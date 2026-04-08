@@ -21,6 +21,8 @@ from app.schemas.incident import (
 )
 from app.utils.security import get_current_user
 
+from app.services.notification_service import notify_user_realtime, send_push_to_user
+
 router = APIRouter(prefix="/api/incidents", tags=["Incidentes"])
 
 
@@ -197,6 +199,13 @@ def update_incident(
 
     if data.status is not None:
         incident.status = data.status
+        _status_labels = {
+            "pending": "Pendiente",
+            "assigned": "Asignado",
+            "in_progress": "En progreso",
+            "completed": "Completado",
+        }
+        status_label = _status_labels.get(data.status.value, data.status.value)
         history = StatusHistory(
             incident_id=incident.id,
             status=data.status.value,
@@ -208,11 +217,24 @@ def update_incident(
         notification = Notification(
             user_id=incident.user_id,
             incident_id=incident.id,
-            title="Actualizacion de servicio",
-            message=f"Tu solicitud ha cambiado a estado: {data.status.value}",
+            title="Actualización de servicio",
+            message=f"Tu solicitud ha cambiado a estado: {status_label}",
             type=NotificationType.STATUS_UPDATE,
         )
         db.add(notification)
+        notify_user_realtime(incident.user_id, {
+            "type": "status_update",
+            "incident_id": incident.id,
+            "status": data.status.value,
+            "title": "Actualización de servicio",
+            "message": f"Tu solicitud ha cambiado a estado: {status_label}",
+        })
+        send_push_to_user(
+            db, incident.user_id,
+            "Actualización de servicio",
+            f"Tu solicitud ha cambiado a estado: {status_label}",
+            {"incident_id": str(incident.id)},
+        )
 
     if data.final_cost is not None:
         incident.final_cost = data.final_cost
@@ -266,6 +288,18 @@ def accept_incident(
         type=NotificationType.INCIDENT_ASSIGNED,
     )
     db.add(notification)
+    notify_user_realtime(incident.user_id, {
+        "type": "incident_assigned",
+        "incident_id": incident.id,
+        "title": "Taller asignado",
+        "message": f"El taller {workshop.name} ha aceptado tu solicitud",
+    })
+    send_push_to_user(
+        db, incident.user_id,
+        "Taller asignado",
+        f"El taller {workshop.name} ha aceptado tu solicitud",
+        {"incident_id": str(incident.id)},
+    )
 
     db.commit()
     db.refresh(incident)

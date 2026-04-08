@@ -61,3 +61,21 @@ def require_role(*roles):
             )
         return current_user
     return role_checker
+
+
+def get_current_user_from_token(token: str, db: Session) -> User:
+    """Validate a JWT token and return the user without FastAPI dependency injection.
+    Used for WebSocket authentication."""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
+            raise ValueError("Token sin usuario")
+        user_id = int(user_id_str)
+    except (JWTError, ValueError) as e:
+        raise ValueError(f"Token invalido: {e}")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise ValueError("Usuario no encontrado")
+    return user

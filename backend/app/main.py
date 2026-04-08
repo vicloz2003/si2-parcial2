@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.database import Base, engine
+from app.database import Base, engine, get_db
 from app.routers import assignment, auth, incidents, notifications, payments, users, vehicles, workshops
+from app.services.websocket_manager import manager
+from app.utils.security import get_current_user_from_token
 
 # Crear tablas
 Base.metadata.create_all(bind=engine)
@@ -49,3 +51,24 @@ def root():
 @app.get("/health", tags=["Root"])
 def health_check():
     return {"status": "ok"}
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
+    """WebSocket endpoint for real-time notifications."""
+    db = next(get_db())
+    try:
+        user = get_current_user_from_token(token, db)
+    except Exception:
+        await websocket.close(code=4001, reason="Invalid token")
+        return
+    finally:
+        db.close()
+
+    await manager.connect(websocket, user.id)
+    try:
+        while True:
+            # Keep connection alive; client can send pings
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user.id)

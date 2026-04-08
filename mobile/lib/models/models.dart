@@ -5,6 +5,7 @@ class User {
   final String phone;
   final String role;
   final bool isActive;
+  final String? profilePhotoUrl;
 
   User({
     required this.id,
@@ -13,15 +14,38 @@ class User {
     required this.phone,
     required this.role,
     required this.isActive,
+    this.profilePhotoUrl,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-        id: json['id'],
-        email: json['email'],
-        fullName: json['full_name'],
-        phone: json['phone'],
-        role: json['role'],
-        isActive: json['is_active'],
+    id: json['id'],
+    email: json['email'],
+    fullName: json['full_name'],
+    phone: json['phone'],
+    role: json['role'],
+    isActive: json['is_active'],
+    profilePhotoUrl: json['profile_photo_url'],
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'email': email,
+    'full_name': fullName,
+    'phone': phone,
+    'role': role,
+    'is_active': isActive,
+    'profile_photo_url': profilePhotoUrl,
+  };
+
+  User copyWith({String? fullName, String? phone, String? profilePhotoUrl}) =>
+      User(
+        id: id,
+        email: email,
+        fullName: fullName ?? this.fullName,
+        phone: phone ?? this.phone,
+        role: role,
+        isActive: isActive,
+        profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       );
 }
 
@@ -45,22 +69,22 @@ class Vehicle {
   });
 
   factory Vehicle.fromJson(Map<String, dynamic> json) => Vehicle(
-        id: json['id'],
-        userId: json['user_id'],
-        brand: json['brand'],
-        model: json['model'],
-        year: json['year'],
-        color: json['color'],
-        plateNumber: json['plate_number'],
-      );
+    id: json['id'],
+    userId: json['user_id'],
+    brand: json['brand'],
+    model: json['model'],
+    year: json['year'],
+    color: json['color'],
+    plateNumber: json['plate_number'],
+  );
 
   Map<String, dynamic> toJson() => {
-        'brand': brand,
-        'model': model,
-        'year': year,
-        'color': color,
-        'plate_number': plateNumber,
-      };
+    'brand': brand,
+    'model': model,
+    'year': year,
+    'color': color,
+    'plate_number': plateNumber,
+  };
 }
 
 class Incident {
@@ -68,6 +92,8 @@ class Incident {
   final int userId;
   final int vehicleId;
   final int? workshopId;
+  final String? workshopName;
+  final String? technicianName;
   final String category;
   final String priority;
   final String status;
@@ -87,6 +113,8 @@ class Incident {
     required this.userId,
     required this.vehicleId,
     this.workshopId,
+    this.workshopName,
+    this.technicianName,
     required this.category,
     required this.priority,
     required this.status,
@@ -103,28 +131,30 @@ class Incident {
   });
 
   factory Incident.fromJson(Map<String, dynamic> json) => Incident(
-        id: json['id'],
-        userId: json['user_id'],
-        vehicleId: json['vehicle_id'],
-        workshopId: json['workshop_id'],
-        category: json['category'],
-        priority: json['priority'],
-        status: json['status'],
-        description: json['description'],
-        aiSummary: json['ai_summary'],
-        aiDiagnosis: json['ai_diagnosis'],
-        latitude: (json['latitude'] as num).toDouble(),
-        longitude: (json['longitude'] as num).toDouble(),
-        address: json['address'],
-        estimatedArrival: json['estimated_arrival'],
-        finalCost: json['final_cost'] != null
-            ? (json['final_cost'] as num).toDouble()
-            : null,
-        createdAt: json['created_at'],
-        evidences: (json['evidences'] as List? ?? [])
-            .map((e) => Evidence.fromJson(e))
-            .toList(),
-      );
+    id: json['id'],
+    userId: json['user_id'],
+    vehicleId: json['vehicle_id'],
+    workshopId: json['workshop_id'],
+    workshopName: json['workshop_name'],
+    technicianName: json['technician_name'],
+    category: json['category'],
+    priority: json['priority'],
+    status: json['status'],
+    description: json['description'],
+    aiSummary: json['ai_summary'],
+    aiDiagnosis: json['ai_diagnosis'],
+    latitude: (json['latitude'] as num).toDouble(),
+    longitude: (json['longitude'] as num).toDouble(),
+    address: json['address'],
+    estimatedArrival: json['estimated_arrival'],
+    finalCost: json['final_cost'] != null
+        ? (json['final_cost'] as num).toDouble()
+        : null,
+    createdAt: json['created_at'],
+    evidences: (json['evidences'] as List? ?? [])
+        .map((e) => Evidence.fromJson(e))
+        .toList(),
+  );
 }
 
 class Evidence {
@@ -145,13 +175,13 @@ class Evidence {
   });
 
   factory Evidence.fromJson(Map<String, dynamic> json) => Evidence(
-        id: json['id'],
-        type: json['type'],
-        fileUrl: json['file_url'],
-        content: json['content'],
-        transcription: json['transcription'],
-        aiAnalysis: json['ai_analysis'],
-      );
+    id: json['id'],
+    type: json['type'],
+    fileUrl: json['file_url'],
+    content: json['content'],
+    transcription: json['transcription'],
+    aiAnalysis: json['ai_analysis'],
+  );
 }
 
 class AppNotification {

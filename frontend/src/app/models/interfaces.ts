@@ -5,6 +5,7 @@ export interface User {
   phone: string;
   role: 'client' | 'workshop' | 'admin';
   is_active: boolean;
+  profile_photo_url: string | null;
   created_at: string;
 }
 
@@ -94,6 +95,8 @@ export interface Incident {
   updated_at: string;
   evidences: Evidence[];
   status_history: StatusHistory[];
+  workshop_name: string | null;
+  technician_name: string | null;
 }
 
 export interface Notification {
@@ -104,6 +107,17 @@ export interface Notification {
   message: string;
   type: string;
   is_read: boolean;
+  created_at: string;
+}
+
+export interface Payment {
+  id: number;
+  incident_id: number;
+  amount: number;
+  commission_amount: number;
+  payment_method: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  transaction_id: string | null;
   created_at: string;
 }
 

@@ -46,7 +46,7 @@ class AppTheme {
         color: AppColors.surface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: AppColors.border, width: 1),
         ),
       ),
@@ -57,7 +57,9 @@ class AppTheme {
           foregroundColor: AppColors.textOnPrimary,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           textStyle: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
@@ -71,8 +73,12 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.border, width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
           minimumSize: const Size(0, 48),
         ),
       ),
@@ -81,38 +87,47 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceAlt,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textTertiary),
-        labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textTertiary,
+        ),
+        labelStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textSecondary,
+        ),
         floatingLabelStyle: textTheme.bodyMedium?.copyWith(
           color: AppColors.primary,
           fontWeight: FontWeight.w600,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.danger, width: 1.8),
         ),
       ),
@@ -142,7 +157,9 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titleTextStyle: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+        titleTextStyle: textTheme.headlineSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
         contentTextStyle: textTheme.bodyMedium,
       ),
 
@@ -155,96 +172,396 @@ class AppTheme {
       ),
 
       iconTheme: const IconThemeData(color: AppColors.textSecondary, size: 24),
+
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textTertiary,
+        selectedLabelStyle: textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
+        unselectedLabelStyle: textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+        ),
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
+      ),
+
+      extensions: const [AppColorsExtension.light],
+    );
+  }
+
+  /// Dark theme
+  static ThemeData dark() {
+    final base = ThemeData.dark(useMaterial3: true);
+    final textTheme = _buildDarkTextTheme(base.textTheme);
+
+    return base.copyWith(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        brightness: Brightness.dark,
+        primary: AppColors.primary,
+        secondary: AppColors.accent,
+        surface: AppColors.surfaceDark,
+        error: AppColors.danger,
+      ),
+      scaffoldBackgroundColor: AppColors.backgroundDark,
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.surfaceDark,
+        foregroundColor: AppColors.textPrimaryDark,
+        elevation: 0,
+        scrolledUnderElevation: 2,
+        centerTitle: false,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: AppColors.textPrimaryDark,
+          fontWeight: FontWeight.w700,
+        ),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+        ),
+      ),
+
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: AppColors.surfaceDark,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.borderDark, width: 1),
+        ),
+      ),
+
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.textOnPrimary,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+          minimumSize: const Size(0, 52),
+        ),
+      ),
+
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.borderDark, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+          minimumSize: const Size(0, 48),
+        ),
+      ),
+
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surfaceAltDark,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textTertiaryDark,
+        ),
+        labelStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textSecondaryDark,
+        ),
+        floatingLabelStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w600,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.borderDark, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.danger, width: 1.8),
+        ),
+      ),
+
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.surfaceAltDark,
+        labelStyle: textTheme.labelMedium,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide.none,
+      ),
+
+      dividerTheme: const DividerThemeData(
+        color: AppColors.dividerDark,
+        thickness: 1,
+        space: 24,
+      ),
+
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.surfaceDark,
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textPrimaryDark,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.surfaceDark,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titleTextStyle: textTheme.headlineSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        contentTextStyle: textTheme.bodyMedium,
+      ),
+
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surfaceDark,
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+      ),
+
+      iconTheme: const IconThemeData(
+        color: AppColors.textSecondaryDark,
+        size: 24,
+      ),
+
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surfaceDark,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textTertiaryDark,
+        selectedLabelStyle: textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
+        unselectedLabelStyle: textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+        ),
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
+      ),
+
+      extensions: const [AppColorsExtension.dark],
     );
   }
 
   static TextTheme _buildTextTheme(TextTheme base) {
-    return GoogleFonts.poppinsTextTheme(base).copyWith(
-      displayLarge: GoogleFonts.poppins(
+    return GoogleFonts.plusJakartaSansTextTheme(base).copyWith(
+      displayLarge: GoogleFonts.sora(
         fontSize: 36,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
-        height: 1.1,
-        letterSpacing: -0.5,
+        height: 1.08,
+        letterSpacing: -0.8,
       ),
-      displayMedium: GoogleFonts.poppins(
+      displayMedium: GoogleFonts.sora(
         fontSize: 30,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
-        height: 1.15,
-        letterSpacing: -0.3,
+        height: 1.12,
+        letterSpacing: -0.6,
       ),
-      headlineLarge: GoogleFonts.poppins(
+      headlineLarge: GoogleFonts.sora(
         fontSize: 26,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
         height: 1.2,
       ),
-      headlineMedium: GoogleFonts.poppins(
+      headlineMedium: GoogleFonts.sora(
         fontSize: 22,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
-        height: 1.25,
+        height: 1.22,
       ),
-      headlineSmall: GoogleFonts.poppins(
+      headlineSmall: GoogleFonts.sora(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
         height: 1.3,
       ),
-      titleLarge: GoogleFonts.poppins(
+      titleLarge: GoogleFonts.sora(
         fontSize: 18,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
         height: 1.3,
       ),
-      titleMedium: GoogleFonts.poppins(
+      titleMedium: GoogleFonts.plusJakartaSans(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
-        height: 1.35,
+        height: 1.32,
       ),
-      titleSmall: GoogleFonts.poppins(
+      titleSmall: GoogleFonts.plusJakartaSans(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
         height: 1.4,
       ),
-      bodyLarge: GoogleFonts.poppins(
+      bodyLarge: GoogleFonts.plusJakartaSans(
         fontSize: 16,
         fontWeight: FontWeight.w400,
         color: AppColors.textPrimary,
-        height: 1.5,
+        height: 1.55,
       ),
-      bodyMedium: GoogleFonts.poppins(
+      bodyMedium: GoogleFonts.plusJakartaSans(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: AppColors.textSecondary,
-        height: 1.5,
+        height: 1.55,
       ),
-      bodySmall: GoogleFonts.poppins(
+      bodySmall: GoogleFonts.plusJakartaSans(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: AppColors.textTertiary,
-        height: 1.4,
+        height: 1.45,
       ),
-      labelLarge: GoogleFonts.poppins(
+      labelLarge: GoogleFonts.plusJakartaSans(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
-        letterSpacing: 0.2,
+        letterSpacing: 0.25,
       ),
-      labelMedium: GoogleFonts.poppins(
+      labelMedium: GoogleFonts.plusJakartaSans(
         fontSize: 12,
         fontWeight: FontWeight.w600,
         color: AppColors.textSecondary,
-        letterSpacing: 0.3,
+        letterSpacing: 0.35,
       ),
-      labelSmall: GoogleFonts.poppins(
+      labelSmall: GoogleFonts.plusJakartaSans(
         fontSize: 10,
         fontWeight: FontWeight.w700,
         color: AppColors.textTertiary,
-        letterSpacing: 0.5,
+        letterSpacing: 0.55,
+      ),
+    );
+  }
+
+  static TextTheme _buildDarkTextTheme(TextTheme base) {
+    return GoogleFonts.plusJakartaSansTextTheme(base).copyWith(
+      displayLarge: GoogleFonts.sora(
+        fontSize: 36,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimaryDark,
+        height: 1.08,
+        letterSpacing: -0.8,
+      ),
+      displayMedium: GoogleFonts.sora(
+        fontSize: 30,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimaryDark,
+        height: 1.12,
+        letterSpacing: -0.6,
+      ),
+      headlineLarge: GoogleFonts.sora(
+        fontSize: 26,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+        height: 1.2,
+      ),
+      headlineMedium: GoogleFonts.sora(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+        height: 1.22,
+      ),
+      headlineSmall: GoogleFonts.sora(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+        height: 1.3,
+      ),
+      titleLarge: GoogleFonts.sora(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+        height: 1.3,
+      ),
+      titleMedium: GoogleFonts.plusJakartaSans(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+        height: 1.32,
+      ),
+      titleSmall: GoogleFonts.plusJakartaSans(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+        height: 1.4,
+      ),
+      bodyLarge: GoogleFonts.plusJakartaSans(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimaryDark,
+        height: 1.55,
+      ),
+      bodyMedium: GoogleFonts.plusJakartaSans(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textSecondaryDark,
+        height: 1.55,
+      ),
+      bodySmall: GoogleFonts.plusJakartaSans(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textTertiaryDark,
+        height: 1.45,
+      ),
+      labelLarge: GoogleFonts.plusJakartaSans(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+        letterSpacing: 0.25,
+      ),
+      labelMedium: GoogleFonts.plusJakartaSans(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondaryDark,
+        letterSpacing: 0.35,
+      ),
+      labelSmall: GoogleFonts.plusJakartaSans(
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textTertiaryDark,
+        letterSpacing: 0.55,
       ),
     );
   }

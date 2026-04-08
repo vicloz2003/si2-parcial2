@@ -2,6 +2,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, Float, ForeignKey, String, Text, func
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -75,3 +76,11 @@ class Incident(Base):
     evidences: Mapped[list["Evidence"]] = relationship(back_populates="incident", cascade="all, delete-orphan")
     status_history: Mapped[list["StatusHistory"]] = relationship(back_populates="incident", cascade="all, delete-orphan")
     payment: Mapped["Payment | None"] = relationship(back_populates="incident", uselist=False)
+
+    @hybrid_property
+    def workshop_name(self) -> str | None:
+        return self.workshop.name if self.workshop else None
+
+    @hybrid_property
+    def technician_name(self) -> str | None:
+        return self.technician.name if self.technician else None

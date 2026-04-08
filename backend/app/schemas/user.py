@@ -25,6 +25,7 @@ class UserResponse(BaseModel):
     phone: str
     role: UserRole
     is_active: bool
+    profile_photo_url: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

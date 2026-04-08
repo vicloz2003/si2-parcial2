@@ -1,19 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { ApiService } from '../../services/api.service';
 import { Technician } from '../../models/interfaces';
 
 @Component({
   selector: 'app-technicians',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule],
   template: `
-    <div class="page">
-      <app-navbar></app-navbar>
-
-      <div class="page-content fade-in">
+    <div class="page-content reveal">
         <div class="page-header">
           <div>
             <h1 class="page-title">Tecnicos</h1>
@@ -31,6 +27,15 @@ import { Technician } from '../../models/interfaces';
               {{ showForm ? 'close' : 'person_add' }}
             </span>
             {{ showForm ? 'Cancelar' : 'Nuevo tecnico' }}
+          </button>
+        </div>
+
+        <div class="error-banner" *ngIf="error && !loading">
+          <span class="material-symbols-rounded">cloud_off</span>
+          <span>No se pudo cargar los tecnicos</span>
+          <button class="retry-btn" (click)="loadData()">
+            <span class="material-symbols-rounded">refresh</span>
+            Reintentar
           </button>
         </div>
 
@@ -182,15 +187,30 @@ import { Technician } from '../../models/interfaces';
             </button>
           </div>
         </ng-template>
-      </div>
     </div>
   `,
   styles: [
     `
+      .error-banner {
+        display: flex; align-items: center; gap: var(--space-md);
+        background: var(--color-surface); border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg); padding: var(--space-md) var(--space-lg);
+        margin-bottom: var(--space-lg); color: var(--color-text-secondary);
+        .material-symbols-rounded { font-size: 20px; color: var(--color-danger); }
+      }
+      .retry-btn {
+        margin-left: auto; padding: 6px 14px; font-size: 13px;
+        border: 1px solid var(--color-border); border-radius: var(--radius-md);
+        color: var(--color-text-primary); display: flex; align-items: center; gap: 6px;
+        &:hover { background: var(--color-surface-alt); }
+        .material-symbols-rounded { font-size: 16px; color: var(--color-text-primary); }
+      }
+
       /* Form card */
       .form-card {
-        padding: var(--space-lg);
+        padding: var(--space-lg) var(--space-xl);
         margin-bottom: var(--space-lg);
+        border-radius: var(--radius-xl);
         border-left: 4px solid var(--color-primary);
       }
 
@@ -206,14 +226,14 @@ import { Technician } from '../../models/interfaces';
       .form-icon {
         width: 48px;
         height: 48px;
-        border-radius: var(--radius-md);
-        background: rgba(30, 58, 95, 0.1);
+        border-radius: var(--radius-lg);
+        background: var(--color-primary-50);
         display: flex;
         align-items: center;
         justify-content: center;
 
         .material-symbols-rounded {
-          font-size: 26px;
+          font-size: 24px;
           color: var(--color-primary);
         }
       }
@@ -260,11 +280,9 @@ import { Technician } from '../../models/interfaces';
         font-weight: 500;
         color: var(--color-text-secondary);
         cursor: pointer;
-        transition: all var(--transition-fast);
+        transition: all 0.2s var(--ease-out);
 
-        .material-symbols-rounded {
-          font-size: 16px;
-        }
+        .material-symbols-rounded { font-size: 16px; }
 
         &:hover {
           background: var(--color-surface-hover);
@@ -272,7 +290,7 @@ import { Technician } from '../../models/interfaces';
         }
 
         &.active {
-          background: rgba(30, 58, 95, 0.1);
+          background: var(--color-primary-50);
           border-color: var(--color-primary);
           color: var(--color-primary);
           font-weight: 600;
@@ -296,11 +314,12 @@ import { Technician } from '../../models/interfaces';
 
       .tech-card {
         padding: var(--space-lg);
-        transition: all var(--transition);
+        border-radius: var(--radius-xl);
+        transition: all 0.25s var(--ease-out);
 
         &:hover {
           transform: translateY(-3px);
-          box-shadow: var(--shadow-md);
+          box-shadow: var(--shadow-card-hover);
         }
       }
 
@@ -312,26 +331,25 @@ import { Technician } from '../../models/interfaces';
       }
 
       .tech-avatar {
-        width: 56px;
-        height: 56px;
+        width: 54px;
+        height: 54px;
         border-radius: 50%;
-        background: var(--gradient-primary);
+        background: var(--color-primary);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
         font-size: 18px;
-        box-shadow: 0 4px 12px rgba(30, 58, 95, 0.25);
       }
 
       .badge-status-available {
-        background: rgba(6, 167, 125, 0.12);
+        background: rgba(6, 167, 125, 0.1);
         color: var(--color-success);
       }
 
       .badge-status-busy {
-        background: rgba(230, 57, 70, 0.12);
+        background: rgba(230, 57, 70, 0.1);
         color: var(--color-danger);
       }
 
@@ -345,19 +363,14 @@ import { Technician } from '../../models/interfaces';
 
         &.online {
           background: var(--color-success);
-          box-shadow: 0 0 0 3px rgba(6, 167, 125, 0.2);
+          box-shadow: 0 0 0 3px rgba(6, 167, 125, 0.18);
           animation: pulse 2s infinite;
         }
       }
 
       @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.6;
-        }
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
       }
 
       .tech-name {
@@ -384,10 +397,8 @@ import { Technician } from '../../models/interfaces';
           color: var(--color-text-secondary);
           text-decoration: none;
           font-weight: 500;
-
-          &:hover {
-            color: var(--color-primary);
-          }
+          transition: color 0.2s;
+          &:hover { color: var(--color-primary); }
         }
       }
 
@@ -411,9 +422,7 @@ import { Technician } from '../../models/interfaces';
         font-size: 11px;
         font-weight: 600;
 
-        .material-symbols-rounded {
-          font-size: 14px;
-        }
+        .material-symbols-rounded { font-size: 14px; }
       }
 
       .tech-actions {
@@ -423,60 +432,50 @@ import { Technician } from '../../models/interfaces';
 
       .action-btn {
         flex: 1;
-        height: 40px;
+        height: 38px;
         border-radius: var(--radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all var(--transition-fast);
+        transition: all 0.2s var(--ease-out);
         border: 1px solid var(--color-border);
         background: var(--color-surface);
 
-        .material-symbols-rounded {
-          font-size: 20px;
-        }
+        .material-symbols-rounded { font-size: 20px; }
 
         &:hover {
           transform: translateY(-1px);
-          box-shadow: var(--shadow-sm);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }
 
         &.toggle {
           color: var(--color-success);
-          &.busy {
-            color: var(--color-warning);
-          }
-          &:hover {
-            background: rgba(6, 167, 125, 0.08);
-          }
+          &.busy { color: var(--color-warning); }
+          &:hover { background: rgba(6, 167, 125, 0.06); }
         }
 
         &.edit {
           color: var(--color-info);
-          &:hover {
-            background: rgba(58, 134, 255, 0.08);
-          }
+          &:hover { background: rgba(58, 134, 255, 0.06); }
         }
 
         &.delete {
           color: var(--color-danger);
-          &:hover {
-            background: rgba(230, 57, 70, 0.08);
-          }
+          &:hover { background: var(--color-danger-light); }
         }
       }
 
       @media (max-width: 768px) {
-        .form-grid {
-          grid-template-columns: 1fr;
-        }
+        .form-grid { grid-template-columns: 1fr; }
       }
     `,
   ],
 })
 export class TechniciansComponent implements OnInit {
   technicians: Technician[] = [];
+  loading = true;
+  error = false;
   showForm = false;
   editing: number | null = null;
   newTech = { name: '', phone: '', specialties: 'battery,tire,crash,engine' };
@@ -490,14 +489,19 @@ export class TechniciansComponent implements OnInit {
     { value: 'other', label: 'Otro', icon: 'help' },
   ];
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    this.load();
+    this.loadData();
   }
 
-  load() {
-    this.api.getTechnicians().subscribe((data) => (this.technicians = data));
+  loadData() {
+    this.loading = true;
+    this.error = false;
+    this.api.getTechnicians().subscribe({
+      next: (data) => { this.technicians = data; this.loading = false; this.cdr.markForCheck(); },
+      error: () => { this.loading = false; this.error = true; this.cdr.markForCheck(); }
+    });
   }
 
   toggleForm() {
@@ -542,12 +546,12 @@ export class TechniciansComponent implements OnInit {
     if (this.editing) {
       this.api.updateTechnician(this.editing, this.newTech).subscribe(() => {
         this.resetForm();
-        this.load();
+        this.loadData();
       });
     } else {
       this.api.createTechnician(this.newTech).subscribe(() => {
         this.resetForm();
-        this.load();
+        this.loadData();
       });
     }
   }
@@ -565,14 +569,14 @@ export class TechniciansComponent implements OnInit {
 
   deleteTechnician(id: number) {
     if (confirm('Eliminar este tecnico?')) {
-      this.api.deleteTechnician(id).subscribe(() => this.load());
+      this.api.deleteTechnician(id).subscribe(() => this.loadData());
     }
   }
 
   toggleAvailability(t: Technician) {
     this.api
       .updateTechnician(t.id, { is_available: !t.is_available })
-      .subscribe(() => this.load());
+      .subscribe(() => this.loadData());
   }
 
   resetForm() {

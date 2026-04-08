@@ -44,6 +44,20 @@ def get_my_workshop(
 ):
     workshop = db.query(Workshop).filter(Workshop.user_id == current_user.id).first()
     if not workshop:
+        # Auto-crear taller para usuarios workshop existentes
+        if current_user.role == UserRole.WORKSHOP:
+            workshop = Workshop(
+                user_id=current_user.id,
+                name=f"Taller de {current_user.full_name}",
+                address="Direccion pendiente",
+                latitude=0.0,
+                longitude=0.0,
+                phone=current_user.phone,
+            )
+            db.add(workshop)
+            db.commit()
+            db.refresh(workshop)
+            return workshop
         raise HTTPException(status_code=404, detail="No tiene taller registrado")
     return workshop
 

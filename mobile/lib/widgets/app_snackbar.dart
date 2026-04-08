@@ -12,7 +12,7 @@ class AppSnackBar {
     IconData? icon,
     Color? color,
   }) {
-    final c = color ?? AppColors.textPrimary;
+    final c = color ?? context.appColors.textPrimary;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         margin: const EdgeInsets.all(AppSpacing.md),

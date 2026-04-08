@@ -2,13 +2,28 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Incident, Notification, Technician, Workshop } from '../models/interfaces';
+import { Incident, Notification, Payment, Technician, User, Workshop } from '../models/interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
+
+  // Profile
+  getMe(): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/users/me`);
+  }
+
+  updateProfile(data: { full_name?: string; phone?: string }): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/users/me`, data);
+  }
+
+  uploadProfilePhoto(file: File): Observable<User> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<User>(`${this.apiUrl}/users/me/photo`, formData);
+  }
 
   // Workshop
   getMyWorkshop(): Observable<Workshop> {
@@ -77,5 +92,10 @@ export class ApiService {
 
   markAllAsRead(): Observable<any> {
     return this.http.put(`${this.apiUrl}/notifications/read-all`, {});
+  }
+
+  // Payments
+  getPayments(): Observable<Payment[]> {
+    return this.http.get<Payment[]>(`${this.apiUrl}/payments/my-payments`);
   }
 }

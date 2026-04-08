@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'blocs/blocs.dart';
 import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
-import 'services/api_service.dart';
+import 'screens/main_shell_screen.dart';
+import 'services/push_notification_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   runApp(const EmergenciApp());
 }
 
@@ -14,33 +21,74 @@ class EmergenciApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'EmergenciApp',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      home: const AuthWrapper(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => ThemeCubit()),
+        BlocProvider(create: (_) => AuthBloc()..add(AuthCheckRequested())),
+      ],
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          return MaterialApp(
+            title: 'AsisteCar',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
+            themeMode: themeMode,
+            home: const AuthGate(),
+          );
+        },
+      ),
     );
   }
 }
 
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: ApiService.isLoggedIn(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: AppColors.primary,
+    return BlocConsumer<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthFailure) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
+        }
+        if (state is AuthAuthenticated) {
+          PushNotificationService.init();
+        }
+      },
+      builder: (context, state) {
+        if (state is AuthInitial || state is AuthLoading) {
+          final colors = context.appColors;
+          return Scaffold(
+            backgroundColor: colors.background,
             body: Center(
-              child: CircularProgressIndicator(color: Colors.white),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/asistecar.png',
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: colors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
-        if (snapshot.data == true) {
-          return const HomeScreen();
+        if (state is AuthAuthenticated) {
+          return const MainShellScreen();
         }
         return const LoginScreen();
       },

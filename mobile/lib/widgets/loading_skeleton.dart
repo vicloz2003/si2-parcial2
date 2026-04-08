@@ -22,7 +22,7 @@ class SkeletonBox extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColors.surface,
         borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.sm),
       ),
     );
@@ -37,8 +37,8 @@ class AppShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: AppColors.surfaceAlt,
-      highlightColor: Colors.white,
+      baseColor: context.appColors.surfaceAlt,
+      highlightColor: context.appColors.surface,
       period: const Duration(milliseconds: 1400),
       child: child,
     );
@@ -56,7 +56,7 @@ class IncidentCardSkeleton extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: AppSpacing.md),
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Column(
@@ -104,7 +104,7 @@ class IncidentListSkeleton extends StatelessWidget {
         100,
       ),
       itemCount: itemCount,
-      itemBuilder: (_, __) => const IncidentCardSkeleton(),
+      itemBuilder: (_, _) => const IncidentCardSkeleton(),
     );
   }
 }

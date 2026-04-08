@@ -1,19 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { ApiService } from '../../services/api.service';
 import { Incident } from '../../models/interfaces';
 
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent],
+  imports: [CommonModule, RouterLink],
   template: `
-    <div class="page">
-      <app-navbar></app-navbar>
-
-      <div class="page-content fade-in">
+    <div class="page-content reveal">
         <div class="page-header">
           <div>
             <h1 class="page-title">Historial de atenciones</h1>
@@ -23,8 +19,17 @@ import { Incident } from '../../models/interfaces';
           </div>
         </div>
 
+        <div class="error-banner" *ngIf="error && !loading">
+          <span class="material-symbols-rounded">cloud_off</span>
+          <span>No se pudo cargar el historial</span>
+          <button class="retry-btn" (click)="loadData()">
+            <span class="material-symbols-rounded">refresh</span>
+            Reintentar
+          </button>
+        </div>
+
         <!-- Summary stats -->
-        <div class="summary-row" *ngIf="incidents.length > 0">
+        <div class="summary-row stagger" *ngIf="incidents.length > 0">
           <div class="summary-card">
             <div class="summary-icon ingreso">
               <span class="material-symbols-rounded">payments</span>
@@ -148,11 +153,25 @@ import { Incident } from '../../models/interfaces';
             <p>Cuando completes servicios apareceran aqui.</p>
           </div>
         </ng-template>
-      </div>
     </div>
   `,
   styles: [
     `
+      .error-banner {
+        display: flex; align-items: center; gap: var(--space-md);
+        background: var(--color-surface); border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg); padding: var(--space-md) var(--space-lg);
+        margin-bottom: var(--space-lg); color: var(--color-text-secondary);
+        .material-symbols-rounded { font-size: 20px; color: var(--color-danger); }
+      }
+      .retry-btn {
+        margin-left: auto; padding: 6px 14px; font-size: 13px;
+        border: 1px solid var(--color-border); border-radius: var(--radius-md);
+        color: var(--color-text-primary); display: flex; align-items: center; gap: 6px;
+        &:hover { background: var(--color-surface-alt); }
+        .material-symbols-rounded { font-size: 16px; color: var(--color-text-primary); }
+      }
+
       /* Summary cards */
       .summary-row {
         display: grid;
@@ -164,65 +183,60 @@ import { Incident } from '../../models/interfaces';
       .summary-card {
         background: var(--color-surface);
         border: 1px solid var(--color-border);
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-xl);
         padding: var(--space-lg);
         display: flex;
         align-items: center;
         gap: var(--space-md);
-        transition: all var(--transition);
+        transition: all 0.25s var(--ease-out);
 
         &:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-md);
+          transform: translateY(-3px);
+          box-shadow: var(--shadow-card-hover);
         }
       }
 
       .summary-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: var(--radius-md);
+        width: 52px;
+        height: 52px;
+        border-radius: var(--radius-lg);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
 
-        .material-symbols-rounded {
-          font-size: 28px;
-        }
+        .material-symbols-rounded { font-size: 26px; }
 
         &.ingreso {
-          background: rgba(58, 134, 255, 0.12);
-          .material-symbols-rounded {
-            color: var(--color-info);
-          }
+          background: rgba(58, 134, 255, 0.1);
+          .material-symbols-rounded { color: var(--color-info); }
         }
         &.comision {
-          background: rgba(247, 127, 0, 0.12);
-          .material-symbols-rounded {
-            color: var(--color-warning);
-          }
+          background: rgba(247, 127, 0, 0.1);
+          .material-symbols-rounded { color: var(--color-warning); }
         }
         &.neto {
-          background: rgba(6, 167, 125, 0.12);
-          .material-symbols-rounded {
-            color: var(--color-success);
-          }
+          background: rgba(6, 167, 125, 0.1);
+          .material-symbols-rounded { color: var(--color-success); }
         }
       }
 
       .summary-label {
-        font-size: 11px;
-        font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 700;
         color: var(--color-text-tertiary);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.1em;
         margin-bottom: 4px;
       }
 
       .summary-value {
+        font-family: 'JetBrains Mono', monospace;
         font-size: 22px;
-        font-weight: 800;
+        font-weight: 700;
         color: var(--color-text-primary);
+        letter-spacing: -0.04em;
       }
 
       /* Table */
@@ -248,7 +262,7 @@ import { Incident } from '../../models/interfaces';
       }
 
       .data-table td {
-        padding: 16px;
+        padding: 14px 16px;
         border-bottom: 1px solid var(--color-divider);
         font-size: 13px;
         color: var(--color-text-primary);
@@ -258,13 +272,11 @@ import { Incident } from '../../models/interfaces';
         border-bottom: none;
       }
 
-      .text-right {
-        text-align: right;
-      }
+      .text-right { text-align: right; }
 
       .clickable {
         cursor: pointer;
-        transition: background var(--transition-fast);
+        transition: background 0.2s var(--ease-out);
 
         &:hover {
           background: var(--color-surface-hover);
@@ -297,21 +309,11 @@ import { Incident } from '../../models/interfaces';
         font-size: 18px;
         color: var(--color-primary);
 
-        &.cat-battery {
-          color: var(--color-warning);
-        }
-        &.cat-tire {
-          color: var(--color-info);
-        }
-        &.cat-crash {
-          color: var(--color-danger);
-        }
-        &.cat-engine {
-          color: var(--color-text-secondary);
-        }
-        &.cat-keys {
-          color: var(--color-accent);
-        }
+        &.cat-battery { color: var(--color-warning); }
+        &.cat-tire { color: var(--color-info); }
+        &.cat-crash { color: var(--color-danger); }
+        &.cat-engine { color: var(--color-text-secondary); }
+        &.cat-keys { color: var(--color-accent); }
       }
 
       .commission-cell {
@@ -319,21 +321,32 @@ import { Incident } from '../../models/interfaces';
       }
 
       @media (max-width: 768px) {
-        .summary-row {
-          grid-template-columns: 1fr;
-        }
+        .summary-row { grid-template-columns: 1fr; }
       }
     `,
   ],
 })
 export class HistoryComponent implements OnInit {
   incidents: Incident[] = [];
+  loading = true;
+  error = false;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    this.api.getIncidents().subscribe((data) => {
-      this.incidents = data.filter((i) => i.status === 'completed');
+    this.loadData();
+  }
+
+  loadData() {
+    this.loading = true;
+    this.error = false;
+    this.api.getIncidents().subscribe({
+      next: (data) => {
+        this.incidents = data.filter((i) => i.status === 'completed');
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.loading = false; this.error = true; this.cdr.markForCheck(); }
     });
   }
 

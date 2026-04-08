@@ -4,7 +4,6 @@ import '../models/models.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_card.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/status_chip.dart';
@@ -77,79 +76,97 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColors.background,
       appBar: AppBar(
         title: Text('Incidente #${widget.incidentId}'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: context.appColors.background,
+        foregroundColor: context.appColors.textPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          color: context.appColors.textPrimary,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
       ),
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : _incident == null
-              ? const EmptyState(
-                  icon: Icons.error_outline_rounded,
-                  title: 'Incidente no encontrado',
-                  subtitle: 'No pudimos obtener la informacion solicitada.',
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  color: AppColors.primary,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    children: [
-                      _buildStatusHero(),
-                      const SizedBox(height: AppSpacing.md),
-                      _buildAICard(),
-                      const SizedBox(height: AppSpacing.md),
-                      _buildInfoCard(),
-                      if (_incident!.evidences.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.md),
-                        _buildEvidencesCard(),
-                      ],
-                      if (_incident!.finalCost != null) ...[
-                        const SizedBox(height: AppSpacing.md),
-                        _buildPaymentCard(),
-                      ],
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-                  ),
-                ),
+          ? const EmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Incidente no encontrado',
+              subtitle: 'No pudimos obtener la información solicitada.',
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              color: AppColors.primary,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                children: [
+                  _buildStatusHero(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildAICard(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildInfoCard(),
+                  if (_incident!.evidences.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    _buildEvidencesCard(),
+                  ],
+                  if (_incident!.finalCost != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    _buildPaymentCard(),
+                  ],
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+              ),
+            ),
     );
   }
 
   Widget _buildStatusHero() {
     final inc = _incident!;
     final color = AppColors.getStatusColor(inc.status);
-    return AppCard(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [color, color.withValues(alpha: 0.75)],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color, color.withValues(alpha: 0.75)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(AppSpacing.lg + 4),
       child: Column(
         children: [
           Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.2),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.4),
-                width: 2,
-              ),
-            ),
-            child: Icon(
-              _statusIcon(inc.status),
-              size: 40,
-              color: Colors.white,
-            ),
-          )
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.2),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  _statusIcon(inc.status),
+                  size: 40,
+                  color: Colors.white,
+                ),
+              )
               .animate()
               .scale(
                 duration: 500.ms,
@@ -157,27 +174,26 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                 begin: const Offset(0.5, 0.5),
               )
               .fadeIn(),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             _statusLabels[inc.status] ?? inc.status,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
           ),
           if (inc.estimatedArrival != null) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.md),
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
-                vertical: 6,
+                vertical: 7,
               ),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -193,6 +209,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
+                      fontSize: 13,
                     ),
                   ),
                 ],
@@ -206,7 +223,19 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
 
   Widget _buildAICard() {
     final inc = _incident!;
-    return AppCard(
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,21 +246,25 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: AppColors.info.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.auto_awesome_rounded,
                   color: AppColors.info,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Analisis de IA',
-                style: Theme.of(context).textTheme.titleMedium,
+                'Análisis de IA',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: context.appColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.lg),
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
@@ -240,13 +273,14 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
               StatusChip.category(inc.category),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          _detailRow('Categoria',
-              _categoryLabels[inc.category] ?? inc.category),
-          if (inc.aiSummary != null)
-            _detailRow('Resumen', inc.aiSummary!),
+          const SizedBox(height: AppSpacing.lg),
+          _detailRow(
+            'Categoría',
+            _categoryLabels[inc.category] ?? inc.category,
+          ),
+          if (inc.aiSummary != null) _detailRow('Resumen', inc.aiSummary!),
           if (inc.aiDiagnosis != null)
-            _detailRow('Diagnostico', inc.aiDiagnosis!),
+            _detailRow('Diagnóstico', inc.aiDiagnosis!),
         ],
       ),
     ).animate(delay: 100.ms).fadeIn().moveY(begin: 16, end: 0);
@@ -254,7 +288,19 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
 
   Widget _buildInfoCard() {
     final inc = _incident!;
-    return AppCard(
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,36 +310,55 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.info_outline_rounded,
                   color: AppColors.primary,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Informacion',
-                style: Theme.of(context).textTheme.titleMedium,
+                'Información',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: context.appColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.lg),
           _detailRow(
-            'Ubicacion',
+            'Ubicación',
             inc.address ??
                 '${inc.latitude.toStringAsFixed(4)}, ${inc.longitude.toStringAsFixed(4)}',
           ),
+          if (inc.workshopName != null) _detailRow('Taller', inc.workshopName!),
+          if (inc.technicianName != null)
+            _detailRow('Técnico', inc.technicianName!),
           if (inc.description != null)
-            _detailRow('Descripcion', inc.description!),
+            _detailRow('Descripción', inc.description!),
         ],
       ),
     ).animate(delay: 200.ms).fadeIn().moveY(begin: 16, end: 0);
   }
 
   Widget _buildEvidencesCard() {
-    return AppCard(
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,38 +369,45 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: AppColors.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.collections_rounded,
                   color: AppColors.accent,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 'Evidencias',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: context.appColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.lg),
           ..._incident!.evidences.map((ev) {
             if (ev.type == 'image' && ev.fileUrl != null) {
               return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderRadius: BorderRadius.circular(20),
                   child: Image.network(
                     'http://10.0.2.2:8000${ev.fileUrl}',
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       height: 120,
-                      color: AppColors.surfaceAlt,
-                      child: const Center(
+                      decoration: BoxDecoration(
+                        color: context.appColors.surfaceAlt,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
                         child: Icon(
                           Icons.broken_image_rounded,
                           size: 48,
-                          color: AppColors.textTertiary,
+                          color: context.appColors.textTertiary,
                         ),
                       ),
                     ),
@@ -344,42 +416,48 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
               );
             } else if (ev.type == 'audio') {
               return Container(
-                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                padding: const EdgeInsets.all(AppSpacing.sm),
+                margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceAlt,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  color: context.appColors.surfaceAlt,
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: AppColors.accent.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.audiotrack_rounded,
                         color: AppColors.accent,
+                        size: 20,
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Audio',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              color: context.appColors.textPrimary,
+                            ),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             ev.transcription != null
-                                ? 'Transcripcion: ${ev.transcription}'
+                                ? 'Transcripción: ${ev.transcription}'
                                 : 'Procesando...',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textTertiary,
+                              color: context.appColors.textTertiary,
                             ),
                           ),
                         ],
@@ -390,20 +468,29 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
               );
             } else if (ev.type == 'text') {
               return Container(
-                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                padding: const EdgeInsets.all(AppSpacing.sm),
+                margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceAlt,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  color: context.appColors.surfaceAlt,
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
                     const Icon(
                       Icons.text_snippet_rounded,
                       color: AppColors.info,
+                      size: 20,
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(child: Text(ev.content ?? '')),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        ev.content ?? '',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.appColors.textPrimary,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -417,8 +504,19 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
 
   Widget _buildPaymentCard() {
     final inc = _incident!;
-    return AppCard(
-      gradient: AppColors.successGradient,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppColors.successGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       padding: const EdgeInsets.all(AppSpacing.lg + 4),
       child: Column(
         children: [
@@ -426,7 +524,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
             padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
               Icons.payments_rounded,
@@ -434,22 +532,24 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           Text(
             'Total a pagar',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Bs. ${inc.finalCost!.toStringAsFixed(2)}',
             style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.8,
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.lg),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -457,6 +557,11 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.success,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               icon: _paying
                   ? const SizedBox(
@@ -467,8 +572,14 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                         color: AppColors.success,
                       ),
                     )
-                  : const Icon(Icons.check_rounded),
-              label: Text(_paying ? 'Procesando...' : 'Realizar pago'),
+                  : const Icon(Icons.check_rounded, size: 18),
+              label: Text(
+                _paying ? 'Procesando...' : 'Realizar pago',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
         ],
@@ -489,10 +600,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.error(
-          context,
-          e.toString().replaceAll('Exception: ', ''),
-        );
+        AppSnackBar.error(context, e.toString().replaceAll('Exception: ', ''));
       }
     } finally {
       if (mounted) setState(() => _paying = false);
@@ -509,19 +617,19 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: AppColors.textTertiary,
+                color: context.appColors.textTertiary,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textPrimary,
+                color: context.appColors.textPrimary,
               ),
             ),
           ),

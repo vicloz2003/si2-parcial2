@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -19,6 +21,7 @@ class NewEmergencyScreen extends StatefulWidget {
 
 class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
   final _descCtrl = TextEditingController();
+  final _audioRecorder = AudioRecorder();
   List<Vehicle> _vehicles = [];
   Vehicle? _selectedVehicle;
   final List<File> _images = [];
@@ -26,6 +29,8 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
   Position? _position;
   bool _loading = false;
   bool _locating = false;
+  bool _recording = false;
+  Duration _recordDuration = Duration.zero;
   int _step = 0; // 0=vehiculo, 1=ubicacion, 2=evidencias, 3=enviar
 
   static const _steps = ['Vehiculo', 'Ubicacion', 'Evidencias', 'Confirmar'];
@@ -39,6 +44,7 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
   @override
   void dispose() {
     _descCtrl.dispose();
+    _audioRecorder.dispose();
     super.dispose();
   }
 
@@ -104,6 +110,67 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
     }
   }
 
+  Future<void> _toggleRecording() async {
+    if (_recording) {
+      // Stop recording
+      final path = await _audioRecorder.stop();
+      if (path != null && mounted) {
+        setState(() {
+          _audioFile = File(path);
+          _recording = false;
+          _recordDuration = Duration.zero;
+        });
+        AppSnackBar.success(context, 'Audio grabado exitosamente');
+      }
+    } else {
+      // Start recording
+      if (await _audioRecorder.hasPermission()) {
+        final dir = await getTemporaryDirectory();
+        final path =
+            '${dir.path}/emergency_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        await _audioRecorder.start(
+          const RecordConfig(
+            encoder: AudioEncoder.aacLc,
+            sampleRate: 44100,
+            bitRate: 128000,
+          ),
+          path: path,
+        );
+        setState(() {
+          _recording = true;
+          _recordDuration = Duration.zero;
+        });
+        _updateRecordTimer();
+      } else {
+        if (mounted) {
+          AppSnackBar.error(context, 'Se necesita permiso de microfono');
+        }
+      }
+    }
+  }
+
+  void _updateRecordTimer() async {
+    while (_recording && mounted) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (_recording && mounted) {
+        setState(() => _recordDuration += const Duration(seconds: 1));
+      }
+    }
+  }
+
+  void _deleteAudio() {
+    setState(() {
+      _audioFile = null;
+      _recordDuration = Duration.zero;
+    });
+  }
+
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
   Future<void> _sendEmergency() async {
     if (_selectedVehicle == null || _position == null) return;
     setState(() => _loading = true);
@@ -130,10 +197,7 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.error(
-          context,
-          e.toString().replaceAll('Exception: ', ''),
-        );
+        AppSnackBar.error(context, e.toString().replaceAll('Exception: ', ''));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -163,25 +227,29 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColors.background,
       appBar: AppBar(
         title: const Text('Reportar Emergencia'),
-        backgroundColor: AppColors.emergency,
-        foregroundColor: Colors.white,
+        backgroundColor: context.appColors.background,
+        foregroundColor: context.appColors.textPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          color: context.appColors.textPrimary,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
       ),
       body: Column(
         children: [
           // Header con stepper visual
-          Container(
+          Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg,
-              AppSpacing.md,
               AppSpacing.lg,
               AppSpacing.lg,
-            ),
-            decoration: const BoxDecoration(
-              gradient: AppColors.emergencyGradient,
+              AppSpacing.lg,
             ),
             child: Column(
               children: [
@@ -190,64 +258,68 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
                   children: List.generate(_steps.length, (i) {
                     final active = i <= _step;
                     final completed = i < _step;
+                    final isLast = i == _steps.length - 1;
+                    final circle = AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: active
+                            ? AppColors.primary
+                            : context.appColors.surfaceAlt,
+                        border: Border.all(
+                          color: active
+                              ? AppColors.primary
+                              : context.appColors.border,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: completed
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 18,
+                                color: Colors.white,
+                              )
+                            : Text(
+                                '${i + 1}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: active
+                                      ? Colors.white
+                                      : context.appColors.textTertiary,
+                                ),
+                              ),
+                      ),
+                    );
+                    if (isLast) return circle;
                     return Expanded(
                       child: Row(
                         children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: active
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.25),
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: completed
-                                  ? const Icon(
-                                      Icons.check_rounded,
-                                      size: 18,
-                                      color: AppColors.emergency,
-                                    )
-                                  : Text(
-                                      '${i + 1}',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                        color: active
-                                            ? AppColors.emergency
-                                            : Colors.white,
-                                      ),
-                                    ),
+                          circle,
+                          Expanded(
+                            child: Container(
+                              height: 2,
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              color: i < _step
+                                  ? AppColors.primary
+                                  : context.appColors.border,
                             ),
                           ),
-                          if (i < _steps.length - 1)
-                            Expanded(
-                              child: Container(
-                                height: 2,
-                                margin: const EdgeInsets.symmetric(
-                                    horizontal: 4),
-                                color: i < _step
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.3),
-                              ),
-                            ),
                         ],
                       ),
                     );
                   }),
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   _steps[_step],
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: context.appColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ],
             ),
@@ -268,18 +340,8 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
           ),
 
           // Botones de control
-          Container(
+          Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
             child: SafeArea(
               top: false,
               child: Row(
@@ -288,8 +350,16 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _loading ? null : _back,
-                        icon: const Icon(Icons.arrow_back_rounded),
-                        label: const Text('Atras'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: context.appColors.textSecondary,
+                          side: BorderSide(color: context.appColors.border),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                        label: const Text('Atrás'),
                       ),
                     ),
                   if (_step > 0) const SizedBox(width: AppSpacing.md),
@@ -301,11 +371,17 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
                         backgroundColor: _step == 3
                             ? AppColors.emergency
                             : AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: _loading
                           ? const SizedBox(
-                              height: 22,
-                              width: 22,
+                              height: 20,
+                              width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.5,
                                 color: Colors.white,
@@ -320,6 +396,7 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
                                       : 'Siguiente',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
+                                    fontSize: 14,
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
@@ -327,7 +404,7 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
                                   _step == 3
                                       ? Icons.send_rounded
                                       : Icons.arrow_forward_rounded,
-                                  size: 20,
+                                  size: 18,
                                 ),
                               ],
                             ),
@@ -362,27 +439,54 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Selecciona el vehiculo afectado',
-          style: Theme.of(context).textTheme.titleMedium,
+          'Selecciona el vehículo afectado',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: context.appColors.textPrimary,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.lg),
         if (_vehicles.isEmpty)
-          AppCard(
-            color: AppColors.warning.withValues(alpha: 0.08),
-            border: Border.all(
-              color: AppColors.warning.withValues(alpha: 0.3),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: context.appColors.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              border: Border.all(
+                color: AppColors.warning.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: Row(
-              children: const [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: AppColors.warning,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.warning,
+                  ),
                 ),
-                SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
-                    'No tienes vehiculos registrados.\nVe a "Mis vehiculos" para agregar uno.',
-                    style: TextStyle(color: AppColors.textPrimary),
+                    'No tienes vehículos registrados.\nVe a "Mis vehículos" para agregar uno.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: context.appColors.textPrimary,
+                    ),
                   ),
                 ),
               ],
@@ -394,77 +498,95 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
             final v = entry.value;
             final selected = _selectedVehicle?.id == v.id;
             return Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: AppCard(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: GestureDetector(
                 onTap: () => setState(() => _selectedVehicle = v),
-                color: selected
-                    ? AppColors.primary.withValues(alpha: 0.08)
-                    : AppColors.surface,
-                border: Border.all(
-                  color: selected
-                      ? AppColors.primary
-                      : AppColors.border,
-                  width: selected ? 2 : 1,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: context.appColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: selected ? 0.06 : 0.04,
+                        ),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 4),
                       ),
-                      child: const Icon(
-                        Icons.directions_car_rounded,
-                        color: AppColors.primary,
-                      ),
+                    ],
+                    border: Border.all(
+                      color: selected
+                          ? AppColors.primary
+                          : context.appColors.border,
+                      width: selected ? 2 : 1,
                     ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${v.brand} ${v.model}',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${v.year} · ${v.color} · ${v.plateNumber}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: AppColors.textTertiary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: selected
-                            ? AppColors.primary
-                            : Colors.transparent,
-                        border: Border.all(
-                          color: selected
-                              ? AppColors.primary
-                              : AppColors.border,
-                          width: 2,
+                  ),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.directions_car_rounded,
+                          color: AppColors.primary,
                         ),
                       ),
-                      child: selected
-                          ? const Icon(
-                              Icons.check_rounded,
-                              size: 16,
-                              color: Colors.white,
-                            )
-                          : null,
-                    ),
-                  ],
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${v.brand} ${v.model}',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    color: context.appColors.textPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${v.year} · ${v.color} · ${v.plateNumber}',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: context.appColors.textTertiary,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: selected
+                              ? AppColors.primary
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: selected
+                                ? AppColors.primary
+                                : context.appColors.border,
+                            width: 2,
+                          ),
+                        ),
+                        child: selected
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 14,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
               ).animate(delay: (60 * i).ms).fadeIn().moveY(begin: 12, end: 0),
             );
@@ -489,9 +611,7 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
         const SizedBox(height: AppSpacing.lg),
         ElevatedButton.icon(
           onPressed: _locating ? null : _getLocation,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.info,
-          ),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.info),
           icon: _locating
               ? const SizedBox(
                   height: 18,
@@ -508,9 +628,7 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
           const SizedBox(height: AppSpacing.lg),
           AppCard(
             color: AppColors.success.withValues(alpha: 0.08),
-            border: Border.all(
-              color: AppColors.success.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
             child: Row(
               children: [
                 Container(
@@ -537,10 +655,9 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
                       const SizedBox(height: 2),
                       Text(
                         '${_position!.latitude.toStringAsFixed(6)}, ${_position!.longitude.toStringAsFixed(6)}',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textTertiary,
-                                ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: context.appColors.textTertiary,
+                        ),
                       ),
                     ],
                   ),
@@ -593,7 +710,7 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _images.length,
-              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
               itemBuilder: (_, i) => Stack(
                 children: [
                   ClipRRect(
@@ -635,6 +752,152 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
             ),
           ),
         ],
+        const SizedBox(height: AppSpacing.lg),
+
+        // Audio recording section
+        Text(
+          'Graba un audio describiendo el problema',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: context.appColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (_audioFile == null)
+          AppCard(
+            color: _recording
+                ? AppColors.emergency.withValues(alpha: 0.08)
+                : context.appColors.surfaceAlt,
+            border: Border.all(
+              color: _recording
+                  ? AppColors.emergency.withValues(alpha: 0.4)
+                  : context.appColors.border,
+            ),
+            child: Column(
+              children: [
+                if (_recording)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.emergency,
+                              ),
+                            )
+                            .animate(onPlay: (c) => c.repeat(reverse: true))
+                            .fadeOut(duration: 600.ms),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Grabando... ${_formatDuration(_recordDuration)}',
+                          style: const TextStyle(
+                            color: AppColors.emergency,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: _toggleRecording,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _recording
+                              ? AppColors.emergency
+                              : AppColors.accent,
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  (_recording
+                                          ? AppColors.emergency
+                                          : AppColors.accent)
+                                      .withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          _recording ? Icons.stop_rounded : Icons.mic_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  _recording ? 'Toca para detener' : 'Toca para grabar audio',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _recording
+                        ? AppColors.emergency
+                        : context.appColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          AppCard(
+            color: AppColors.success.withValues(alpha: 0.08),
+            border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: const Icon(
+                    Icons.audiotrack_rounded,
+                    color: AppColors.success,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Audio grabado',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Listo para enviar',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: context.appColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: _deleteAudio,
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.danger,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
         const SizedBox(height: AppSpacing.lg),
         TextField(
           controller: _descCtrl,
@@ -705,6 +968,11 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
                 'Fotos',
                 '${_images.length}',
               ),
+              _infoRow(
+                Icons.mic_rounded,
+                'Audio',
+                _audioFile != null ? 'Grabado' : 'No',
+              ),
               if (_descCtrl.text.isNotEmpty)
                 _infoRow(
                   Icons.edit_note_rounded,
@@ -719,14 +987,14 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
           color: AppColors.info.withValues(alpha: 0.08),
           border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
           child: Row(
-            children: const [
-              Icon(Icons.psychology_rounded, color: AppColors.info),
-              SizedBox(width: AppSpacing.sm),
+            children: [
+              const Icon(Icons.psychology_rounded, color: AppColors.info),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   'La IA analizara tu reporte y asignara un taller automaticamente.',
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: context.appColors.textPrimary,
                     fontSize: 13,
                   ),
                 ),
@@ -744,25 +1012,25 @@ class _NewEmergencyScreenState extends State<NewEmergencyScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.textTertiary),
+          Icon(icon, size: 18, color: context.appColors.textTertiary),
           const SizedBox(width: AppSpacing.sm),
           SizedBox(
             width: 92,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textPrimary,
+                color: context.appColors.textPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),

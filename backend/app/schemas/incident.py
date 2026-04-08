@@ -63,6 +63,8 @@ class IncidentResponse(BaseModel):
     updated_at: datetime
     evidences: list[EvidenceResponse] = []
     status_history: list[StatusHistoryResponse] = []
+    workshop_name: str | None = None
+    technician_name: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -80,6 +82,8 @@ class IncidentListResponse(BaseModel):
     latitude: float
     longitude: float
     address: str | None
+    final_cost: float | None
+    commission_amount: float | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

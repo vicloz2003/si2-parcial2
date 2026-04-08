@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
+from app.models.workshop import Workshop
 from app.schemas.user import Token, UserCreate, UserLogin, UserResponse
 from app.utils.security import create_access_token, get_current_user, hash_password, verify_password
 
@@ -25,6 +26,19 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Auto-crear taller si el usuario es de tipo workshop
+    if user.role == UserRole.WORKSHOP:
+        workshop = Workshop(
+            user_id=user.id,
+            name=f"Taller de {user.full_name}",
+            address="Direccion pendiente",
+            latitude=0.0,
+            longitude=0.0,
+            phone=user.phone,
+        )
+        db.add(workshop)
+        db.commit()
 
     token = create_access_token({"sub": str(user.id)})
     return Token(access_token=token, user=UserResponse.model_validate(user))

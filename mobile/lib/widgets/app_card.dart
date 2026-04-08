@@ -30,6 +30,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = borderRadius ?? BorderRadius.circular(AppRadius.lg);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: margin ?? EdgeInsets.zero,
@@ -40,19 +41,25 @@ class AppCard extends StatelessWidget {
           borderRadius: radius,
           child: Ink(
             decoration: BoxDecoration(
-              color: gradient == null ? (color ?? AppColors.surface) : null,
+              color: gradient == null
+                  ? (color ?? context.appColors.surface)
+                  : null,
               gradient: gradient,
               borderRadius: radius,
-              border: border ??
+              border:
+                  border ??
                   (gradient == null
-                      ? Border.all(color: AppColors.border, width: 1)
+                      ? Border.all(color: context.appColors.border, width: 1)
                       : null),
-              boxShadow: boxShadow ??
+              boxShadow:
+                  boxShadow ??
                   [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.25 : 0.06,
+                      ),
+                      blurRadius: isDark ? 20 : 14,
+                      offset: const Offset(0, 6),
                     ),
                   ],
             ),

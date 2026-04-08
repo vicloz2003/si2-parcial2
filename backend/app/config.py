@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     OPENAI_API_KEY: str = ""
     UPLOAD_DIR: str = "./uploads"
+    FIREBASE_CREDENTIALS_PATH: str = ""
 
     class Config:
         env_file = ".env"

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 
@@ -98,6 +99,77 @@ class ApiService {
     return null;
   }
 
+  static Future<User> fetchProfile() async {
+    final resp = await http.get(
+      Uri.parse('$baseUrl/users/me'),
+      headers: await _headers(),
+    );
+    if (resp.statusCode == 200) {
+      final data = jsonDecode(resp.body);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user', jsonEncode(data));
+      return User.fromJson(data);
+    }
+    throw Exception('Error al obtener perfil');
+  }
+
+  static Future<User> updateProfile({String? fullName, String? phone}) async {
+    final body = <String, dynamic>{};
+    if (fullName != null) body['full_name'] = fullName;
+    if (phone != null) body['phone'] = phone;
+    final resp = await http.put(
+      Uri.parse('$baseUrl/users/me'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
+    if (resp.statusCode == 200) {
+      final data = jsonDecode(resp.body);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user', jsonEncode(data));
+      return User.fromJson(data);
+    }
+    throw Exception('Error al actualizar perfil');
+  }
+
+  static Future<void> updateFirebaseToken(String token) async {
+    await http.put(
+      Uri.parse('$baseUrl/users/me'),
+      headers: await _headers(),
+      body: jsonEncode({'firebase_token': token}),
+    );
+  }
+
+  static Future<User> uploadProfilePhoto(File imageFile) async {
+    final token = await _getToken();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/users/me/photo'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    final ext = imageFile.path.split('.').last.toLowerCase();
+    final mimeType = switch (ext) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      _ => 'image/jpeg',
+    };
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        imageFile.path,
+        contentType: MediaType.parse(mimeType),
+      ),
+    );
+    final streamed = await request.send();
+    final resp = await http.Response.fromStream(streamed);
+    if (resp.statusCode == 200) {
+      final data = jsonDecode(resp.body);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user', jsonEncode(data));
+      return User.fromJson(data);
+    }
+    throw Exception('Error al subir foto');
+  }
+
   // VEHICLES
   static Future<List<Vehicle>> getVehicles() async {
     final resp = await http.get(
@@ -119,7 +191,36 @@ class ApiService {
       body: jsonEncode(data),
     );
     if (resp.statusCode == 201) return Vehicle.fromJson(jsonDecode(resp.body));
-    throw Exception(jsonDecode(resp.body)['detail'] ?? 'Error al crear vehiculo');
+    throw Exception(
+      jsonDecode(resp.body)['detail'] ?? 'Error al crear vehiculo',
+    );
+  }
+
+  static Future<Vehicle> updateVehicle(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    final resp = await http.put(
+      Uri.parse('$baseUrl/vehicles/$id'),
+      headers: await _headers(),
+      body: jsonEncode(data),
+    );
+    if (resp.statusCode == 200) return Vehicle.fromJson(jsonDecode(resp.body));
+    throw Exception(
+      jsonDecode(resp.body)['detail'] ?? 'Error al actualizar vehiculo',
+    );
+  }
+
+  static Future<void> deleteVehicle(int id) async {
+    final resp = await http.delete(
+      Uri.parse('$baseUrl/vehicles/$id'),
+      headers: await _headers(),
+    );
+    if (resp.statusCode != 204) {
+      throw Exception(
+        jsonDecode(resp.body)['detail'] ?? 'Error al eliminar vehiculo',
+      );
+    }
   }
 
   // INCIDENTS
@@ -207,6 +308,13 @@ class ApiService {
           .toList();
     }
     throw Exception('Error al obtener notificaciones');
+  }
+
+  static Future<void> markAllNotificationsRead() async {
+    await http.put(
+      Uri.parse('$baseUrl/notifications/read-all'),
+      headers: await _headers(),
+    );
   }
 
   // PAYMENTS

@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
+import { WebSocketService } from '../../services/websocket.service';
 
 @Component({
   selector: 'app-navbar',
@@ -13,10 +15,10 @@ import { ApiService } from '../../services/api.service';
       <div class="nav-inner">
         <a routerLink="/dashboard" class="nav-brand">
           <div class="brand-icon">
-            <span class="material-symbols-rounded">car_crash</span>
+            <img src="logo.png" alt="AsisteCar" class="brand-logo">
           </div>
           <div class="brand-text">
-            <span class="brand-name">EmergenciApp</span>
+            <span class="brand-name">AsisteCar</span>
             <span class="brand-tag">Panel Taller</span>
           </div>
         </a>
@@ -96,15 +98,18 @@ import { ApiService } from '../../services/api.service';
       .brand-icon {
         width: 40px;
         height: 40px;
-        background: var(--gradient-primary);
+        background: white;
         border-radius: var(--radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
+        border: 1px solid var(--color-border);
 
-        .material-symbols-rounded {
-          font-size: 24px;
-          color: white;
+        .brand-logo {
+          width: 30px;
+          height: 30px;
+          object-fit: contain;
         }
       }
 
@@ -157,7 +162,7 @@ import { ApiService } from '../../services/api.service';
         }
 
         &.active {
-          background: rgba(30, 58, 95, 0.08);
+          background: var(--color-primary-50);
           color: var(--color-primary);
           font-weight: 600;
         }
@@ -278,14 +283,16 @@ import { ApiService } from '../../services/api.service';
     `,
   ],
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
   userName = '';
   unreadCount = 0;
+  private wsSub: Subscription | null = null;
 
   constructor(
     private auth: AuthService,
     private api: ApiService,
     private router: Router,
+    private wsService: WebSocketService,
   ) {}
 
   ngOnInit() {
@@ -295,6 +302,16 @@ export class NavbarComponent implements OnInit {
       next: (res) => (this.unreadCount = res.count),
       error: () => (this.unreadCount = 0),
     });
+
+    // Connect WebSocket for real-time notifications
+    this.wsService.connect();
+    this.wsSub = this.wsService.notifications$.subscribe(() => {
+      this.unreadCount++;
+    });
+  }
+
+  ngOnDestroy() {
+    this.wsSub?.unsubscribe();
   }
 
   get initials(): string {

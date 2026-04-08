@@ -1,20 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { ApiService } from '../../services/api.service';
 import { Incident, Technician } from '../../models/interfaces';
 
 @Component({
   selector: 'app-incident-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule],
   template: `
-    <div class="page">
-      <app-navbar></app-navbar>
-
-      <div class="page-content fade-in" *ngIf="incident; else loadingTpl">
+    <div class="page-content reveal" *ngIf="incident; else loadingTpl">
         <button class="btn-back" (click)="goBack()">
           <span class="material-symbols-rounded">arrow_back</span>
           Volver a incidentes
@@ -293,7 +289,6 @@ import { Incident, Technician } from '../../models/interfaces';
           </div>
         </div>
       </ng-template>
-    </div>
   `,
   styles: [
     `
@@ -308,12 +303,10 @@ import { Incident, Technician } from '../../models/interfaces';
         padding: 8px 12px;
         margin-left: -12px;
         margin-bottom: var(--space-md);
-        border-radius: var(--radius-sm);
-        transition: all var(--transition-fast);
+        border-radius: var(--radius-md);
+        transition: all 0.2s var(--ease-out);
 
-        .material-symbols-rounded {
-          font-size: 18px;
-        }
+        .material-symbols-rounded { font-size: 18px; }
 
         &:hover {
           background: var(--color-surface-alt);
@@ -322,9 +315,7 @@ import { Incident, Technician } from '../../models/interfaces';
       }
 
       /* Header */
-      .detail-header {
-        margin-bottom: var(--space-xl);
-      }
+      .detail-header { margin-bottom: var(--space-xl); }
 
       .header-left {
         display: flex;
@@ -333,43 +324,35 @@ import { Incident, Technician } from '../../models/interfaces';
       }
 
       .cat-icon {
-        width: 64px;
-        height: 64px;
-        border-radius: var(--radius-lg);
+        width: 60px;
+        height: 60px;
+        border-radius: var(--radius-xl);
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(30, 58, 95, 0.08);
+        background: var(--color-primary-50);
         flex-shrink: 0;
 
         .material-symbols-rounded {
-          font-size: 36px;
+          font-size: 32px;
           color: var(--color-primary);
         }
 
         &.cat-battery {
-          background: rgba(247, 127, 0, 0.12);
-          .material-symbols-rounded {
-            color: var(--color-warning);
-          }
+          background: rgba(247, 127, 0, 0.1);
+          .material-symbols-rounded { color: var(--color-warning); }
         }
         &.cat-tire {
-          background: rgba(58, 134, 255, 0.12);
-          .material-symbols-rounded {
-            color: var(--color-info);
-          }
+          background: rgba(58, 134, 255, 0.1);
+          .material-symbols-rounded { color: var(--color-info); }
         }
         &.cat-crash {
-          background: rgba(230, 57, 70, 0.12);
-          .material-symbols-rounded {
-            color: var(--color-danger);
-          }
+          background: rgba(230, 57, 70, 0.1);
+          .material-symbols-rounded { color: var(--color-danger); }
         }
         &.cat-engine {
-          background: rgba(108, 117, 125, 0.12);
-          .material-symbols-rounded {
-            color: var(--color-text-secondary);
-          }
+          background: rgba(108, 117, 125, 0.1);
+          .material-symbols-rounded { color: var(--color-text-secondary); }
         }
       }
 
@@ -381,20 +364,18 @@ import { Incident, Technician } from '../../models/interfaces';
       }
 
       .header-id {
-        font-size: 12px;
-        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 700;
         color: var(--color-text-tertiary);
-        letter-spacing: 0.5px;
+        letter-spacing: 0.08em;
       }
 
       .page-subtitle {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-
-        .material-symbols-rounded {
-          font-size: 14px;
-        }
+        .material-symbols-rounded { font-size: 14px; }
       }
 
       /* Detail grid */
@@ -443,18 +424,16 @@ import { Incident, Technician } from '../../models/interfaces';
         gap: 2px;
         padding: var(--space-sm) 0;
         border-bottom: 1px solid var(--color-divider);
-
-        &:last-child {
-          border-bottom: none;
-        }
+        &:last-child { border-bottom: none; }
       }
 
       .info-label {
-        font-size: 11px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
         font-weight: 700;
         color: var(--color-text-tertiary);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.1em;
       }
 
       .info-value {
@@ -468,7 +447,7 @@ import { Incident, Technician } from '../../models/interfaces';
         color: var(--color-text-primary);
         background: var(--color-surface-alt);
         padding: var(--space-md);
-        border-radius: var(--radius-md);
+        border-radius: var(--radius-lg);
       }
 
       .quote {
@@ -490,11 +469,11 @@ import { Incident, Technician } from '../../models/interfaces';
       .evidence {
         background: var(--color-surface-alt);
         padding: var(--space-md);
-        border-radius: var(--radius-md);
+        border-radius: var(--radius-lg);
 
         img {
           max-width: 100%;
-          border-radius: var(--radius-sm);
+          border-radius: var(--radius-md);
           margin-top: var(--space-sm);
         }
       }
@@ -508,23 +487,21 @@ import { Incident, Technician } from '../../models/interfaces';
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.5px;
-        background: rgba(30, 58, 95, 0.08);
+        background: var(--color-primary-50);
         color: var(--color-primary);
 
-        .material-symbols-rounded {
-          font-size: 14px;
-        }
+        .material-symbols-rounded { font-size: 14px; }
 
         &.ev-image {
-          background: rgba(58, 134, 255, 0.12);
+          background: rgba(58, 134, 255, 0.1);
           color: var(--color-info);
         }
         &.ev-audio {
-          background: rgba(255, 107, 53, 0.12);
+          background: rgba(255, 107, 53, 0.1);
           color: var(--color-accent);
         }
         &.ev-text {
-          background: rgba(108, 117, 125, 0.12);
+          background: rgba(108, 117, 125, 0.1);
           color: var(--color-text-secondary);
         }
       }
@@ -538,9 +515,9 @@ import { Incident, Technician } from '../../models/interfaces';
       .ai-tag {
         margin-top: var(--space-sm);
         padding: var(--space-sm) var(--space-md);
-        background: rgba(58, 134, 255, 0.08);
-        border: 1px solid rgba(58, 134, 255, 0.25);
-        border-radius: var(--radius-sm);
+        background: rgba(58, 134, 255, 0.06);
+        border: 1px solid rgba(58, 134, 255, 0.2);
+        border-radius: var(--radius-md);
         font-size: 12px;
         color: var(--color-info);
         display: flex;
@@ -577,7 +554,7 @@ import { Incident, Technician } from '../../models/interfaces';
         border-radius: 50%;
         background: var(--color-primary);
         margin-top: 4px;
-        box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15);
+        box-shadow: 0 0 0 3px var(--color-primary-100);
 
         &.dot-pending {
           background: var(--color-status-pending);
@@ -635,42 +612,42 @@ import { Incident, Technician } from '../../models/interfaces';
 
       /* Status hero */
       .status-hero {
-        background: var(--gradient-primary);
+        background: var(--color-primary);
         color: white;
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-xl);
         padding: var(--space-lg);
         text-align: center;
 
         &.hero-pending {
-          background: linear-gradient(135deg, #f77f00 0%, #d96f00 100%);
+          background: #f77f00;
         }
         &.hero-assigned {
-          background: linear-gradient(135deg, #3a86ff 0%, #2563eb 100%);
+          background: #3a86ff;
         }
         &.hero-in_progress {
-          background: linear-gradient(135deg, #00b4d8 0%, #0096c7 100%);
+          background: #00b4d8;
         }
         &.hero-completed {
-          background: var(--gradient-success);
+          background: var(--color-success);
         }
         &.hero-cancelled {
-          background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+          background: #6c757d;
         }
       }
 
       .hero-icon {
-        width: 64px;
-        height: 64px;
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        border: 2px solid rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.18);
+        border: 2px solid rgba(255, 255, 255, 0.35);
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0 auto var(--space-sm);
 
         .material-symbols-rounded {
-          font-size: 36px;
+          font-size: 32px;
           color: white;
         }
       }
@@ -695,48 +672,46 @@ import { Incident, Technician } from '../../models/interfaces';
         gap: 4px;
         margin-top: var(--space-sm);
         padding: 4px 12px;
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.18);
         border-radius: var(--radius-pill);
         font-size: 12px;
         font-weight: 700;
 
-        .material-symbols-rounded {
-          font-size: 14px;
-        }
+        .material-symbols-rounded { font-size: 14px; }
       }
 
       .reject-btn {
         margin-top: var(--space-sm);
         color: var(--color-danger);
-        border-color: rgba(230, 57, 70, 0.3);
+        border-color: rgba(230, 57, 70, 0.25);
 
         &:hover {
-          background: rgba(230, 57, 70, 0.08);
+          background: var(--color-danger-light);
           border-color: var(--color-danger);
         }
       }
 
       /* Cost card */
       .cost-card {
-        background: var(--gradient-success);
+        background: var(--color-success);
         color: white;
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-xl);
         padding: var(--space-lg);
         text-align: center;
       }
 
       .cost-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: var(--radius-md);
-        background: rgba(255, 255, 255, 0.2);
+        width: 52px;
+        height: 52px;
+        border-radius: var(--radius-lg);
+        background: rgba(255, 255, 255, 0.18);
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0 auto var(--space-sm);
 
         .material-symbols-rounded {
-          font-size: 32px;
+          font-size: 28px;
           color: white;
         }
       }
@@ -751,6 +726,7 @@ import { Incident, Technician } from '../../models/interfaces';
         font-size: 32px;
         font-weight: 800;
         margin: 4px 0;
+        letter-spacing: -0.02em;
       }
 
       .cost-commission {
@@ -781,14 +757,15 @@ export class IncidentDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private api: ApiService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.api.getIncident(id).subscribe((inc) => (this.incident = inc));
+    this.api.getIncident(id).subscribe((inc) => { this.incident = inc; this.cdr.markForCheck(); });
     this.api.getTechnicians().subscribe({
-      next: (t) => (this.technicians = t),
-      error: () => (this.technicians = []),
+      next: (t) => { this.technicians = t; this.cdr.markForCheck(); },
+      error: () => { this.technicians = []; this.cdr.markForCheck(); },
     });
   }
 
@@ -802,6 +779,7 @@ export class IncidentDetailComponent implements OnInit {
       .acceptIncident(this.incident.id, this.selectedTechnician || undefined)
       .subscribe((inc) => {
         this.incident = inc;
+        this.cdr.markForCheck();
       });
   }
 
@@ -818,6 +796,7 @@ export class IncidentDetailComponent implements OnInit {
       .updateIncident(this.incident.id, { status } as any)
       .subscribe((inc) => {
         this.incident = inc;
+        this.cdr.markForCheck();
       });
   }
 
@@ -830,6 +809,7 @@ export class IncidentDetailComponent implements OnInit {
       } as any)
       .subscribe((inc) => {
         this.incident = inc;
+        this.cdr.markForCheck();
       });
   }
 
