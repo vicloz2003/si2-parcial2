@@ -909,6 +909,8 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                   onPressed: selectedRating == 0
                       ? null
                       : () async {
+                          final navigator = Navigator.of(ctx);
+                          final messenger = ScaffoldMessenger.of(ctx);
                           try {
                             final review = await ApiService.createReview(
                               incidentId: _incident!.id,
@@ -919,20 +921,20 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                             );
                             if (mounted) {
                               setState(() => _review = review);
-                              Navigator.pop(ctx);
-                              AppSnackBar.success(
-                                context,
-                                '¡Gracias por tu calificación!',
-                              );
                             }
+                            navigator.pop();
+                            AppSnackBar.showOn(
+                              messenger,
+                              '¡Gracias por tu calificación!',
+                              isError: false,
+                            );
                           } catch (e) {
-                            if (mounted) {
-                              Navigator.pop(ctx);
-                              AppSnackBar.error(
-                                context,
-                                e.toString().replaceAll('Exception: ', ''),
-                              );
-                            }
+                            navigator.pop();
+                            AppSnackBar.showOn(
+                              messenger,
+                              e.toString().replaceAll('Exception: ', ''),
+                              isError: true,
+                            );
                           }
                         },
                   style: ElevatedButton.styleFrom(

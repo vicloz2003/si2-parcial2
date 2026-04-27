@@ -69,4 +69,41 @@ class AppSnackBar {
       color: AppColors.info,
     );
   }
+
+  /// Version that takes a pre-captured [ScaffoldMessengerState] so it can be
+  /// called safely after an async gap without holding a [BuildContext].
+  static void showOn(
+    ScaffoldMessengerState messenger,
+    String message, {
+    bool isError = false,
+  }) {
+    final color = isError ? AppColors.danger : AppColors.success;
+    final icon = isError ? Icons.error_rounded : Icons.check_circle_rounded;
+    messenger.showSnackBar(
+      SnackBar(
+        margin: const EdgeInsets.all(AppSpacing.md),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: color,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 }
