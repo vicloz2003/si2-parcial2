@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
+import '../services/websocket_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_snackbar.dart';
@@ -26,11 +29,47 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
   Review? _review;
   List<ServiceOffer> _offers = [];
   List<PaymentCard> _cards = [];
+  StreamSubscription<Map<String, dynamic>>? _wsSub;
+  Timer? _locationRefreshTimer;
 
   @override
   void initState() {
     super.initState();
+    _listenTechnicianLocation();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _wsSub?.cancel();
+    _locationRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _listenTechnicianLocation() {
+    _wsSub = WebSocketService.instance.notifications.listen((data) {
+      if (data['type'] != 'technician_location_update') return;
+      if (data['incident_id'] != widget.incidentId) return;
+      _refreshIncidentLocation(silent: true);
+    });
+    _locationRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      final status = _incident?.status;
+      if (status == 'assigned' || status == 'in_progress') {
+        _refreshIncidentLocation(silent: true);
+      }
+    });
+  }
+
+  Future<void> _refreshIncidentLocation({bool silent = false}) async {
+    try {
+      final inc = await ApiService.getIncident(widget.incidentId);
+      if (!mounted) return;
+      setState(() => _incident = inc);
+    } catch (_) {
+      if (!silent && mounted) {
+        AppSnackBar.error(context, 'No se pudo actualizar la ubicacion');
+      }
+    }
   }
 
   Future<void> _load() async {
@@ -491,6 +530,13 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
   Widget _buildMapCard() {
     final inc = _incident!;
     final pos = LatLng(inc.latitude, inc.longitude);
+    final technicianPos =
+        inc.technicianLatitude != null && inc.technicianLongitude != null
+        ? LatLng(inc.technicianLatitude!, inc.technicianLongitude!)
+        : null;
+    final hasTechnicianLocation =
+        technicianPos != null &&
+        (inc.status == 'assigned' || inc.status == 'in_progress');
     return Container(
       decoration: BoxDecoration(
         color: context.appColors.surface,
@@ -538,7 +584,10 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
           SizedBox(
             height: 200,
             child: GoogleMap(
-              initialCameraPosition: CameraPosition(target: pos, zoom: 15),
+              initialCameraPosition: CameraPosition(
+                target: hasTechnicianLocation ? technicianPos : pos,
+                zoom: hasTechnicianLocation ? 13 : 15,
+              ),
               markers: {
                 Marker(
                   markerId: const MarkerId('incident'),
@@ -548,6 +597,27 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                     snippet: inc.address ?? 'Ubicación del incidente',
                   ),
                 ),
+                if (hasTechnicianLocation)
+                  Marker(
+                    markerId: const MarkerId('technician'),
+                    position: technicianPos,
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueAzure,
+                    ),
+                    infoWindow: InfoWindow(
+                      title: inc.technicianName ?? 'Tecnico en camino',
+                      snippet: 'Ultima ubicacion compartida',
+                    ),
+                  ),
+              },
+              polylines: {
+                if (hasTechnicianLocation)
+                  Polyline(
+                    polylineId: const PolylineId('technician-route'),
+                    points: [technicianPos, pos],
+                    color: AppColors.primary,
+                    width: 4,
+                  ),
               },
               myLocationEnabled: false,
               zoomControlsEnabled: false,
@@ -555,6 +625,49 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
               liteModeEnabled: true,
             ),
           ),
+          if (hasTechnicianLocation)
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.navigation_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        '${inc.technicianName ?? 'El tecnico'} compartio su ubicacion. El marcador azul muestra por donde viene.',
+                        style: TextStyle(
+                          color: context.appColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (inc.technicianName != null && inc.status != 'completed')
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Text(
+                '${inc.technicianName} aun no compartio su ubicacion.',
+                style: TextStyle(
+                  color: context.appColors.textTertiary,
+                  fontSize: 12,
+                ),
+              ),
+            ),
         ],
       ),
     ).animate(delay: 250.ms).fadeIn().moveY(begin: 16, end: 0);

@@ -94,6 +94,9 @@ class Incident {
   final int? workshopId;
   final String? workshopName;
   final String? technicianName;
+  final double? technicianLatitude;
+  final double? technicianLongitude;
+  final String? technicianLastLocationAt;
   final String category;
   final String priority;
   final String status;
@@ -115,6 +118,9 @@ class Incident {
     this.workshopId,
     this.workshopName,
     this.technicianName,
+    this.technicianLatitude,
+    this.technicianLongitude,
+    this.technicianLastLocationAt,
     required this.category,
     required this.priority,
     required this.status,
@@ -137,6 +143,13 @@ class Incident {
     workshopId: json['workshop_id'],
     workshopName: json['workshop_name'],
     technicianName: json['technician_name'],
+    technicianLatitude: json['technician_latitude'] != null
+        ? (json['technician_latitude'] as num).toDouble()
+        : null,
+    technicianLongitude: json['technician_longitude'] != null
+        ? (json['technician_longitude'] as num).toDouble()
+        : null,
+    technicianLastLocationAt: json['technician_last_location_at'],
     category: json['category'],
     priority: json['priority'],
     status: json['status'],

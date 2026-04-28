@@ -65,6 +65,9 @@ class IncidentResponse(BaseModel):
     status_history: list[StatusHistoryResponse] = []
     workshop_name: str | None = None
     technician_name: str | None = None
+    technician_latitude: float | None = None
+    technician_longitude: float | None = None
+    technician_last_location_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

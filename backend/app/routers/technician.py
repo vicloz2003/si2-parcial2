@@ -47,6 +47,20 @@ def update_my_location(
     technician.last_location_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(technician)
+    active_jobs = db.query(Incident).filter(
+        Incident.technician_id == technician.id,
+        Incident.status.in_([IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS]),
+    ).all()
+    for incident in active_jobs:
+        notify_user_realtime(incident.user_id, {
+            "type": "technician_location_update",
+            "incident_id": incident.id,
+            "technician_id": technician.id,
+            "technician_name": technician.name,
+            "latitude": technician.latitude,
+            "longitude": technician.longitude,
+            "last_location_at": technician.last_location_at.isoformat() if technician.last_location_at else None,
+        })
     return technician
 
 

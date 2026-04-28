@@ -84,3 +84,15 @@ class Incident(Base):
     @hybrid_property
     def technician_name(self) -> str | None:
         return self.technician.name if self.technician else None
+
+    @hybrid_property
+    def technician_latitude(self) -> float | None:
+        return self.technician.latitude if self.technician else None
+
+    @hybrid_property
+    def technician_longitude(self) -> float | None:
+        return self.technician.longitude if self.technician else None
+
+    @hybrid_property
+    def technician_last_location_at(self) -> datetime | None:
+        return self.technician.last_location_at if self.technician else None
