@@ -132,11 +132,14 @@ class ApiService {
   }
 
   static Future<void> updateFirebaseToken(String token) async {
-    await http.put(
+    final resp = await http.put(
       Uri.parse('$baseUrl/users/me'),
       headers: await _headers(),
       body: jsonEncode({'firebase_token': token}),
     );
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw Exception('Error al registrar token push');
+    }
   }
 
   static Future<User> uploadProfilePhoto(File imageFile) async {

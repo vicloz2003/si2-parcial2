@@ -106,6 +106,7 @@ En GitHub, agrega estos secretos en `Settings > Secrets and variables > Actions`
 | Nombre | Valor |
 | --- | --- |
 | `GCP_SA_KEY` | Contenido completo de `gcp-sa-key.json` |
+| `FIREBASE_CREDENTIALS_JSON` | JSON de service account de Firebase Admin para enviar push FCM. Si no existe, el workflow usa `GCP_SA_KEY` como respaldo. |
 | `GCE_INSTANCE` | `asistecar-vm` |
 | `GCE_ZONE` | `us-central1-a` |
 | `POSTGRES_PASSWORD` | Password fuerte para PostgreSQL |
@@ -118,7 +119,7 @@ Variables opcionales de GitHub Actions:
 | `GOOGLE_CLOUD_LOCATION` | `us-central1` |
 | `GEMINI_MODEL` | `gemini-2.5-flash` |
 
-En este repositorio ya se configuraron con GitHub CLI los secrets `GCP_SA_KEY`, `GCE_INSTANCE`, `GCE_ZONE`, `POSTGRES_PASSWORD`, `SECRET_KEY` y las variables `GOOGLE_CLOUD_LOCATION`, `GEMINI_MODEL`.
+En este repositorio ya se configuraron con GitHub CLI los secrets `GCP_SA_KEY`, `GCE_INSTANCE`, `GCE_ZONE`, `POSTGRES_PASSWORD`, `SECRET_KEY` y las variables `GOOGLE_CLOUD_LOCATION`, `GEMINI_MODEL`. Para push reales en mobile, agrega tambien `FIREBASE_CREDENTIALS_JSON` con un service account que tenga permiso para Firebase Cloud Messaging.
 
 ## 3. Ejecutar despliegue
 

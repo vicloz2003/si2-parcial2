@@ -26,10 +26,11 @@ services:
       GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION:-us-central1}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
       UPLOAD_DIR: /app/uploads
-      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-}
+      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-/run/secrets/firebase-credentials.json}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
       - uploads_data:/app/uploads
+      - ./secrets/firebase-credentials.json:/run/secrets/firebase-credentials.json:ro
     depends_on:
       db:
         condition: service_healthy

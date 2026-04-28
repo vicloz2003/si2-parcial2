@@ -20,7 +20,10 @@ class PushNotificationService {
 
   /// Request permissions and register the FCM token with the backend.
   static Future<void> init() async {
-    if (_initialized) return;
+    if (_initialized) {
+      await _registerCurrentToken();
+      return;
+    }
     _initialized = true;
 
     // Create the Android notification channel
@@ -55,11 +58,7 @@ class PushNotificationService {
       sound: true,
     );
 
-    // Get FCM token and send it to the backend
-    final token = await _messaging.getToken();
-    if (token != null) {
-      await _sendTokenToBackend(token);
-    }
+    await _registerCurrentToken();
 
     // Listen for token refreshes
     _messaging.onTokenRefresh.listen(_sendTokenToBackend);
@@ -69,6 +68,13 @@ class PushNotificationService {
 
     // Handle background/terminated message taps
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageTap);
+  }
+
+  static Future<void> _registerCurrentToken() async {
+    final token = await _messaging.getToken();
+    if (token != null) {
+      await _sendTokenToBackend(token);
+    }
   }
 
   static Future<void> _sendTokenToBackend(String token) async {
