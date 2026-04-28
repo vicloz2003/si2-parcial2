@@ -3,7 +3,7 @@ export interface User {
   email: string;
   full_name: string;
   phone: string;
-  role: 'client' | 'workshop' | 'admin';
+  role: 'client' | 'workshop' | 'technician' | 'admin';
   is_active: boolean;
   profile_photo_url: string | null;
   created_at: string;
@@ -35,12 +35,14 @@ export interface Workshop {
 export interface Technician {
   id: number;
   workshop_id: number;
+  user_id: number | null;
   name: string;
   phone: string;
   specialties: string;
   is_available: boolean;
   latitude: number | null;
   longitude: number | null;
+  last_location_at: string | null;
   created_at: string;
 }
 
@@ -137,7 +139,7 @@ export interface ChatMessage {
   incident_id: number;
   sender_id: number;
   sender_name: string;
-  sender_role: 'client' | 'workshop' | 'admin';
+  sender_role: 'client' | 'workshop' | 'technician' | 'admin';
   message: string;
   created_at: string;
 }

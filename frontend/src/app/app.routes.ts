@@ -1,8 +1,10 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
+import { workshopGuard } from './guards/workshop.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: '', loadComponent: () => import('./pages/landing/landing.component').then(m => m.LandingComponent) },
   { path: 'login', loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent) },
   { path: 'register', loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent) },
   {
@@ -13,7 +15,9 @@ export const routes: Routes = [
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'incidents', loadComponent: () => import('./pages/incidents/incidents.component').then(m => m.IncidentsComponent) },
       { path: 'incidents/:id', loadComponent: () => import('./pages/incident-detail/incident-detail.component').then(m => m.IncidentDetailComponent) },
-      { path: 'technicians', loadComponent: () => import('./pages/technicians/technicians.component').then(m => m.TechniciansComponent) },
+      { path: 'admin/users', canActivate: [adminGuard], loadComponent: () => import('./pages/admin-users/admin-users.component').then(m => m.AdminUsersComponent) },
+      { path: 'admin/workshops', canActivate: [adminGuard], loadComponent: () => import('./pages/admin-workshops/admin-workshops.component').then(m => m.AdminWorkshopsComponent) },
+      { path: 'technicians', canActivate: [workshopGuard], loadComponent: () => import('./pages/technicians/technicians.component').then(m => m.TechniciansComponent) },
       { path: 'history', loadComponent: () => import('./pages/history/history.component').then(m => m.HistoryComponent) },
       { path: 'reports', loadComponent: () => import('./pages/reports/reports.component').then(m => m.ReportsComponent) },
       { path: 'profile', loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) },

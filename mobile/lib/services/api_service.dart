@@ -296,6 +296,63 @@ class ApiService {
     throw Exception('Error al subir audio');
   }
 
+  // TECHNICIAN
+  static Future<Technician> getMyTechnicianProfile() async {
+    final resp = await http.get(
+      Uri.parse('$baseUrl/technician/me'),
+      headers: await _headers(),
+    );
+    if (resp.statusCode == 200) {
+      return Technician.fromJson(jsonDecode(resp.body));
+    }
+    throw Exception('Error al obtener perfil tecnico');
+  }
+
+  static Future<List<Incident>> getTechnicianJobs() async {
+    final resp = await http.get(
+      Uri.parse('$baseUrl/technician/jobs'),
+      headers: await _headers(),
+    );
+    if (resp.statusCode == 200) {
+      return (jsonDecode(resp.body) as List)
+          .map((i) => Incident.fromJson(i))
+          .toList();
+    }
+    throw Exception('Error al obtener trabajos');
+  }
+
+  static Future<Technician> updateTechnicianLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
+    final resp = await http.put(
+      Uri.parse('$baseUrl/technician/location'),
+      headers: await _headers(),
+      body: jsonEncode({'latitude': latitude, 'longitude': longitude}),
+    );
+    if (resp.statusCode == 200) {
+      return Technician.fromJson(jsonDecode(resp.body));
+    }
+    throw Exception('Error al actualizar ubicacion');
+  }
+
+  static Future<Incident> updateTechnicianJobStatus({
+    required int incidentId,
+    required String status,
+  }) async {
+    final resp = await http.put(
+      Uri.parse(
+        '$baseUrl/technician/jobs/$incidentId/status?status_value=$status',
+      ),
+      headers: await _headers(),
+      body: jsonEncode({}),
+    );
+    if (resp.statusCode == 200) {
+      return Incident.fromJson(jsonDecode(resp.body));
+    }
+    throw Exception('Error al actualizar servicio');
+  }
+
   // NOTIFICATIONS
   static Future<List<AppNotification>> getNotifications() async {
     final resp = await http.get(

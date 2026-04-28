@@ -1,6 +1,4 @@
-from openai import OpenAI
-
-from app.config import settings
+from app.ai.gemini_client import generate_json
 
 
 async def classify_incident(evidences: list[dict]) -> dict:
@@ -8,8 +6,6 @@ async def classify_incident(evidences: list[dict]) -> dict:
     Clasifica un incidente basandose en todas las evidencias recopiladas.
     Combina texto, transcripciones de audio y analisis de imagenes.
     """
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
     evidence_summary = ""
     for ev in evidences:
         if ev.get("type") == "text":
@@ -19,30 +15,26 @@ async def classify_incident(evidences: list[dict]) -> dict:
         elif ev.get("type") == "image":
             evidence_summary += f"\nAnalisis de imagen: {ev.get('ai_analysis', '')}"
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "Eres un sistema de clasificacion de emergencias vehiculares. "
-                    "Basandote en las evidencias proporcionadas, clasifica el incidente. "
-                    "Responde en formato JSON con los campos: "
-                    "categoria (battery/tire/crash/engine/keys/other/uncertain), "
-                    "prioridad (low/medium/high/critical), "
-                    "resumen (str - resumen del incidente en 2-3 oraciones), "
-                    "diagnostico_preliminar (str - posible diagnostico), "
-                    "servicios_requeridos (list[str] - tipos de servicio necesarios), "
-                    "requiere_remolque (bool), "
-                    "confianza (float 0-1 - que tan seguro estas de la clasificacion)"
-                ),
-            },
-            {
-                "role": "user",
-                "content": f"Evidencias del incidente:\n{evidence_summary}",
-            },
-        ],
-        response_format={"type": "json_object"},
+    prompt = (
+        "Eres un sistema de clasificacion de emergencias vehiculares para AsisteCar. "
+        "Analiza texto, transcripciones y analisis de imagenes. Responde solo JSON valido con: "
+        "categoria (battery/tire/crash/engine/keys/other/uncertain), "
+        "prioridad (low/medium/high/critical), resumen, diagnostico_preliminar, "
+        "servicios_requeridos (array), requiere_remolque (boolean), "
+        "costo_estimado_min (number), costo_estimado_max (number), confianza (number 0-1).\n\n"
+        f"Evidencias del incidente:\n{evidence_summary}"
     )
-    import json
-    return json.loads(response.choices[0].message.content)
+    try:
+        return generate_json(prompt)
+    except Exception as exc:
+        return {
+            "categoria": "uncertain",
+            "prioridad": "medium",
+            "resumen": "No se pudo completar la clasificacion automatica.",
+            "diagnostico_preliminar": f"Pendiente de revision manual: {exc}",
+            "servicios_requeridos": ["other"],
+            "requiere_remolque": False,
+            "costo_estimado_min": 0,
+            "costo_estimado_max": 0,
+            "confianza": 0,
+        }

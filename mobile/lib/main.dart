@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'blocs/blocs.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_shell_screen.dart';
+import 'screens/technician_jobs_screen.dart';
 import 'services/push_notification_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
@@ -88,6 +89,9 @@ class AuthGate extends StatelessWidget {
           );
         }
         if (state is AuthAuthenticated) {
+          if (state.user.role == 'technician') {
+            return const TechnicianJobsScreen();
+          }
           return const MainShellScreen();
         }
         return const LoginScreen();

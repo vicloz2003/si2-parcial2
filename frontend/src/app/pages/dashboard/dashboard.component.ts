@@ -15,7 +15,7 @@ import { Incident, Workshop, Review } from '../../models/interfaces';
         <div class="page-header">
           <div>
             <h1 class="page-title">{{ greeting }}, {{ firstName }} 👋</h1>
-            <p class="page-subtitle">Aqui tienes un resumen de tu taller</p>
+            <p class="page-subtitle">{{ isAdmin ? 'Resumen general de la plataforma' : 'Aqui tienes un resumen de tu taller' }}</p>
           </div>
           <a routerLink="/incidents" class="btn btn-primary">
             <span class="material-symbols-rounded">visibility</span>
@@ -24,7 +24,7 @@ import { Incident, Workshop, Review } from '../../models/interfaces';
         </div>
 
         <!-- Workshop setup card -->
-        <div class="setup-card" *ngIf="!workshop && !loading">
+        <div class="setup-card" *ngIf="!isAdmin && !workshop && !loading">
           <div class="setup-icon">
             <span class="material-symbols-rounded">store</span>
           </div>
@@ -52,7 +52,7 @@ import { Incident, Workshop, Review } from '../../models/interfaces';
         </div>
 
         <!-- Stats -->
-        <div class="stats-grid stagger" *ngIf="workshop || loading">
+        <div class="stats-grid stagger" *ngIf="isAdmin || workshop || loading">
           <div class="stat-card stat-pending">
             <div class="stat-icon">
               <span class="material-symbols-rounded">schedule</span>
@@ -97,10 +97,9 @@ import { Incident, Workshop, Review } from '../../models/interfaces';
               <span class="material-symbols-rounded">star</span>
             </div>
             <div class="stat-content">
-              <div class="stat-label">Rating</div>
-              <div class="stat-number">
-                {{ (workshop?.rating || 0) | number: '1.1-1' }}
-              </div>
+              <div class="stat-label">{{ isAdmin ? 'Comision' : 'Rating' }}</div>
+              <div class="stat-number" *ngIf="isAdmin">Bs {{ totalCommission | number: '1.0-0' }}</div>
+              <div class="stat-number" *ngIf="!isAdmin">{{ (workshop?.rating || 0) | number: '1.1-1' }}</div>
             </div>
             <div class="stat-trend up">
               <span class="material-symbols-rounded">star_half</span>
@@ -109,7 +108,7 @@ import { Incident, Workshop, Review } from '../../models/interfaces';
         </div>
 
         <!-- Charts row -->
-        <div class="charts-row" *ngIf="workshop">
+        <div class="charts-row" *ngIf="isAdmin || workshop">
           <!-- Weekly activity chart -->
           <div class="card chart-card">
             <div class="card-header">
@@ -161,7 +160,7 @@ import { Incident, Workshop, Review } from '../../models/interfaces';
         </div>
 
         <!-- Bottom row: recent incidents + activity timeline -->
-        <div class="bottom-row" *ngIf="workshop">
+        <div class="bottom-row" *ngIf="isAdmin || workshop">
           <!-- Recent incidents -->
           <div class="card">
             <div class="card-header">
@@ -699,6 +698,7 @@ export class DashboardComponent implements OnInit {
   pendingCount = 0;
   inProgressCount = 0;
   completedCount = 0;
+  totalCommission = 0;
   loading = true;
   error = false;
 
@@ -747,6 +747,7 @@ export class DashboardComponent implements OnInit {
         this.completedCount = incidents.filter(
           (i) => i.status === 'completed',
         ).length;
+        this.totalCommission = incidents.reduce((sum, i) => sum + (i.commission_amount || 0), 0);
         this.buildWeeklyBars(incidents);
         this.buildCategoryStats(incidents);
         this.buildTimeline(incidents);
@@ -758,13 +759,17 @@ export class DashboardComponent implements OnInit {
       },
     });
 
-    this.api.getMyReviews().subscribe({
-      next: (reviews) => {
-        this.reviews = reviews;
-        this.cdr.markForCheck();
-      },
-      error: () => {},
-    });
+    if (!this.isAdmin) {
+      this.api.getMyReviews().subscribe({
+        next: (reviews) => {
+          this.reviews = reviews;
+          this.cdr.markForCheck();
+        },
+        error: () => {},
+      });
+    } else {
+      this.reviews = [];
+    }
   }
 
   private buildWeeklyBars(incidents: Incident[]) {
@@ -851,6 +856,10 @@ export class DashboardComponent implements OnInit {
     const user = this.auth.getCurrentUser();
     if (!user?.full_name) return 'Taller';
     return user.full_name.split(' ')[0];
+  }
+
+  get isAdmin(): boolean {
+    return this.auth.getCurrentUser()?.role === 'admin';
   }
 
   get greeting(): string {

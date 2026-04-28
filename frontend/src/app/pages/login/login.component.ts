@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { PublicNavbarComponent } from '../../components/public-navbar/public-navbar.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PublicNavbarComponent],
   template: `
+    <app-public-navbar></app-public-navbar>
     <div class="auth-page">
       <div class="auth-wrapper">
         <div class="auth-hero">
@@ -94,7 +96,7 @@ import { AuthService } from '../../services/auth.service';
   styles: [`
     /* ── Mobile-first: Auth page ── */
     .auth-page {
-      min-height: 100vh;
+      min-height: calc(100vh - var(--navbar-height));
       display: flex; align-items: center; justify-content: center;
       background: var(--color-bg);
       padding: var(--space-sm);
@@ -233,7 +235,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     if (this.auth.isLoggedIn()) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate([this.getHomeRoute()]);
     }
   }
 
@@ -242,12 +244,28 @@ export class LoginComponent implements OnInit {
     this.error = '';
     this.auth.login(this.email, this.password).subscribe({
       next: () => {
-        this.router.navigate(['/dashboard']);
+        const role = this.auth.getCurrentUser()?.role;
+        if (role === 'client' || role === 'technician') {
+          this.auth.logout();
+          this.error = 'Esta cuenta debe ingresar desde la app movil de AsisteCar.';
+          this.loading = false;
+          return;
+        }
+        this.router.navigate([this.getHomeRoute()]);
       },
       error: (err) => {
         this.error = err.error?.detail || 'Error al iniciar sesion';
         this.loading = false;
       },
     });
+  }
+
+  private getHomeRoute(): string {
+    const role = this.auth.getCurrentUser()?.role;
+    if (role === 'client' || role === 'technician') {
+      this.auth.logout();
+      return '/login';
+    }
+    return '/dashboard';
   }
 }

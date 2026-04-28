@@ -11,6 +11,10 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   // Profile
+  getUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/users/`);
+  }
+
   getMe(): Observable<User> {
     return this.http.get<User>(`${this.apiUrl}/users/me`);
   }
@@ -26,6 +30,10 @@ export class ApiService {
   }
 
   // Workshop
+  getWorkshops(): Observable<Workshop[]> {
+    return this.http.get<Workshop[]>(`${this.apiUrl}/workshops/`);
+  }
+
   getMyWorkshop(): Observable<Workshop> {
     return this.http.get<Workshop>(`${this.apiUrl}/workshops/me`);
   }

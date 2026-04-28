@@ -23,11 +23,11 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
       <!-- Navigation -->
       <nav class="sidebar-nav">
-        <div class="nav-section">
+        <div class="nav-section" *ngIf="role === 'admin'; else nonAdminNav">
           <span class="nav-label" *ngIf="!collapsed">PRINCIPAL</span>
-          <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" [title]="collapsed ? 'Dashboard' : ''">
+          <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" [title]="collapsed ? 'Resumen' : ''">
             <span class="material-symbols-rounded">dashboard</span>
-            <span class="nav-text" *ngIf="!collapsed">Dashboard</span>
+            <span class="nav-text" *ngIf="!collapsed">Resumen</span>
           </a>
           <a routerLink="/incidents" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Incidentes' : ''">
             <span class="material-symbols-rounded">warning</span>
@@ -35,23 +35,56 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
             <span class="nav-badge" *ngIf="pendingCount > 0 && !collapsed">{{ pendingCount }}</span>
             <span class="nav-dot" *ngIf="pendingCount > 0 && collapsed"></span>
           </a>
-        </div>
-
-        <div class="nav-section">
-          <span class="nav-label" *ngIf="!collapsed">GESTION</span>
-          <a routerLink="/technicians" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Tecnicos' : ''">
-            <span class="material-symbols-rounded">engineering</span>
-            <span class="nav-text" *ngIf="!collapsed">Tecnicos</span>
+          <span class="nav-label section-gap" *ngIf="!collapsed">ADMINISTRACION</span>
+          <a routerLink="/admin/workshops" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Talleres' : ''">
+            <span class="material-symbols-rounded">store</span>
+            <span class="nav-text" *ngIf="!collapsed">Talleres</span>
           </a>
-          <a routerLink="/history" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Historial' : ''">
-            <span class="material-symbols-rounded">history</span>
-            <span class="nav-text" *ngIf="!collapsed">Historial</span>
+          <a routerLink="/admin/users" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Usuarios' : ''">
+            <span class="material-symbols-rounded">groups</span>
+            <span class="nav-text" *ngIf="!collapsed">Usuarios</span>
           </a>
           <a routerLink="/reports" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Reportes' : ''">
             <span class="material-symbols-rounded">bar_chart</span>
             <span class="nav-text" *ngIf="!collapsed">Reportes</span>
           </a>
         </div>
+
+        <ng-template #nonAdminNav>
+          <ng-container *ngTemplateOutlet="workshopNav"></ng-container>
+        </ng-template>
+
+        <ng-template #workshopNav>
+          <div class="nav-section">
+            <span class="nav-label" *ngIf="!collapsed">PRINCIPAL</span>
+            <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" [title]="collapsed ? 'Dashboard' : ''">
+              <span class="material-symbols-rounded">dashboard</span>
+              <span class="nav-text" *ngIf="!collapsed">Dashboard</span>
+            </a>
+            <a routerLink="/incidents" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Solicitudes' : ''">
+              <span class="material-symbols-rounded">warning</span>
+              <span class="nav-text" *ngIf="!collapsed">Solicitudes</span>
+              <span class="nav-badge" *ngIf="pendingCount > 0 && !collapsed">{{ pendingCount }}</span>
+              <span class="nav-dot" *ngIf="pendingCount > 0 && collapsed"></span>
+            </a>
+          </div>
+
+          <div class="nav-section">
+            <span class="nav-label" *ngIf="!collapsed">GESTION DEL TALLER</span>
+            <a *ngIf="role === 'workshop'" routerLink="/technicians" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Tecnicos' : ''">
+              <span class="material-symbols-rounded">engineering</span>
+              <span class="nav-text" *ngIf="!collapsed">Tecnicos</span>
+            </a>
+            <a routerLink="/history" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Historial' : ''">
+              <span class="material-symbols-rounded">history</span>
+              <span class="nav-text" *ngIf="!collapsed">Historial</span>
+            </a>
+            <a routerLink="/reports" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Reportes' : ''">
+              <span class="material-symbols-rounded">bar_chart</span>
+              <span class="nav-text" *ngIf="!collapsed">Reportes</span>
+            </a>
+          </div>
+        </ng-template>
 
         <div class="nav-section">
           <span class="nav-label" *ngIf="!collapsed">CUENTA</span>
@@ -130,6 +163,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     }
 
     .nav-section { display: flex; flex-direction: column; gap: 0.125rem; margin-bottom: 1rem; }
+
+    .section-gap { margin-top: 1rem; }
 
     .nav-label {
       font-family: 'JetBrains Mono', monospace;
@@ -235,6 +270,7 @@ export class SidebarComponent {
   @Input() collapsed = false;
   @Input() pendingCount = 0;
   @Input() mobileOpen = false;
+  @Input() role: 'workshop' | 'admin' | null = null;
   @Output() collapsedChange = new EventEmitter<boolean>();
   @Output() mobileOpenChange = new EventEmitter<boolean>();
 

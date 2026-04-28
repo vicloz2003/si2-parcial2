@@ -17,6 +17,17 @@ from app.utils.security import get_current_user
 router = APIRouter(prefix="/api/workshops", tags=["Talleres"])
 
 
+@router.get("/", response_model=list[WorkshopResponse])
+def list_workshops(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ver talleres")
+
+    return db.query(Workshop).order_by(Workshop.created_at.desc()).all()
+
+
 @router.post("/", response_model=WorkshopResponse, status_code=status.HTTP_201_CREATED)
 def create_workshop(
     data: WorkshopCreate,
@@ -105,6 +116,9 @@ def create_technician(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if current_user.role != UserRole.WORKSHOP:
+        raise HTTPException(status_code=403, detail="Solo usuarios tipo taller pueden gestionar tecnicos")
+
     workshop = db.query(Workshop).filter(Workshop.user_id == current_user.id).first()
     if not workshop:
         raise HTTPException(status_code=404, detail="No tiene taller registrado")
@@ -121,6 +135,9 @@ def list_technicians(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if current_user.role != UserRole.WORKSHOP:
+        raise HTTPException(status_code=403, detail="Solo usuarios tipo taller pueden ver tecnicos")
+
     workshop = db.query(Workshop).filter(Workshop.user_id == current_user.id).first()
     if not workshop:
         raise HTTPException(status_code=404, detail="No tiene taller registrado")
@@ -134,6 +151,9 @@ def update_technician(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if current_user.role != UserRole.WORKSHOP:
+        raise HTTPException(status_code=403, detail="Solo usuarios tipo taller pueden gestionar tecnicos")
+
     workshop = db.query(Workshop).filter(Workshop.user_id == current_user.id).first()
     if not workshop:
         raise HTTPException(status_code=404, detail="No tiene taller registrado")
@@ -157,6 +177,9 @@ def delete_technician(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if current_user.role != UserRole.WORKSHOP:
+        raise HTTPException(status_code=403, detail="Solo usuarios tipo taller pueden gestionar tecnicos")
+
     workshop = db.query(Workshop).filter(Workshop.user_id == current_user.id).first()
     if not workshop:
         raise HTTPException(status_code=404, detail="No tiene taller registrado")

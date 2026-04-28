@@ -184,6 +184,52 @@ class Evidence {
   );
 }
 
+class Technician {
+  final int id;
+  final int workshopId;
+  final int? userId;
+  final String name;
+  final String phone;
+  final String specialties;
+  final bool isAvailable;
+  final double? latitude;
+  final double? longitude;
+  final String? lastLocationAt;
+  final String createdAt;
+
+  Technician({
+    required this.id,
+    required this.workshopId,
+    this.userId,
+    required this.name,
+    required this.phone,
+    required this.specialties,
+    required this.isAvailable,
+    this.latitude,
+    this.longitude,
+    this.lastLocationAt,
+    required this.createdAt,
+  });
+
+  factory Technician.fromJson(Map<String, dynamic> json) => Technician(
+    id: json['id'],
+    workshopId: json['workshop_id'],
+    userId: json['user_id'],
+    name: json['name'],
+    phone: json['phone'],
+    specialties: json['specialties'],
+    isAvailable: json['is_available'],
+    latitude: json['latitude'] != null
+        ? (json['latitude'] as num).toDouble()
+        : null,
+    longitude: json['longitude'] != null
+        ? (json['longitude'] as num).toDouble()
+        : null,
+    lastLocationAt: json['last_location_at'],
+    createdAt: json['created_at'],
+  );
+}
+
 class AppNotification {
   final int id;
   final String title;

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -32,16 +32,20 @@ class Workshop(Base):
 
 class Technician(Base):
     __tablename__ = "technicians"
+    __table_args__ = (UniqueConstraint("user_id", name="uq_technicians_user_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     workshop_id: Mapped[int] = mapped_column(ForeignKey("workshops.id"))
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     name: Mapped[str] = mapped_column(String(255))
     phone: Mapped[str] = mapped_column(String(50))
     specialties: Mapped[str] = mapped_column(String(500), default="battery,tire,crash,engine,other")
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    last_location_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     workshop: Mapped["Workshop"] = relationship(back_populates="technicians")
+    user: Mapped["User | None"] = relationship()
     incidents: Mapped[list["Incident"]] = relationship(back_populates="technician")

@@ -63,12 +63,19 @@ class TechnicianUpdate(BaseModel):
 class TechnicianResponse(BaseModel):
     id: int
     workshop_id: int
+    user_id: int | None
     name: str
     phone: str
     specialties: str
     is_available: bool
     latitude: float | None
     longitude: float | None
+    last_location_at: datetime | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class TechnicianLocationUpdate(BaseModel):
+    latitude: float
+    longitude: float

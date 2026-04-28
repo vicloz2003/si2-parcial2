@@ -18,6 +18,7 @@ import { ThemeService } from '../../services/theme.service';
         [collapsed]="sidebarCollapsed"
         [pendingCount]="pendingCount"
         [mobileOpen]="mobileOpen"
+        [role]="userRole"
         (collapsedChange)="sidebarCollapsed = $event"
         (mobileOpenChange)="mobileOpen = $event"
       ></app-sidebar>
@@ -31,7 +32,7 @@ import { ThemeService } from '../../services/theme.service';
             </button>
             <div class="breadcrumb">
               <span class="material-symbols-rounded">home</span>
-              <span>Panel Taller</span>
+              <span>{{ getWorkspaceLabel() }}</span>
             </div>
           </div>
 
@@ -53,7 +54,7 @@ import { ThemeService } from '../../services/theme.service';
               <div class="user-avatar">{{ initials }}</div>
               <div class="user-info">
                 <span class="user-name">{{ userName || 'Taller' }}</span>
-                <span class="user-role">Workshop</span>
+                <span class="user-role">{{ getRoleLabel() }}</span>
               </div>
             </a>
 
@@ -188,6 +189,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false;
   mobileOpen = false;
   userName = '';
+  userRole: 'workshop' | 'admin' | null = null;
   initials = '';
   unreadCount = 0;
   pendingCount = 0;
@@ -206,6 +208,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     const user = this.auth.getCurrentUser();
     if (user) {
       this.userName = user.full_name;
+      this.userRole = user.role === 'admin' ? 'admin' : 'workshop';
       const parts = user.full_name.split(' ');
       this.initials = parts.length >= 2
         ? (parts[0][0] + parts[1][0]).toUpperCase()
@@ -245,5 +248,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   toggleTheme() {
     this.themeSvc.toggle();
+  }
+
+  getRoleLabel() {
+    if (this.userRole === 'admin') return 'Admin';
+    return 'Taller';
+  }
+
+  getWorkspaceLabel() {
+    if (this.userRole === 'admin') return 'Administracion Plataforma';
+    return 'Panel Taller';
   }
 }

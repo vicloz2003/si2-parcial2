@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { PublicNavbarComponent } from '../../components/public-navbar/public-navbar.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PublicNavbarComponent],
   template: `
+    <app-public-navbar></app-public-navbar>
     <div class="auth-page">
       <div class="auth-wrapper">
         <div class="auth-hero">
@@ -118,7 +120,7 @@ import { AuthService } from '../../services/auth.service';
   styles: [`
     /* ── Mobile-first: Auth page ── */
     .auth-page {
-      min-height: 100vh;
+      min-height: calc(100vh - var(--navbar-height));
       display: flex; align-items: center; justify-content: center;
       background: var(--color-bg);
       padding: var(--space-sm);

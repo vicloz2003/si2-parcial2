@@ -165,8 +165,15 @@ def list_incidents(
         return db.query(Incident).filter(
             (Incident.workshop_id == workshop.id) | (Incident.status == IncidentStatus.PENDING)
         ).order_by(Incident.created_at.desc()).all()
-    else:
+    elif current_user.role == UserRole.TECHNICIAN:
+        from app.models.workshop import Technician
+        technician = db.query(Technician).filter(Technician.user_id == current_user.id).first()
+        if not technician:
+            return []
+        return db.query(Incident).filter(Incident.technician_id == technician.id).order_by(Incident.created_at.desc()).all()
+    elif current_user.role == UserRole.ADMIN:
         return db.query(Incident).order_by(Incident.created_at.desc()).all()
+    return []
 
 
 @router.get("/{incident_id}", response_model=IncidentResponse)
@@ -182,6 +189,15 @@ def get_incident(
     # Verificar acceso
     if current_user.role == UserRole.CLIENT and incident.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Sin acceso a este incidente")
+    if current_user.role == UserRole.WORKSHOP:
+        workshop = db.query(Workshop).filter(Workshop.user_id == current_user.id).first()
+        if not workshop or (incident.workshop_id not in (None, workshop.id) and incident.status != IncidentStatus.PENDING):
+            raise HTTPException(status_code=403, detail="Sin acceso a este incidente")
+    if current_user.role == UserRole.TECHNICIAN:
+        from app.models.workshop import Technician
+        technician = db.query(Technician).filter(Technician.user_id == current_user.id).first()
+        if not technician or incident.technician_id != technician.id:
+            raise HTTPException(status_code=403, detail="Sin acceso a este incidente")
 
     return incident
 
