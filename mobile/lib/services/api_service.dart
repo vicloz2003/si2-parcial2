@@ -597,4 +597,26 @@ class ApiService {
     }
     return null;
   }
+
+  // ASSISTANT
+  static Future<AssistantResponse> askAssistant({
+    required String screen,
+    String? question,
+    Map<String, dynamic> visibleState = const {},
+  }) async {
+    final resp = await http.post(
+      Uri.parse('$baseUrl/assistant/help'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'platform': 'mobile',
+        'screen': screen,
+        'question': question,
+        'visible_state': visibleState,
+      }),
+    );
+    if (resp.statusCode == 200) {
+      return AssistantResponse.fromJson(jsonDecode(resp.body));
+    }
+    throw Exception('Error al consultar el asistente');
+  }
 }

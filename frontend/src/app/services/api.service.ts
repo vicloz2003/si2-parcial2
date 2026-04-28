@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AdminPayment, AdminPaymentSummary, Incident, Notification, Payment, ServiceOffer, Technician, User, Workshop, ChatMessage, Review } from '../models/interfaces';
+import { AdminPayment, AdminPaymentSummary, AssistantRequest, AssistantResponse, Incident, Notification, Payment, ServiceOffer, Technician, User, Workshop, ChatMessage, Review } from '../models/interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -144,5 +144,10 @@ export class ApiService {
   // Reviews
   getMyReviews(): Observable<Review[]> {
     return this.http.get<Review[]>(`${this.apiUrl}/reviews/my-reviews`);
+  }
+
+  // Asistente IA contextual
+  askAssistant(data: AssistantRequest): Observable<AssistantResponse> {
+    return this.http.post<AssistantResponse>(`${this.apiUrl}/assistant/help`, data);
   }
 }

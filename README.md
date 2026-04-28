@@ -2,6 +2,27 @@
 
 Plataforma que conecta usuarios con talleres mecánicos mediante análisis automatizado de incidentes con IA (imagen, audio, texto y geolocalización).
 
+## Ejecución rápida: Backend y Web
+
+Abrir una terminal en la raíz del proyecto y levantar el backend:
+
+```bash
+cd backend
+.venv/Scripts/python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Abrir otra terminal en la raíz del proyecto y levantar la web Angular:
+
+```bash
+cd frontend
+npm start
+```
+
+Luego abrir:
+
+- Backend/API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Web: [http://localhost:4200](http://localhost:4200)
+
 ## Requisitos Previos
 
 | Herramienta | Versión mínima |
@@ -76,12 +97,14 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/emergencias_vehicular
 SECRET_KEY=tu-clave-secreta-aqui
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
-OPENAI_API_KEY=sk-tu-api-key-de-openai
+GOOGLE_CLOUD_PROJECT=asistecar
+GOOGLE_CLOUD_LOCATION=us-central1
+GEMINI_MODEL=gemini-2.5-flash
 UPLOAD_DIR=./uploads
 FIREBASE_CREDENTIALS_PATH=
 ```
 
-> **Nota:** `OPENAI_API_KEY` es necesaria para los módulos de IA (transcripción de audio, análisis de imágenes, clasificación de incidentes). Sin ella, la IA no funcionará pero el resto de la app sí.
+> **Nota:** La IA principal usa Vertex AI con Gemini Flash (`GEMINI_MODEL=gemini-2.5-flash`). Para local, autentica Google Cloud con credenciales de aplicación predeterminadas o una cuenta de servicio con permisos de Vertex AI. Si Vertex no está disponible, el asistente contextual responde con guías locales básicas.
 
 4. Crear carpetas de uploads:
 
@@ -92,7 +115,7 @@ mkdir -p uploads/images uploads/audio
 ### Ejecutar
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+.venv/Scripts/python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Verificar
@@ -210,15 +233,17 @@ flutter run -d chrome
 ## Flujo Completo de Prueba
 
 1. **Levantar base de datos** → `docker compose up db -d`
-2. **Levantar backend** → `cd backend && uvicorn app.main:app --reload`
+2. **Levantar backend** → `cd backend && .venv/Scripts/python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
 3. **Levantar frontend** → `cd frontend && npm start`
 4. **Levantar mobile** → `cd mobile && flutter run`
 
 ### Prueba end-to-end:
 
 1. En la **app móvil**: registrar usuario → registrar vehículo → crear emergencia (ubicación + fotos + audio + descripción).
-2. En el **panel web**: registrar como taller → crear workshop → agregar técnicos → ver incidentes pendientes → aceptar incidente → completar servicio con costo.
-3. En la **app móvil**: ver el estado actualizado → realizar pago.
+2. En el **panel web**: registrar como taller → crear workshop → agregar técnicos → ver incidentes pendientes → enviar una oferta con costo, ETA y técnico sugerido.
+3. En la **app móvil**: comparar ofertas por costo, distancia, ETA, calificación y recomendación IA → aceptar una oferta manualmente o usar la recomendación automática.
+4. En la **app móvil del técnico**: ver el trabajo asignado → compartir ubicación → abrir ruta → marcar en camino → subir evidencia de atención.
+5. En la **app móvil del cliente**: ver el estado actualizado → confirmar pago con tarjeta simulada o efectivo al finalizar.
 
 ---
 
@@ -227,7 +252,7 @@ flutter run -d chrome
 ```
 ├── backend/            # FastAPI (Python) — API REST + WebSocket + IA
 │   ├── app/
-│   │   ├── ai/         # Módulos de IA (Whisper, GPT-4 Vision, clasificador)
+│   │   ├── ai/         # Módulos de IA con Vertex AI / Gemini Flash
 │   │   ├── models/     # Modelos SQLAlchemy (ORM)
 │   │   ├── routers/    # Endpoints de la API
 │   │   ├── schemas/    # Schemas Pydantic (validación)
@@ -258,7 +283,9 @@ flutter run -d chrome
 |----------|-------------|-----------|
 | `DATABASE_URL` | Conexión a PostgreSQL | Sí |
 | `SECRET_KEY` | Clave para firmar JWT | Sí |
-| `OPENAI_API_KEY` | API key de OpenAI para IA | Para módulos IA |
+| `GOOGLE_CLOUD_PROJECT` | Proyecto de Google Cloud usado por Vertex AI | Para módulos IA |
+| `GOOGLE_CLOUD_LOCATION` | Región de Vertex AI | Para módulos IA |
+| `GEMINI_MODEL` | Modelo Gemini usado por clasificación y asistente contextual | Para módulos IA |
 | `FIREBASE_CREDENTIALS_PATH` | Ruta al JSON de Firebase Admin | Para push notifications |
 
 ---

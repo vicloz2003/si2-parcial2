@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterOutlet, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SidebarComponent } from '../sidebar/sidebar.component';
@@ -11,7 +12,7 @@ import { ThemeService } from '../../services/theme.service';
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, SidebarComponent],
   template: `
     <div class="layout" [class.sidebar-collapsed]="sidebarCollapsed">
       <app-sidebar
@@ -37,6 +38,10 @@ import { ThemeService } from '../../services/theme.service';
           </div>
 
           <div class="topbar-right">
+            <button class="topbar-btn assistant-toggle" (click)="toggleAssistant()" title="Asistente IA">
+              <span class="material-symbols-rounded">support_agent</span>
+            </button>
+
             <button class="topbar-btn theme-toggle" (click)="toggleTheme()" [title]="themeSvc.theme() === 'dark' ? 'Modo claro' : 'Modo oscuro'">
               <span class="material-symbols-rounded">{{ themeSvc.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</span>
             </button>
@@ -69,6 +74,42 @@ import { ThemeService } from '../../services/theme.service';
           <router-outlet></router-outlet>
         </main>
       </div>
+
+      <section class="assistant-panel" *ngIf="assistantOpen" aria-label="Asistente IA contextual">
+        <div class="assistant-header">
+          <div>
+            <span class="assistant-eyebrow">Asistente IA</span>
+            <h2>AsisteCar te guia</h2>
+          </div>
+          <button class="topbar-btn" (click)="assistantOpen = false" title="Cerrar asistente">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        </div>
+
+        <div class="assistant-body">
+          <div class="assistant-message assistant-message-ai">
+            {{ assistantMessage || 'Puedo ayudarte segun la pantalla actual. Preguntame que hacer ahora o pulsa el boton para recibir una guia rapida.' }}
+          </div>
+
+          <div class="assistant-actions" *ngIf="assistantActions.length > 0">
+            <button *ngFor="let action of assistantActions" (click)="handleAssistantAction(action)">
+              {{ formatAssistantAction(action) }}
+            </button>
+          </div>
+        </div>
+
+        <form class="assistant-form" (ngSubmit)="askAssistant(assistantQuestion)">
+          <input
+            name="assistantQuestion"
+            [(ngModel)]="assistantQuestion"
+            placeholder="Pregunta sobre esta pantalla"
+            [disabled]="assistantLoading"
+          />
+          <button type="submit" [disabled]="assistantLoading">
+            <span class="material-symbols-rounded">send</span>
+          </button>
+        </form>
+      </section>
     </div>
   `,
   styles: [`
@@ -110,6 +151,7 @@ import { ThemeService } from '../../services/theme.service';
       .material-symbols-rounded { font-size: 1.25rem; }
       &:hover { background: var(--color-surface-alt); color: var(--color-text-primary); }
       &.logout-btn:hover { background: var(--color-danger-light); color: var(--color-danger); }
+      &.assistant-toggle { color: var(--color-primary); }
     }
 
     .mobile-menu-btn { display: flex; }
@@ -183,6 +225,110 @@ import { ThemeService } from '../../services/theme.service';
     @media (min-width: 1440px) {
       .layout-content { max-width: 1400px; }
     }
+
+    .assistant-panel {
+      position: fixed;
+      right: var(--space-md);
+      bottom: var(--space-md);
+      z-index: 220;
+      width: min(360px, calc(100vw - 32px));
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .assistant-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      border-bottom: 1px solid var(--color-divider);
+    }
+
+    .assistant-eyebrow {
+      display: block;
+      color: var(--color-primary);
+      font-size: 0.6875rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .assistant-header h2 {
+      margin: 0.125rem 0 0;
+      color: var(--color-text-primary);
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .assistant-body {
+      padding: var(--space-md);
+      display: grid;
+      gap: var(--space-sm);
+      max-height: 48vh;
+      overflow-y: auto;
+    }
+
+    .assistant-message {
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    .assistant-message-ai {
+      background: var(--color-primary-50);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-primary-100);
+    }
+
+    .assistant-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+
+    .assistant-actions button {
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-pill);
+      background: var(--color-surface-alt);
+      color: var(--color-text-secondary);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .assistant-form {
+      display: flex;
+      gap: var(--space-xs);
+      padding: var(--space-md);
+      border-top: 1px solid var(--color-divider);
+      background: var(--color-bg);
+    }
+
+    .assistant-form input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      padding: 0.75rem;
+      font: inherit;
+    }
+
+    .assistant-form button {
+      width: 2.75rem;
+      border-radius: var(--radius-md);
+      background: var(--color-primary);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
   `]
 })
 export class LayoutComponent implements OnInit, OnDestroy {
@@ -193,6 +339,24 @@ export class LayoutComponent implements OnInit, OnDestroy {
   initials = '';
   unreadCount = 0;
   pendingCount = 0;
+  assistantOpen = false;
+  assistantLoading = false;
+  assistantQuestion = '';
+  assistantMessage = '';
+  assistantActions: string[] = [];
+  private assistantRoutes: Record<string, string> = {
+    abrir_incidente: '/incidents',
+    ir_a_incidentes: '/incidents',
+    ir_a_tecnicos: '/technicians',
+    crear_tecnico: '/technicians',
+    ir_a_historial: '/history',
+    ir_a_reportes: '/reports',
+    ir_a_perfil: '/profile',
+    actualizar_perfil: '/profile',
+    ir_a_usuarios: '/admin/users',
+    ir_a_talleres: '/admin/workshops',
+    ir_a_pagos: '/admin/payments',
+  };
   private wsSub?: Subscription;
 
   constructor(
@@ -248,6 +412,72 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   toggleTheme() {
     this.themeSvc.toggle();
+  }
+
+  toggleAssistant() {
+    this.assistantOpen = !this.assistantOpen;
+    if (this.assistantOpen && !this.assistantMessage) {
+      this.askAssistant('explicar esta pantalla');
+    }
+  }
+
+  askAssistant(question?: string | null) {
+    const cleanQuestion = (question || '').trim();
+    this.assistantLoading = true;
+    this.api.askAssistant({
+      platform: 'web',
+      screen: this.router.url.split('?')[0],
+      question: cleanQuestion || null,
+      visible_state: {
+        route: this.router.url,
+        role: this.userRole,
+        workspace: this.getWorkspaceLabel(),
+        unread_notifications: this.unreadCount,
+        pending_incidents: this.pendingCount,
+      },
+    }).subscribe({
+      next: (response) => {
+        this.assistantMessage = response.message;
+        this.assistantActions = response.suggested_actions || [];
+        this.assistantQuestion = '';
+        this.assistantLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.assistantMessage = 'No pude conectar con el asistente ahora. Revisa que el backend este corriendo e intenta de nuevo.';
+        this.assistantActions = [];
+        this.assistantLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  handleAssistantAction(action: string) {
+    const route = this.assistantRoutes[action];
+    if (route) {
+      this.router.navigate([route]).then(() => {
+        this.askAssistant(`explica que hago en ${this.formatAssistantAction(action)}`);
+      });
+      return;
+    }
+    this.askAssistant(action);
+  }
+
+  formatAssistantAction(action: string) {
+    const labels: Record<string, string> = {
+      abrir_incidente: 'Abrir incidentes',
+      crear_tecnico: 'Crear tecnico',
+      enviar_oferta: 'Como enviar oferta',
+      ir_a_historial: 'Ir a historial',
+      ir_a_incidentes: 'Ir a incidentes',
+      ir_a_pagos: 'Ir a pagos',
+      ir_a_perfil: 'Ir a perfil',
+      ir_a_reportes: 'Ir a reportes',
+      ir_a_talleres: 'Ir a talleres',
+      ir_a_tecnicos: 'Ir a tecnicos',
+      ir_a_usuarios: 'Ir a usuarios',
+    };
+    return labels[action] || action.replace(/_/g, ' ');
   }
 
   getRoleLabel() {

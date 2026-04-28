@@ -12,8 +12,11 @@ from app.models import (
     Notification,
     NotificationType,
     Payment,
+    PaymentCard,
     PaymentStatus,
     Review,
+    OfferStatus,
+    ServiceOffer,
     StatusHistory,
     Technician,
     User,
@@ -308,6 +311,90 @@ def add_related_demo_data(db, incident: Incident, client: User, workshop_user: U
     add_status_history(db, incident)
 
 
+def add_demo_payment_cards(db, clients: list[User]) -> None:
+    card_specs = [
+        (clients[0], "Ana Rojas", "visa", "4242"),
+        (clients[1], "Carlos Mendez", "mastercard", "4444"),
+        (clients[2], "Lucia Vargas", "visa", "1881"),
+    ]
+    for client, holder_name, brand, last4 in card_specs:
+        if db.query(PaymentCard).filter(PaymentCard.user_id == client.id, PaymentCard.last4 == last4).first():
+            continue
+        db.add(
+            PaymentCard(
+                user_id=client.id,
+                holder_name=holder_name,
+                brand=brand,
+                last4=last4,
+                exp_month=12,
+                exp_year=2030,
+                is_default=True,
+            )
+        )
+
+
+def add_demo_offers(
+    db,
+    incident: Incident,
+    workshops: list[Workshop],
+    technicians_by_workshop: list[list[Technician]],
+) -> None:
+    if db.query(ServiceOffer).filter(ServiceOffer.incident_id == incident.id).first():
+        return
+
+    preferred_by_category = {
+        IncidentCategory.BATTERY: [3, 0, 1],
+        IncidentCategory.TIRE: [1, 0, 3],
+        IncidentCategory.CRASH: [4, 2, 0],
+        IncidentCategory.ENGINE: [0, 2, 3],
+        IncidentCategory.KEYS: [3, 0, 1],
+        IncidentCategory.OTHER: [2, 0, 1],
+        IncidentCategory.UNCERTAIN: [0, 1, 2],
+    }
+    candidate_indexes = preferred_by_category.get(incident.category, [0, 1, 2])
+    accepted_workshop_id = incident.workshop_id if incident.status != IncidentStatus.PENDING else None
+    if accepted_workshop_id:
+        accepted_index = next((index for index, workshop in enumerate(workshops) if workshop.id == accepted_workshop_id), None)
+        if accepted_index is not None and accepted_index not in candidate_indexes:
+            candidate_indexes = [accepted_index, *candidate_indexes[:2]]
+
+    base_cost_by_category = {
+        IncidentCategory.BATTERY: 95,
+        IncidentCategory.TIRE: 85,
+        IncidentCategory.CRASH: 180,
+        IncidentCategory.ENGINE: 160,
+        IncidentCategory.KEYS: 70,
+        IncidentCategory.OTHER: 130,
+        IncidentCategory.UNCERTAIN: 120,
+    }
+    base_cost = base_cost_by_category.get(incident.category, 120)
+
+    for position, workshop_index in enumerate(candidate_indexes[:3]):
+        workshop = workshops[workshop_index]
+        technician = technicians_by_workshop[workshop_index][position % len(technicians_by_workshop[workshop_index])]
+        is_accepted = accepted_workshop_id == workshop.id
+        cost = incident.final_cost if is_accepted and incident.final_cost else round(base_cost + position * 18 + max(0, 5 - workshop.rating) * 15, 2)
+        eta = 14 + position * 9
+        distance = round(2.4 + position * 1.8 + max(0, 5 - workshop.rating), 2)
+        offer = ServiceOffer(
+            incident_id=incident.id,
+            workshop_id=workshop.id,
+            technician_id=technician.id,
+            cost=cost,
+            estimated_arrival=eta,
+            distance_km=distance,
+            score=round(92 - position * 8 + workshop.rating, 2),
+            recommendation_reason=(
+                "Recomendado por cercania, calificacion y tiempo de llegada."
+                if position == 0
+                else "Alternativa demo para comparar costo, ETA y reputacion."
+            ),
+            message="Oferta demo lista para comparar en la app movil.",
+            status=OfferStatus.ACCEPTED if is_accepted else (OfferStatus.PENDING if not accepted_workshop_id else OfferStatus.REJECTED),
+        )
+        db.add(offer)
+
+
 def add_payment_and_review(db, incident: Incident, client: User, workshop: Workshop) -> None:
     if incident.final_cost and not db.query(Payment).filter(Payment.incident_id == incident.id).first():
         db.add(
@@ -315,7 +402,7 @@ def add_payment_and_review(db, incident: Incident, client: User, workshop: Works
                 incident_id=incident.id,
                 amount=incident.final_cost,
                 commission_amount=incident.commission_amount or round(incident.final_cost * 0.10, 2),
-                payment_method="qr",
+                payment_method="cash" if incident.id % 2 == 0 else "card",
                 status=PaymentStatus.COMPLETED,
                 transaction_id=f"SEED-{incident.id:04d}",
             )
@@ -501,11 +588,13 @@ def run_seed() -> None:
             get_or_create_vehicle(db, clients[5], "Chevrolet", "Onix", 2020, "Plata", "ASC-1006"),
         ]
 
+        add_demo_payment_cards(db, clients)
+
         incident_specs = [
             (clients[0], vehicles[0], "El auto no enciende y parece ser problema de bateria.", IncidentCategory.BATTERY, IncidentPriority.MEDIUM, IncidentStatus.PENDING, -17.7833, -63.1821, "Segundo anillo, Santa Cruz", None, None, None),
-            (clients[1], vehicles[1], "Tengo una llanta reventada cerca del centro.", IncidentCategory.TIRE, IncidentPriority.HIGH, IncidentStatus.ASSIGNED, -17.7794, -63.1800, "Plaza 24 de Septiembre, Santa Cruz", workshops[1], technicians_by_workshop[1][0], None),
-            (clients[2], vehicles[2], "El motor se apago mientras conducia y sale humo del capo.", IncidentCategory.ENGINE, IncidentPriority.CRITICAL, IncidentStatus.IN_PROGRESS, -17.8025, -63.1807, "Av. Grigota, Santa Cruz", workshops[2], technicians_by_workshop[2][0], None),
-            (clients[3], vehicles[3], "Tuve un choque leve y necesito evaluar chaperio y pintura.", IncidentCategory.CRASH, IncidentPriority.HIGH, IncidentStatus.ASSIGNED, -17.7430, -63.1900, "Los Tusequis, Santa Cruz", workshops[4], technicians_by_workshop[4][1], None),
+            (clients[1], vehicles[1], "Tengo una llanta reventada cerca del centro.", IncidentCategory.TIRE, IncidentPriority.HIGH, IncidentStatus.ASSIGNED, -17.7794, -63.1800, "Plaza 24 de Septiembre, Santa Cruz", workshops[1], technicians_by_workshop[1][0], 95.0),
+            (clients[2], vehicles[2], "El motor se apago mientras conducia y sale humo del capo.", IncidentCategory.ENGINE, IncidentPriority.CRITICAL, IncidentStatus.IN_PROGRESS, -17.8025, -63.1807, "Av. Grigota, Santa Cruz", workshops[2], technicians_by_workshop[2][0], 175.0),
+            (clients[3], vehicles[3], "Tuve un choque leve y necesito evaluar chaperio y pintura.", IncidentCategory.CRASH, IncidentPriority.HIGH, IncidentStatus.ASSIGNED, -17.7430, -63.1900, "Los Tusequis, Santa Cruz", workshops[4], technicians_by_workshop[4][1], 210.0),
             (clients[4], vehicles[4], "Se quedaron las llaves dentro del vehiculo.", IncidentCategory.KEYS, IncidentPriority.LOW, IncidentStatus.COMPLETED, -17.7671, -63.1958, "Equipetrol, Santa Cruz", workshops[3], technicians_by_workshop[3][0], 90.0),
             (clients[5], vehicles[5], "La camioneta necesita grua porque no puede moverse.", IncidentCategory.OTHER, IncidentPriority.MEDIUM, IncidentStatus.COMPLETED, -17.7898, -63.1563, "Av. Virgen de Cotoca, Santa Cruz", workshops[2], technicians_by_workshop[2][1], 180.0),
             (clients[0], vehicles[0], "Falla electrica intermitente en el tablero y luces.", IncidentCategory.BATTERY, IncidentPriority.MEDIUM, IncidentStatus.IN_PROGRESS, -17.7602, -63.1650, "Av. Alemana, Santa Cruz", workshops[3], technicians_by_workshop[3][1], None),
@@ -533,6 +622,7 @@ def run_seed() -> None:
             if workshop:
                 workshop_user = next((user for user in workshop_users if user.id == workshop.user_id), None)
             add_related_demo_data(db, incident, client, workshop_user)
+            add_demo_offers(db, incident, workshops, technicians_by_workshop)
             if status == IncidentStatus.COMPLETED and workshop:
                 completed_incidents.append((incident, client, workshop))
 

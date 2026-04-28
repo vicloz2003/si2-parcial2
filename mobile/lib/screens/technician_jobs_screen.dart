@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../blocs/blocs.dart';
 import '../models/models.dart';
@@ -113,6 +114,221 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
         AppSnackBar.error(context, 'No se pudo actualizar el servicio');
       }
     }
+  }
+
+  Future<void> _openRoute(Incident job) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${job.latitude},${job.longitude}&travelmode=driving',
+    );
+    try {
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened && mounted) {
+        AppSnackBar.error(context, 'No se pudo abrir la ruta');
+      }
+    } catch (_) {
+      if (mounted) {
+        AppSnackBar.error(context, 'No se pudo abrir la ruta');
+      }
+    }
+  }
+
+  Future<void> _openAssistant() async {
+    final controller = TextEditingController();
+    var loading = true;
+    var message = 'Analizando tus trabajos...';
+    var actions = <String>[];
+    var initialRequestStarted = false;
+
+    Future<void> ask(
+      String? question,
+      void Function(void Function()) update,
+    ) async {
+      update(() => loading = true);
+      try {
+        final response = await ApiService.askAssistant(
+          screen: 'technician_jobs',
+          question: question,
+          visibleState: {
+            'assigned_jobs': _jobs.length,
+            'in_progress_jobs': _jobs
+                .where((job) => job.status == 'in_progress')
+                .length,
+            'technician_name': _technician?.name,
+            'has_location':
+                _technician?.latitude != null && _technician?.longitude != null,
+          },
+        );
+        update(() {
+          message = response.message;
+          actions = response.suggestedActions;
+          loading = false;
+          controller.clear();
+        });
+      } catch (_) {
+        update(() {
+          message =
+              'No pude conectar con el asistente. Revisa que el backend este corriendo e intenta de nuevo.';
+          actions = [];
+          loading = false;
+        });
+      }
+    }
+
+    void handleAction(String action, void Function(void Function()) update) {
+      if (action == 'compartir_ubicacion') {
+        Navigator.pop(context);
+        _shareLocation();
+        return;
+      }
+      if (action == 'abrir_ruta' && _jobs.isNotEmpty) {
+        Navigator.pop(context);
+        _openRoute(_jobs.first);
+        return;
+      }
+      if (action == 'subir_evidencia' && _jobs.isNotEmpty) {
+        Navigator.pop(context);
+        _showEvidenceSheet(_jobs.first);
+        return;
+      }
+      ask(action, update);
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setModalState) {
+          if (!initialRequestStarted) {
+            initialRequestStarted = true;
+            Future.microtask(
+              () => ask('explicar esta pantalla', setModalState),
+            );
+          }
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              decoration: BoxDecoration(
+                color: context.appColors.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+                border: Border(
+                  top: BorderSide(color: context.appColors.border),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const CircleAvatar(
+                          backgroundColor: AppColors.primary,
+                          child: Icon(
+                            Icons.support_agent_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Asistente para tecnico',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: context.appColors.textPrimary,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: context.appColors.surfaceAlt,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: context.appColors.border),
+                      ),
+                      child: loading
+                          ? Row(
+                              children: [
+                                const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(child: Text(message)),
+                              ],
+                            )
+                          : Text(
+                              message,
+                              style: TextStyle(
+                                color: context.appColors.textPrimary,
+                                height: 1.45,
+                              ),
+                            ),
+                    ),
+                    if (actions.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: actions.map((action) {
+                          return ActionChip(
+                            label: Text(action.replaceAll('_', ' ')),
+                            onPressed: loading
+                                ? null
+                                : () => handleAction(action, setModalState),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            enabled: !loading,
+                            decoration: const InputDecoration(
+                              hintText: 'Pregunta sobre tu trabajo',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          onPressed: loading
+                              ? null
+                              : () => ask(controller.text, setModalState),
+                          child: const Icon(Icons.send_rounded),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    controller.dispose();
   }
 
   Future<void> _showEvidenceSheet(Incident job) async {
@@ -233,6 +449,11 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
         title: const Text('Mis trabajos'),
         actions: [
           IconButton(
+            tooltip: 'Asistente IA',
+            onPressed: _openAssistant,
+            icon: const Icon(Icons.support_agent_rounded),
+          ),
+          IconButton(
             tooltip: 'Actualizar',
             onPressed: _loading ? null : _loadData,
             icon: const Icon(Icons.refresh_rounded),
@@ -286,6 +507,7 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
                       (job) => _JobCard(
                         job: job,
                         onStart: () => _setStatus(job, 'in_progress'),
+                        onRoute: () => _openRoute(job),
                         onChat: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -403,12 +625,14 @@ class _TechnicianHeader extends StatelessWidget {
 class _JobCard extends StatelessWidget {
   final Incident job;
   final VoidCallback onStart;
+  final VoidCallback onRoute;
   final VoidCallback onChat;
   final VoidCallback onEvidence;
 
   const _JobCard({
     required this.job,
     required this.onStart,
+    required this.onRoute,
     required this.onChat,
     required this.onEvidence,
   });
@@ -487,6 +711,14 @@ class _JobCard extends StatelessWidget {
                   onPressed: isInProgress || isCompleted ? null : onStart,
                   icon: const Icon(Icons.route_rounded),
                   label: const Text('En camino'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onRoute,
+                  icon: const Icon(Icons.map_rounded),
+                  label: const Text('Ruta'),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),

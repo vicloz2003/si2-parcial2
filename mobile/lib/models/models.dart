@@ -425,3 +425,24 @@ class Review {
     userName: json['user_name'],
   );
 }
+
+class AssistantResponse {
+  final String message;
+  final List<String> suggestedActions;
+  final String source;
+
+  AssistantResponse({
+    required this.message,
+    required this.suggestedActions,
+    required this.source,
+  });
+
+  factory AssistantResponse.fromJson(Map<String, dynamic> json) =>
+      AssistantResponse(
+        message: json['message'] ?? '',
+        suggestedActions: (json['suggested_actions'] as List? ?? [])
+            .map((action) => action.toString())
+            .toList(),
+        source: json['source'] ?? 'rules',
+      );
+}

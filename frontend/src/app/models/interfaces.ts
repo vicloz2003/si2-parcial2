@@ -189,3 +189,16 @@ export interface Review {
   created_at: string;
   user_name: string;
 }
+
+export interface AssistantRequest {
+  platform: 'web' | 'mobile';
+  screen: string;
+  question?: string | null;
+  visible_state: Record<string, unknown>;
+}
+
+export interface AssistantResponse {
+  message: string;
+  suggested_actions: string[];
+  source: 'gemini' | 'rules' | string;
+}
