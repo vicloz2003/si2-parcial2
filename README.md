@@ -23,6 +23,21 @@ Luego abrir:
 - Backend/API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Web: [http://localhost:4200](http://localhost:4200)
 
+## Despliegue en Google Compute Engine
+
+El despliegue de produccion para el proyecto GCP `asistecar` esta preparado con Docker Compose y GitHub Actions.
+
+Guia completa: [deploy/gce/README.md](deploy/gce/README.md)
+
+El workflow esta en [.github/workflows/deploy-gce.yml](.github/workflows/deploy-gce.yml) y publica backend, web y PostgreSQL en una VM de Compute Engine.
+
+Produccion actual:
+
+- Web: [http://34.136.223.87](http://34.136.223.87)
+- Health backend: [http://34.136.223.87/health](http://34.136.223.87/health)
+- API docs: [http://34.136.223.87/docs](http://34.136.223.87/docs)
+- Dominio preparado: `asistecar.net` y `www.asistecar.net` apuntando a la IP estatica `34.136.223.87`.
+
 ## Requisitos Previos
 
 | Herramienta | Versión mínima |

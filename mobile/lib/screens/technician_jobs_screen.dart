@@ -138,11 +138,13 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
     var message = 'Analizando tus trabajos...';
     var actions = <String>[];
     var initialRequestStarted = false;
+    var sheetOpen = true;
 
     Future<void> ask(
       String? question,
       void Function(void Function()) update,
     ) async {
+      if (!sheetOpen) return;
       update(() => loading = true);
       try {
         final response = await ApiService.askAssistant(
@@ -158,6 +160,7 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
                 _technician?.latitude != null && _technician?.longitude != null,
           },
         );
+        if (!sheetOpen) return;
         update(() {
           message = response.message;
           actions = response.suggestedActions;
@@ -165,6 +168,7 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
           controller.clear();
         });
       } catch (_) {
+        if (!sheetOpen) return;
         update(() {
           message =
               'No pude conectar con el asistente. Revisa que el backend este corriendo e intenta de nuevo.';
@@ -174,20 +178,30 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
       }
     }
 
-    void handleAction(String action, void Function(void Function()) update) {
+    void handleAction(
+      BuildContext sheetContext,
+      String action,
+      void Function(void Function()) update,
+    ) {
       if (action == 'compartir_ubicacion') {
-        Navigator.pop(context);
-        _shareLocation();
+        Navigator.pop(sheetContext);
+        Future.microtask(() {
+          if (mounted) _shareLocation();
+        });
         return;
       }
       if (action == 'abrir_ruta' && _jobs.isNotEmpty) {
-        Navigator.pop(context);
-        _openRoute(_jobs.first);
+        Navigator.pop(sheetContext);
+        Future.microtask(() {
+          if (mounted) _openRoute(_jobs.first);
+        });
         return;
       }
       if (action == 'subir_evidencia' && _jobs.isNotEmpty) {
-        Navigator.pop(context);
-        _showEvidenceSheet(_jobs.first);
+        Navigator.pop(sheetContext);
+        Future.microtask(() {
+          if (mounted) _showEvidenceSheet(_jobs.first);
+        });
         return;
       }
       ask(action, update);
@@ -293,7 +307,11 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
                             label: Text(action.replaceAll('_', ' ')),
                             onPressed: loading
                                 ? null
-                                : () => handleAction(action, setModalState),
+                                : () => handleAction(
+                                    sheetContext,
+                                    action,
+                                    setModalState,
+                                  ),
                           );
                         }).toList(),
                       ),
@@ -328,6 +346,7 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
         },
       ),
     );
+    sheetOpen = false;
     controller.dispose();
   }
 

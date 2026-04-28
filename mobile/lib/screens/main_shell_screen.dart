@@ -99,11 +99,13 @@ class _MainShellScreenState extends State<MainShellScreen> {
     var message = 'Analizando esta pantalla...';
     var actions = <String>[];
     var initialRequestStarted = false;
+    var sheetOpen = true;
 
     Future<void> ask(
       String? question,
       void Function(void Function()) update,
     ) async {
+      if (!sheetOpen) return;
       update(() {
         loading = true;
         if (question != null && question.trim().isNotEmpty) {
@@ -120,6 +122,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
             'unread_notifications': _unreadCount,
           },
         );
+        if (!sheetOpen) return;
         update(() {
           message = response.message;
           actions = response.suggestedActions;
@@ -127,6 +130,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
           controller.clear();
         });
       } catch (_) {
+        if (!sheetOpen) return;
         update(() {
           message =
               'No pude conectar con el asistente. Verifica que el backend este corriendo e intenta de nuevo.';
@@ -147,25 +151,35 @@ class _MainShellScreenState extends State<MainShellScreen> {
         case 'agregar_foto':
         case 'enviar_reporte':
           Navigator.pop(sheetContext);
-          _onTabTapped(2);
+          Future.microtask(() {
+            if (mounted) _onTabTapped(2);
+          });
           return;
         case 'agregar_vehiculo':
         case 'editar_vehiculo':
           Navigator.pop(sheetContext);
-          setState(() => _currentIndex = 1);
+          Future.microtask(() {
+            if (mounted) setState(() => _currentIndex = 1);
+          });
           return;
         case 'abrir_notificacion':
         case 'marcar_como_leida':
           Navigator.pop(sheetContext);
-          setState(() => _currentIndex = 3);
+          Future.microtask(() {
+            if (mounted) setState(() => _currentIndex = 3);
+          });
           return;
         case 'actualizar_perfil':
           Navigator.pop(sheetContext);
-          setState(() => _currentIndex = 4);
+          Future.microtask(() {
+            if (mounted) setState(() => _currentIndex = 4);
+          });
           return;
         case 'revisar_estado':
           Navigator.pop(sheetContext);
-          setState(() => _currentIndex = 0);
+          Future.microtask(() {
+            if (mounted) setState(() => _currentIndex = 0);
+          });
           return;
         default:
           ask(action, update);
@@ -339,6 +353,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         );
       },
     );
+    sheetOpen = false;
     controller.dispose();
   }
 

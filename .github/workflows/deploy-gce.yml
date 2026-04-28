@@ -1,0 +1,93 @@
+name: Deploy to Google Compute Engine
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "deploy/**"
+      - "docker-compose.prod.yml"
+      - ".github/workflows/deploy-gce.yml"
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: asistecar
+  RELEASE_ARCHIVE: asistecar-release.tar.gz
+
+jobs:
+  deploy:
+    name: Deploy AsisteCar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Create deployment environment file
+        run: |
+          cat > .env.production <<'EOF'
+          POSTGRES_DB=asistecar
+          POSTGRES_USER=asistecar
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          ACCESS_TOKEN_EXPIRE_MINUTES=1440
+          GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}
+          GOOGLE_CLOUD_LOCATION=${{ vars.GOOGLE_CLOUD_LOCATION || 'us-central1' }}
+          GEMINI_MODEL=${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+          FIREBASE_CREDENTIALS_PATH=
+          OPENAI_API_KEY=
+          EOF
+
+      - name: Package application
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='backend/.env' \
+            --exclude='backend/.venv' \
+            --exclude='backend/uploads' \
+            --exclude='frontend/node_modules' \
+            --exclude='frontend/dist' \
+            --exclude='mobile' \
+            -czf "$RELEASE_ARCHIVE" \
+            backend frontend deploy docker-compose.prod.yml
+
+      - name: Copy release to Compute Engine
+        run: |
+          gcloud compute scp "$RELEASE_ARCHIVE" .env.production \
+            "${{ secrets.GCE_INSTANCE }}:/tmp/" \
+            --zone "${{ secrets.GCE_ZONE }}" \
+            --project "$PROJECT_ID" \
+            --quiet
+
+      - name: Deploy on Compute Engine
+        run: |
+          gcloud compute ssh "${{ secrets.GCE_INSTANCE }}" \
+            --zone "${{ secrets.GCE_ZONE }}" \
+            --project "$PROJECT_ID" \
+            --quiet \
+            --command '
+              set -euo pipefail
+              sudo mkdir -p /opt/asistecar
+              sudo rm -rf /opt/asistecar/backend /opt/asistecar/frontend /opt/asistecar/deploy /opt/asistecar/docker-compose.prod.yml
+              sudo tar -xzf /tmp/asistecar-release.tar.gz -C /opt/asistecar
+              sudo mv /tmp/.env.production /opt/asistecar/.env.production
+              sudo chown -R $USER:$USER /opt/asistecar
+              cd /opt/asistecar
+              sudo docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+              sudo docker image prune -f
+              sudo docker compose --env-file .env.production -f docker-compose.prod.yml ps
+            '
