@@ -15,11 +15,14 @@ on:
 env:
   PROJECT_ID: asistecar
   RELEASE_ARCHIVE: asistecar-release.tar.gz
+  REMOTE_RELEASE_ARCHIVE: /tmp/asistecar-release-${{ github.sha }}.tar.gz
+  REMOTE_ENV_FILE: /tmp/asistecar-${{ github.sha }}.env.production
 
 jobs:
   deploy:
     name: Deploy AsisteCar
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
 
@@ -67,8 +70,13 @@ jobs:
 
       - name: Copy release to Compute Engine
         run: |
-          gcloud compute scp "$RELEASE_ARCHIVE" .env.production \
-            "${{ secrets.GCE_INSTANCE }}:/tmp/" \
+          gcloud compute scp "$RELEASE_ARCHIVE" \
+            "${{ secrets.GCE_INSTANCE }}:$REMOTE_RELEASE_ARCHIVE" \
+            --zone "${{ secrets.GCE_ZONE }}" \
+            --project "$PROJECT_ID" \
+            --quiet
+          gcloud compute scp .env.production \
+            "${{ secrets.GCE_INSTANCE }}:$REMOTE_ENV_FILE" \
             --zone "${{ secrets.GCE_ZONE }}" \
             --project "$PROJECT_ID" \
             --quiet
@@ -83,8 +91,9 @@ jobs:
               set -euo pipefail
               sudo mkdir -p /opt/asistecar
               sudo rm -rf /opt/asistecar/backend /opt/asistecar/frontend /opt/asistecar/deploy /opt/asistecar/docker-compose.prod.yml
-              sudo tar -xzf /tmp/asistecar-release.tar.gz -C /opt/asistecar
-              sudo mv /tmp/.env.production /opt/asistecar/.env.production
+              sudo tar -xzf '${REMOTE_RELEASE_ARCHIVE}' -C /opt/asistecar
+              sudo mv '${REMOTE_ENV_FILE}' /opt/asistecar/.env.production
+              rm -f '${REMOTE_RELEASE_ARCHIVE}'
               sudo chown -R $USER:$USER /opt/asistecar
               cd /opt/asistecar
               sudo docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
