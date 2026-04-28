@@ -48,6 +48,10 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
             <span class="material-symbols-rounded">campaign</span>
             <span class="nav-text" *ngIf="!collapsed">Notificaciones</span>
           </a>
+          <a routerLink="/admin/payments" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Pagos' : ''">
+            <span class="material-symbols-rounded">payments</span>
+            <span class="nav-text" *ngIf="!collapsed">Pagos</span>
+          </a>
           <a routerLink="/reports" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Reportes' : ''">
             <span class="material-symbols-rounded">bar_chart</span>
             <span class="nav-text" *ngIf="!collapsed">Reportes</span>

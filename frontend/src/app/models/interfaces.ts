@@ -124,6 +124,20 @@ export interface Payment {
   created_at: string;
 }
 
+export interface AdminPayment extends Payment {
+  client_name: string | null;
+  workshop_name: string | null;
+  incident_status: string | null;
+}
+
+export interface AdminPaymentSummary {
+  total_payments: number;
+  total_amount: number;
+  total_commission: number;
+  card_amount: number;
+  cash_amount: number;
+}
+
 export interface ServiceOffer {
   id: number;
   incident_id: number;

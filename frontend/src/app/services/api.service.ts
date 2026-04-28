@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Incident, Notification, Payment, ServiceOffer, Technician, User, Workshop, ChatMessage, Review } from '../models/interfaces';
+import { AdminPayment, AdminPaymentSummary, Incident, Notification, Payment, ServiceOffer, Technician, User, Workshop, ChatMessage, Review } from '../models/interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -122,6 +122,14 @@ export class ApiService {
   // Payments
   getPayments(): Observable<Payment[]> {
     return this.http.get<Payment[]>(`${this.apiUrl}/payments/my-payments`);
+  }
+
+  getAdminPayments(): Observable<AdminPayment[]> {
+    return this.http.get<AdminPayment[]>(`${this.apiUrl}/payments/admin`);
+  }
+
+  getAdminPaymentSummary(): Observable<AdminPaymentSummary> {
+    return this.http.get<AdminPaymentSummary>(`${this.apiUrl}/payments/admin/summary`);
   }
 
   // Chat

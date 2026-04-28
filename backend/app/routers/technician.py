@@ -1,9 +1,13 @@
+import os
+import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
+from app.models.evidence import Evidence, EvidenceType
 from app.models.incident import Incident, IncidentStatus
 from app.models.notification import Notification, NotificationType
 from app.models.status_history import StatusHistory
@@ -86,8 +90,8 @@ def update_job_status(
     db: Session = Depends(get_db),
 ):
     technician = get_current_technician(current_user, db)
-    if status_value not in {IncidentStatus.IN_PROGRESS, IncidentStatus.COMPLETED}:
-        raise HTTPException(status_code=400, detail="El tecnico solo puede marcar en progreso o completado")
+    if status_value != IncidentStatus.IN_PROGRESS:
+        raise HTTPException(status_code=400, detail="El tecnico solo puede iniciar la atencion; el cliente finaliza con el pago")
 
     incident = db.query(Incident).filter(
         Incident.id == incident_id,
@@ -116,6 +120,72 @@ def update_job_status(
         "status": status_value.value,
         "title": "Actualizacion del tecnico",
         "message": f"El tecnico actualizo tu servicio a: {status_value.value}",
+    })
+    db.commit()
+    db.refresh(incident)
+    return incident
+
+
+@router.post("/jobs/{incident_id}/evidence", response_model=IncidentResponse, status_code=status.HTTP_201_CREATED)
+async def upload_job_evidence(
+    incident_id: int,
+    note: str | None = Form(default=None),
+    file: UploadFile | None = File(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    technician = get_current_technician(current_user, db)
+    incident = db.query(Incident).filter(
+        Incident.id == incident_id,
+        Incident.technician_id == technician.id,
+    ).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Trabajo no encontrado")
+    if incident.status == IncidentStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="El servicio ya esta completado")
+
+    has_note = bool(note and note.strip())
+    if not has_note and file is None:
+        raise HTTPException(status_code=400, detail="Agrega una nota o una foto")
+
+    if has_note:
+        db.add(Evidence(
+            incident_id=incident.id,
+            type=EvidenceType.TEXT,
+            content=f"Reporte tecnico ({technician.name}): {note.strip()}",
+        ))
+
+    if file is not None:
+        if file.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+            raise HTTPException(status_code=400, detail="Solo se permiten imagenes JPEG, PNG o WebP")
+        ext = os.path.splitext(file.filename or "evidence.jpg")[1] or ".jpg"
+        filename = f"tech_{uuid.uuid4().hex}{ext}"
+        filepath = os.path.join(settings.UPLOAD_DIR, "images", filename)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        content = await file.read()
+        if len(content) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="La imagen no puede superar 5MB")
+        with open(filepath, "wb") as output:
+            output.write(content)
+        db.add(Evidence(
+            incident_id=incident.id,
+            type=EvidenceType.IMAGE,
+            file_url=f"/uploads/images/{filename}",
+            ai_analysis=f"Evidencia final subida por tecnico {technician.name}",
+        ))
+
+    db.add(Notification(
+        user_id=incident.user_id,
+        incident_id=incident.id,
+        title="Reporte del tecnico",
+        message=f"{technician.name} agrego evidencia del servicio.",
+        type=NotificationType.STATUS_UPDATE,
+    ))
+    notify_user_realtime(incident.user_id, {
+        "type": "technician_evidence",
+        "incident_id": incident.id,
+        "title": "Reporte del tecnico",
+        "message": f"{technician.name} agrego evidencia del servicio.",
     })
     db.commit()
     db.refresh(incident)

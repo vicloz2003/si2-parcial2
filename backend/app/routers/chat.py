@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models.chat import ChatMessage
 from app.models.incident import Incident
 from app.models.user import User, UserRole
-from app.models.workshop import Workshop
+from app.models.workshop import Technician, Workshop
 from app.schemas.chat import ChatMessageCreate, ChatMessageResponse
 from app.services.notification_service import notify_user_realtime
 from app.utils.security import get_current_user
@@ -14,12 +14,16 @@ router = APIRouter(prefix="/api/chat", tags=["Chat"])
 
 
 def _verify_access(incident: Incident, user: User, db: Session) -> None:
-    """Verify the user is either the incident's client or the assigned workshop."""
+    """Verify the user can access the incident conversation."""
     if user.role == UserRole.CLIENT and incident.user_id == user.id:
         return
     if user.role == UserRole.WORKSHOP:
         workshop = db.query(Workshop).filter(Workshop.user_id == user.id).first()
         if workshop and incident.workshop_id == workshop.id:
+            return
+    if user.role == UserRole.TECHNICIAN:
+        technician = db.query(Technician).filter(Technician.user_id == user.id).first()
+        if technician and incident.technician_id == technician.id:
             return
     if user.role == UserRole.ADMIN:
         return
@@ -79,12 +83,18 @@ def send_message(
     }
 
     if current_user.role == UserRole.CLIENT and incident.workshop_id:
-        # Notify workshop owner
         workshop = db.query(Workshop).filter(Workshop.id == incident.workshop_id).first()
         if workshop:
             notify_user_realtime(workshop.user_id, chat_payload)
+        if incident.technician and incident.technician.user_id:
+            notify_user_realtime(incident.technician.user_id, chat_payload)
     elif current_user.role == UserRole.WORKSHOP:
-        # Notify client
         notify_user_realtime(incident.user_id, chat_payload)
+        if incident.technician and incident.technician.user_id:
+            notify_user_realtime(incident.technician.user_id, chat_payload)
+    elif current_user.role == UserRole.TECHNICIAN:
+        notify_user_realtime(incident.user_id, chat_payload)
+        if incident.workshop:
+            notify_user_realtime(incident.workshop.user_id, chat_payload)
 
     return msg

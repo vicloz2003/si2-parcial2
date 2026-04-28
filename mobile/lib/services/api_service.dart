@@ -394,6 +394,35 @@ class ApiService {
     throw Exception('Error al actualizar servicio');
   }
 
+  static Future<Incident> uploadTechnicianEvidence({
+    required int incidentId,
+    String? note,
+    File? image,
+  }) async {
+    final token = await _getToken();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/technician/jobs/$incidentId/evidence'),
+    );
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    if (note != null && note.trim().isNotEmpty) {
+      request.fields['note'] = note.trim();
+    }
+    if (image != null) {
+      request.files.add(await http.MultipartFile.fromPath('file', image.path));
+    }
+    final streamResp = await request.send();
+    final resp = await http.Response.fromStream(streamResp);
+    if (resp.statusCode == 201) {
+      return Incident.fromJson(jsonDecode(resp.body));
+    }
+    throw Exception(
+      jsonDecode(resp.body)['detail'] ?? 'Error al subir evidencia',
+    );
+  }
+
   // NOTIFICATIONS
   static Future<List<AppNotification>> getNotifications() async {
     final resp = await http.get(

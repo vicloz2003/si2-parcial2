@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../blocs/blocs.dart';
 import '../models/models.dart';
@@ -10,6 +13,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/status_chip.dart';
+import 'chat_screen.dart';
 
 class TechnicianJobsScreen extends StatefulWidget {
   const TechnicianJobsScreen({super.key});
@@ -111,6 +115,111 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
     }
   }
 
+  Future<void> _showEvidenceSheet(Incident job) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final colors = context.appColors;
+    final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
+      color: colors.textPrimary,
+      fontWeight: FontWeight.w800,
+    );
+    var note = '';
+    File? image;
+    final evidence = await showModalBottomSheet<({String note, File? image})>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Reporte de atencion', style: titleStyle),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                minLines: 3,
+                maxLines: 5,
+                onChanged: (value) => note = value,
+                decoration: const InputDecoration(
+                  labelText: 'Notas del servicio',
+                  hintText: 'Describe que revisaste o reparaste',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final picked = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                    imageQuality: 80,
+                  );
+                  if (!ctx.mounted) return;
+                  if (picked != null) {
+                    setModalState(() => image = File(picked.path));
+                  }
+                },
+                icon: const Icon(Icons.photo_camera_rounded),
+                label: Text(
+                  image == null ? 'Agregar foto' : 'Foto seleccionada',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    final cleanNote = note.trim();
+                    if (cleanNote.isEmpty && image == null) {
+                      AppSnackBar.showOn(
+                        messenger,
+                        'Agrega una nota o foto',
+                        isError: true,
+                      );
+                      return;
+                    }
+                    Navigator.of(ctx).pop((note: cleanNote, image: image));
+                  },
+                  icon: const Icon(Icons.upload_rounded),
+                  label: const Text('Enviar reporte'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (evidence == null) return;
+
+    try {
+      final updated = await ApiService.uploadTechnicianEvidence(
+        incidentId: job.id,
+        note: evidence.note,
+        image: evidence.image,
+      );
+      if (!mounted) return;
+      setState(() {
+        _jobs = _jobs
+            .map((item) => item.id == updated.id ? updated : item)
+            .toList();
+      });
+      AppSnackBar.showOn(messenger, 'Reporte enviado');
+    } catch (e) {
+      AppSnackBar.showOn(
+        messenger,
+        e.toString().replaceAll('Exception: ', ''),
+        isError: true,
+      );
+    }
+  }
+
   void _logout() {
     context.read<AuthBloc>().add(AuthLogoutRequested());
   }
@@ -177,7 +286,13 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
                       (job) => _JobCard(
                         job: job,
                         onStart: () => _setStatus(job, 'in_progress'),
-                        onComplete: () => _setStatus(job, 'completed'),
+                        onChat: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatScreen(incidentId: job.id),
+                          ),
+                        ),
+                        onEvidence: () => _showEvidenceSheet(job),
                       ),
                     ),
                 ],
@@ -288,19 +403,21 @@ class _TechnicianHeader extends StatelessWidget {
 class _JobCard extends StatelessWidget {
   final Incident job;
   final VoidCallback onStart;
-  final VoidCallback onComplete;
+  final VoidCallback onChat;
+  final VoidCallback onEvidence;
 
   const _JobCard({
     required this.job,
     required this.onStart,
-    required this.onComplete,
+    required this.onChat,
+    required this.onEvidence,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final isCompleted = job.status == 'completed';
     final isInProgress = job.status == 'in_progress';
+    final isCompleted = job.status == 'completed';
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -339,6 +456,15 @@ class _JobCard extends StatelessWidget {
               StatusChip.status(job.status),
             ],
           ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: isCompleted ? null : onEvidence,
+              icon: const Icon(Icons.add_photo_alternate_rounded),
+              label: const Text('Subir evidencia final'),
+            ),
+          ),
           const SizedBox(height: AppSpacing.md),
           Text(
             job.description ?? job.aiSummary ?? 'Servicio sin descripcion',
@@ -366,13 +492,20 @@ class _JobCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: isCompleted ? null : onComplete,
-                  icon: const Icon(Icons.check_circle_rounded),
-                  label: const Text('Completar'),
+                  onPressed: onChat,
+                  icon: const Icon(Icons.chat_rounded),
+                  label: const Text('Chat'),
                 ),
               ),
             ],
           ),
+          if (isInProgress && !isCompleted) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Cuando termines la atencion, el cliente cerrara el servicio registrando el pago.',
+              style: TextStyle(color: colors.textTertiary, fontSize: 12),
+            ),
+          ],
         ],
       ),
     );

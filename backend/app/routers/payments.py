@@ -9,10 +9,55 @@ from app.models.incident import Incident, IncidentStatus
 from app.models.notification import Notification, NotificationType
 from app.models.payment import Payment, PaymentCard, PaymentStatus
 from app.models.user import User, UserRole
-from app.schemas.payment import PaymentCardCreate, PaymentCardResponse, PaymentCreate, PaymentResponse
+from app.schemas.payment import AdminPaymentResponse, AdminPaymentSummary, PaymentCardCreate, PaymentCardResponse, PaymentCreate, PaymentResponse
 from app.utils.security import get_current_user
 
 router = APIRouter(prefix="/api/payments", tags=["Pagos"])
+
+
+def _admin_payment_response(payment: Payment) -> AdminPaymentResponse:
+    incident = payment.incident
+    return AdminPaymentResponse(
+        id=payment.id,
+        incident_id=payment.incident_id,
+        amount=payment.amount,
+        commission_amount=payment.commission_amount,
+        payment_method=payment.payment_method,
+        status=payment.status,
+        transaction_id=payment.transaction_id,
+        created_at=payment.created_at,
+        client_name=incident.user.full_name if incident and incident.user else None,
+        workshop_name=incident.workshop.name if incident and incident.workshop else None,
+        incident_status=incident.status.value if incident else None,
+    )
+
+
+@router.get("/admin", response_model=list[AdminPaymentResponse])
+def list_admin_payments(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ver pagos")
+    payments = db.query(Payment).order_by(Payment.created_at.desc()).all()
+    return [_admin_payment_response(payment) for payment in payments]
+
+
+@router.get("/admin/summary", response_model=AdminPaymentSummary)
+def admin_payment_summary(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ver pagos")
+    payments = db.query(Payment).all()
+    return AdminPaymentSummary(
+        total_payments=len(payments),
+        total_amount=round(sum(payment.amount for payment in payments), 2),
+        total_commission=round(sum(payment.commission_amount for payment in payments), 2),
+        card_amount=round(sum(payment.amount for payment in payments if payment.payment_method == "card"), 2),
+        cash_amount=round(sum(payment.amount for payment in payments if payment.payment_method == "cash"), 2),
+    )
 
 
 @router.get("/cards", response_model=list[PaymentCardResponse])
@@ -114,6 +159,17 @@ def create_payment(
     if data.payment_method not in {"card", "cash"}:
         raise HTTPException(status_code=400, detail="Metodo de pago invalido")
 
+    if incident.status not in {IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS}:
+        raise HTTPException(status_code=400, detail="Solo puedes pagar un servicio asignado o en atencion")
+
+    if incident.final_cost is None:
+        raise HTTPException(status_code=400, detail="El servicio no tiene una oferta aceptada")
+
+    expected_amount = round(float(incident.final_cost), 2)
+    requested_amount = round(float(data.amount), 2)
+    if requested_amount != expected_amount:
+        raise HTTPException(status_code=400, detail="El monto debe coincidir con la oferta aceptada")
+
     if data.payment_method == "card":
         card_query = db.query(PaymentCard).filter(PaymentCard.user_id == current_user.id)
         if data.card_id:
@@ -127,10 +183,10 @@ def create_payment(
     if existing:
         raise HTTPException(status_code=400, detail="Ya existe un pago para este incidente")
 
-    commission = data.amount * 0.10
+    commission = expected_amount * 0.10
     payment = Payment(
         incident_id=data.incident_id,
-        amount=data.amount,
+        amount=expected_amount,
         commission_amount=commission,
         payment_method=data.payment_method,
         status=PaymentStatus.COMPLETED,
@@ -138,7 +194,6 @@ def create_payment(
     )
     db.add(payment)
 
-    incident.final_cost = data.amount
     incident.commission_amount = commission
     incident.status = IncidentStatus.COMPLETED
 
@@ -146,7 +201,7 @@ def create_payment(
         user_id=current_user.id,
         incident_id=incident.id,
         title="Pago realizado",
-        message=f"Pago de Bs. {data.amount:.2f} registrado por {data.payment_method}",
+        message=f"Pago de Bs. {expected_amount:.2f} registrado por {data.payment_method}",
         type=NotificationType.PAYMENT,
     )
     db.add(notification)

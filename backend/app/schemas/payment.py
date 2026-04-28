@@ -46,3 +46,17 @@ class PaymentResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AdminPaymentResponse(PaymentResponse):
+    client_name: str | None = None
+    workshop_name: str | None = None
+    incident_status: str | None = None
+
+
+class AdminPaymentSummary(BaseModel):
+    total_payments: int
+    total_amount: float
+    total_commission: float
+    card_amount: float
+    cash_amount: float
