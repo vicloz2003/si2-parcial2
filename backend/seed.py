@@ -444,6 +444,42 @@ def run_seed() -> None:
             get_or_create_user(db, "valeria.rios@email.com", "Valeria Rios", "70000006", UserRole.CLIENT),
             get_or_create_user(db, "diego.nunez@email.com", "Diego Nunez", "70000007", UserRole.CLIENT),
         ]
+        client_first_names = [
+            "Sofia",
+            "Mateo",
+            "Camila",
+            "Gabriel",
+            "Daniela",
+            "Nicolas",
+            "Paola",
+            "Andres",
+            "Fernanda",
+            "Rodrigo",
+        ]
+        client_last_names = [
+            "Quiroga",
+            "Arce",
+            "Molina",
+            "Salazar",
+            "Rivero",
+            "Cespedes",
+            "Vaca",
+            "Montero",
+            "Aguilera",
+            "Ribera",
+        ]
+        for index in range(len(clients) + 1, 101):
+            first_name = client_first_names[(index - 1) % len(client_first_names)]
+            last_name = client_last_names[(index - 1) % len(client_last_names)]
+            clients.append(
+                get_or_create_user(
+                    db,
+                    f"cliente{index:03d}@asistecar.demo",
+                    f"{first_name} {last_name} {index:03d}",
+                    f"70{index:06d}",
+                    UserRole.CLIENT,
+                )
+            )
 
         workshop_specs = [
             {
@@ -542,6 +578,74 @@ def run_seed() -> None:
                 ],
             },
         ]
+        service_sets = [
+            "battery,engine,keys,other",
+            "tire,other",
+            "crash,engine,other",
+            "battery,engine,keys",
+            "crash,other",
+        ]
+        workshop_names = [
+            "Auxilio Norte",
+            "Mecanica Express",
+            "Auto Rescate",
+            "ServiMotor",
+            "Ruta Segura",
+            "TecnoAuto",
+            "Llanta Movil",
+            "ElectroRuta",
+            "Gruas Rapidas",
+            "Motor Total",
+        ]
+        technician_names = ["Alex", "Bruno", "Cesar", "Dario", "Erika", "Fabian", "Gustavo", "Hugo", "Iris", "Joel"]
+
+        for spec_index, spec in enumerate(workshop_specs, start=1):
+            while len(spec["techs"]) < 5:
+                tech_number = len(spec["techs"]) + 1
+                tech_name = f"Tecnico {tech_number} {spec['name']}"
+                spec["techs"].append(
+                    (
+                        f"tecnico{spec_index:02d}{tech_number:02d}@demo.asistecar.net",
+                        tech_name,
+                        f"72{spec_index:03d}{tech_number:03d}",
+                        spec["services"],
+                        spec["lat"] + tech_number * 0.001,
+                        spec["lng"] - tech_number * 0.001,
+                    )
+                )
+
+        for index in range(len(workshop_specs) + 1, 51):
+            services = service_sets[(index - 1) % len(service_sets)]
+            base_name = workshop_names[(index - 1) % len(workshop_names)]
+            lat = -17.7300 - (index % 12) * 0.006
+            lng = -63.1400 - (index % 10) * 0.007
+            workshop_specs.append(
+                {
+                    "email": f"taller{index:03d}@asistecar.demo",
+                    "owner": f"{base_name} {index:03d}",
+                    "phone": f"7102{index:04d}",
+                    "name": f"{base_name} {index:03d}",
+                    "description": "Taller demo con cobertura movil, tecnicos disponibles y respuesta rapida.",
+                    "address": f"Zona demo {index}, Santa Cruz",
+                    "lat": lat,
+                    "lng": lng,
+                    "services": services,
+                    "capacity": 5 + (index % 8),
+                    "rating": round(4.1 + (index % 9) * 0.1, 1),
+                    "total_ratings": 25 + index * 3,
+                    "techs": [
+                        (
+                            f"mecanico{index:03d}{tech_index:02d}@asistecar.demo",
+                            f"{technician_names[(index + tech_index) % len(technician_names)]} Mecanico {index:03d}-{tech_index}",
+                            f"711{index:03d}{tech_index:02d}",
+                            services,
+                            lat + tech_index * 0.0015,
+                            lng - tech_index * 0.0015,
+                        )
+                        for tech_index in range(1, 6)
+                    ],
+                }
+            )
 
         workshops = []
         workshop_users = []
@@ -587,6 +691,22 @@ def run_seed() -> None:
             get_or_create_vehicle(db, clients[4], "Kia", "Rio", 2022, "Azul", "ASC-1005"),
             get_or_create_vehicle(db, clients[5], "Chevrolet", "Onix", 2020, "Plata", "ASC-1006"),
         ]
+        vehicle_brands = ["Toyota", "Suzuki", "Nissan", "Hyundai", "Kia", "Chevrolet", "Ford", "Mazda", "Renault", "Volkswagen"]
+        vehicle_models = ["Corolla", "Vitara", "March", "Tucson", "Rio", "Onix", "Ranger", "CX-5", "Duster", "Gol"]
+        vehicle_colors = ["Blanco", "Gris", "Rojo", "Negro", "Azul", "Plata", "Verde", "Cafe", "Dorado", "Guindo"]
+        for index, client in enumerate(clients[len(vehicles):], start=len(vehicles) + 1):
+            model_index = (index - 1) % len(vehicle_brands)
+            vehicles.append(
+                get_or_create_vehicle(
+                    db,
+                    client,
+                    vehicle_brands[model_index],
+                    vehicle_models[model_index],
+                    2015 + (index % 9),
+                    vehicle_colors[model_index],
+                    f"ASC-{1000 + index}",
+                )
+            )
 
         add_demo_payment_cards(db, clients)
 
@@ -600,6 +720,55 @@ def run_seed() -> None:
             (clients[0], vehicles[0], "Falla electrica intermitente en el tablero y luces.", IncidentCategory.BATTERY, IncidentPriority.MEDIUM, IncidentStatus.IN_PROGRESS, -17.7602, -63.1650, "Av. Alemana, Santa Cruz", workshops[3], technicians_by_workshop[3][1], None),
             (clients[1], vehicles[1], "Perdi presion en dos llantas despues de pasar por baches.", IncidentCategory.TIRE, IncidentPriority.MEDIUM, IncidentStatus.COMPLETED, -17.7350, -63.1740, "Av. Banzer, Santa Cruz", workshops[1], technicians_by_workshop[1][1], 110.0),
         ]
+        categories = [
+            IncidentCategory.BATTERY,
+            IncidentCategory.TIRE,
+            IncidentCategory.ENGINE,
+            IncidentCategory.CRASH,
+            IncidentCategory.KEYS,
+            IncidentCategory.OTHER,
+        ]
+        priorities = [IncidentPriority.LOW, IncidentPriority.MEDIUM, IncidentPriority.HIGH, IncidentPriority.CRITICAL]
+        statuses = [IncidentStatus.PENDING, IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS, IncidentStatus.COMPLETED]
+        descriptions = {
+            IncidentCategory.BATTERY: "El vehiculo no enciende y requiere revision de bateria o alternador.",
+            IncidentCategory.TIRE: "Tengo una llanta baja y necesito auxilio movil para cambiarla.",
+            IncidentCategory.ENGINE: "El motor perdio fuerza y aparecen alertas en el tablero.",
+            IncidentCategory.CRASH: "Necesito evaluacion por choque leve y posible remolque.",
+            IncidentCategory.KEYS: "Las llaves quedaron dentro del vehiculo y necesito apertura segura.",
+            IncidentCategory.OTHER: "El vehiculo no puede continuar y necesito diagnostico en ruta.",
+        }
+
+        for index, client in enumerate(clients, start=1):
+            vehicle = vehicles[index - 1]
+            for round_index in range(1, 3):
+                category = categories[(index + round_index) % len(categories)]
+                status = statuses[(index + round_index) % len(statuses)]
+                priority = priorities[(index + round_index) % len(priorities)]
+                workshop = None
+                technician = None
+                cost = None
+                if status != IncidentStatus.PENDING:
+                    workshop_index = (index + round_index * 7) % len(workshops)
+                    workshop = workshops[workshop_index]
+                    technician = technicians_by_workshop[workshop_index][(index + round_index) % 5]
+                    cost = round(70 + ((index * 11 + round_index * 17) % 180), 2)
+                incident_specs.append(
+                    (
+                        client,
+                        vehicle,
+                        f"{descriptions[category]} Caso demo #{index:03d}-{round_index}.",
+                        category,
+                        priority,
+                        status,
+                        -17.7200 - (index % 18) * 0.004 - round_index * 0.001,
+                        -63.1300 - (index % 16) * 0.005 - round_index * 0.001,
+                        f"Ubicacion demo {index:03d}-{round_index}, Santa Cruz",
+                        workshop,
+                        technician,
+                        cost,
+                    )
+                )
 
         completed_incidents = []
         for client, vehicle, description, category, priority, status, lat, lng, address, workshop, technician, cost in incident_specs:

@@ -7,6 +7,7 @@ import { ApiService } from '../../services/api.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { AuthService } from '../../services/auth.service';
 import { Incident, Technician, ChatMessage, ServiceOffer } from '../../models/interfaces';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-incident-detail',
@@ -122,7 +123,7 @@ import { Incident, Technician, ChatMessage, ServiceOffer } from '../../models/in
                   </div>
                   <img
                     *ngIf="ev.type === 'image' && ev.file_url"
-                    [src]="'http://localhost:8000' + ev.file_url"
+                    [src]="apiBaseUrl + ev.file_url"
                     alt="Evidencia"
                   />
                   <p
@@ -744,6 +745,7 @@ import { Incident, Technician, ChatMessage, ServiceOffer } from '../../models/in
   ],
 })
 export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChecked {
+  apiBaseUrl = environment.apiUrl.replace(/\/api$/, '');
   incident: Incident | null = null;
   technicians: Technician[] = [];
   selectedTechnician: number | null = null;
