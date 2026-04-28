@@ -43,12 +43,28 @@ services:
     build:
       context: ./frontend
     restart: unless-stopped
-    ports:
-      - "80:80"
     depends_on:
       backend:
+        condition: service_started
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_started
+      frontend:
         condition: service_started
 
 volumes:
   postgres_data:
   uploads_data:
+  caddy_data:
+  caddy_config:

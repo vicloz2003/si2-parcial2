@@ -36,7 +36,7 @@ Produccion actual:
 - Web: [http://34.136.223.87](http://34.136.223.87)
 - Health backend: [http://34.136.223.87/health](http://34.136.223.87/health)
 - API docs: [http://34.136.223.87/docs](http://34.136.223.87/docs)
-- Dominio preparado: `asistecar.net` y `www.asistecar.net` apuntando a la IP estatica `34.136.223.87`.
+- Dominio: [https://asistecar.net](https://asistecar.net) y [https://www.asistecar.net](https://www.asistecar.net) con HTTPS automatico.
 
 ## Requisitos Previos
 

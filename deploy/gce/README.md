@@ -5,6 +5,7 @@ Esta configuracion despliega AsisteCar en una VM de Compute Engine usando Docker
 - `frontend`: Angular compilado y servido con Nginx.
 - `backend`: FastAPI en Uvicorn.
 - `db`: PostgreSQL 16 con volumen persistente.
+- `caddy`: proxy publico con HTTPS automatico para `asistecar.net` y `www.asistecar.net`.
 
 El proyecto GCP usado es `asistecar`.
 
@@ -47,13 +48,18 @@ gcloud compute instances create asistecar-vm \
   --scopes=https://www.googleapis.com/auth/cloud-platform
 ```
 
-Abrir HTTP publico:
+Abrir HTTP y HTTPS publicos:
 
 ```bash
 gcloud compute firewall-rules create asistecar-allow-http \
   --allow=tcp:80 \
   --target-tags=asistecar-http \
   --description="Allow HTTP traffic to AsisteCar"
+
+gcloud compute firewall-rules create asistecar-allow-https \
+  --allow=tcp:443 \
+  --target-tags=asistecar-http \
+  --description="Allow HTTPS traffic to AsisteCar"
 ```
 
 Reservar la IP publica como estatica para que el dominio no cambie si la VM se reinicia:
@@ -162,14 +168,12 @@ Elimina o reemplaza estos registros actuales de parking:
 
 Mantén los registros de correo (`mail`, `smtp`, `imap`, `pop`, `webmail`) si vas a usar el correo de DonDominio.
 
-Despues de la propagacion DNS, la web quedara disponible en:
+Despues de la propagacion DNS, la web queda disponible con HTTPS automatico:
 
 ```text
-http://asistecar.net
-http://www.asistecar.net
+https://asistecar.net
+https://www.asistecar.net
 ```
-
-Cuando el dominio ya resuelva a la IP de Compute Engine, se puede activar HTTPS con Let's Encrypt.
 
 ## 5. Comandos utiles en la VM
 
@@ -178,6 +182,7 @@ cd /opt/asistecar
 sudo docker compose --env-file .env.production -f docker-compose.prod.yml ps
 sudo docker compose --env-file .env.production -f docker-compose.prod.yml logs -f backend
 sudo docker compose --env-file .env.production -f docker-compose.prod.yml logs -f frontend
+sudo docker compose --env-file .env.production -f docker-compose.prod.yml logs -f caddy
 sudo docker compose --env-file .env.production -f docker-compose.prod.yml logs -f db
 ```
 
