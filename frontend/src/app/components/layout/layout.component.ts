@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { ThemeService } from '../../services/theme.service';
+import { Notification } from '../../models/interfaces';
 
 @Component({
   selector: 'app-layout',
@@ -46,12 +47,55 @@ import { ThemeService } from '../../services/theme.service';
               <span class="material-symbols-rounded">{{ themeSvc.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</span>
             </button>
 
-            <button class="topbar-btn" title="Notificaciones">
-              <span class="material-symbols-rounded">notifications</span>
-              <span class="notif-badge" *ngIf="unreadCount > 0">
-                {{ unreadCount > 9 ? '9+' : unreadCount }}
-              </span>
-            </button>
+            <div class="notifications-menu">
+              <button class="topbar-btn" title="Notificaciones" (click)="toggleNotifications()">
+                <span class="material-symbols-rounded">notifications</span>
+                <span class="notif-badge" *ngIf="unreadCount > 0">
+                  {{ unreadCount > 9 ? '9+' : unreadCount }}
+                </span>
+              </button>
+
+              <section class="notifications-panel" *ngIf="notificationsOpen">
+                <header class="notifications-header">
+                  <div>
+                    <strong>Notificaciones</strong>
+                    <span>{{ unreadCount }} sin leer</span>
+                  </div>
+                  <button (click)="markAllNotificationsRead()" [disabled]="unreadCount === 0 || notificationsLoading">
+                    Marcar leidas
+                  </button>
+                </header>
+
+                <div class="notifications-list" *ngIf="!notificationsLoading; else notificationsLoadingTpl">
+                  <button
+                    class="notification-item"
+                    *ngFor="let notification of notifications"
+                    [class.unread]="!notification.is_read"
+                    (click)="openNotification(notification)"
+                  >
+                    <span class="notification-dot-status"></span>
+                    <span class="notification-copy">
+                      <strong>{{ notification.title }}</strong>
+                      <span>{{ notification.message }}</span>
+                      <small>{{ notification.created_at | date: 'dd/MM HH:mm' }}</small>
+                    </span>
+                    <span class="material-symbols-rounded" *ngIf="notification.incident_id">chevron_right</span>
+                  </button>
+
+                  <div class="notifications-empty" *ngIf="notifications.length === 0">
+                    <span class="material-symbols-rounded">notifications_off</span>
+                    <p>No tienes notificaciones.</p>
+                  </div>
+                </div>
+
+                <ng-template #notificationsLoadingTpl>
+                  <div class="notifications-empty">
+                    <span class="material-symbols-rounded">hourglass_top</span>
+                    <p>Cargando notificaciones...</p>
+                  </div>
+                </ng-template>
+              </section>
+            </div>
 
             <div class="topbar-divider"></div>
 
@@ -71,6 +115,21 @@ import { ThemeService } from '../../services/theme.service';
 
         <!-- Page content -->
         <main class="layout-content">
+          <div class="realtime-alert" *ngIf="notificationToast">
+            <div class="realtime-alert-icon">
+              <span class="material-symbols-rounded">notifications_active</span>
+            </div>
+            <div class="realtime-alert-copy">
+              <strong>{{ notificationToast.title }}</strong>
+              <span>{{ notificationToast.message }}</span>
+            </div>
+            <button class="realtime-alert-action" (click)="openIncidentAlert()">
+              Ver solicitudes
+            </button>
+            <button class="realtime-alert-close" (click)="notificationToast = null" title="Cerrar">
+              <span class="material-symbols-rounded">close</span>
+            </button>
+          </div>
           <router-outlet></router-outlet>
         </main>
       </div>
@@ -171,6 +230,28 @@ import { ThemeService } from '../../services/theme.service';
 
     .topbar-divider { display: none; }
 
+    .notifications-menu { position: relative; }
+
+    .notifications-panel { position: absolute; top: calc(100% + 0.625rem); right: 0; z-index: 250; width: min(22rem, calc(100vw - 2rem)); max-height: min(30rem, calc(100vh - 6rem)); overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-xl); }
+    .notifications-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); padding: var(--space-md); border-bottom: 1px solid var(--color-divider); }
+    .notifications-header div, .notification-copy { display: grid; gap: 0.125rem; min-width: 0; }
+    .notifications-header strong { color: var(--color-text-primary); font-size: 0.9375rem; }
+    .notifications-header span, .notification-copy small { color: var(--color-text-tertiary); font-size: 0.75rem; }
+    .notifications-header button { padding: 0.4375rem 0.625rem; border-radius: var(--radius-md); color: var(--color-primary); font-size: 0.75rem; font-weight: 800; }
+    .notifications-header button:disabled { color: var(--color-text-tertiary); cursor: default; }
+    .notifications-list { max-height: 24rem; overflow-y: auto; padding: var(--space-xs); }
+    .notification-item { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: var(--space-sm); padding: var(--space-sm); border-radius: var(--radius-md); text-align: left; color: var(--color-text-secondary); }
+    .notification-item:hover { background: var(--color-surface-alt); }
+    .notification-item.unread { background: var(--color-primary-50); color: var(--color-text-primary); }
+    .notification-dot-status { width: 0.5rem; height: 0.5rem; margin-top: 0.375rem; border-radius: 999px; background: transparent; }
+    .notification-item.unread .notification-dot-status { background: var(--color-primary); }
+    .notification-copy strong { color: var(--color-text-primary); font-size: 0.8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .notification-copy span { color: var(--color-text-secondary); font-size: 0.75rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .notification-copy small { font-size: 0.6875rem; }
+    .notifications-empty { display: grid; place-items: center; gap: var(--space-xs); padding: var(--space-xl); color: var(--color-text-tertiary); text-align: center; }
+    .notifications-empty .material-symbols-rounded { font-size: 2rem; }
+    .notifications-empty p { margin: 0; font-size: 0.8125rem; }
+
     .user-pill {
       display: flex; align-items: center; gap: 0.375rem;
       padding: 0.25rem; border-radius: var(--radius-pill);
@@ -196,6 +277,74 @@ import { ThemeService } from '../../services/theme.service';
       box-sizing: border-box;
       max-width: 100%;
       overflow-x: hidden;
+    }
+
+    .realtime-alert {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+      padding: var(--space-sm);
+      border: 1px solid var(--color-primary-100);
+      border-radius: var(--radius-lg);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-card);
+    }
+
+    .realtime-alert-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-primary-50);
+      color: var(--color-primary);
+      flex-shrink: 0;
+    }
+
+    .realtime-alert-copy {
+      display: grid;
+      gap: 0.125rem;
+      min-width: 0;
+    }
+
+    .realtime-alert-copy strong {
+      color: var(--color-text-primary);
+      font-size: 0.875rem;
+    }
+
+    .realtime-alert-copy span {
+      color: var(--color-text-secondary);
+      font-size: 0.75rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .realtime-alert-action {
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-md);
+      background: var(--color-primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .realtime-alert-close {
+      width: 2rem;
+      height: 2rem;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-tertiary);
+    }
+
+    .realtime-alert-close:hover {
+      background: var(--color-surface-alt);
+      color: var(--color-text-primary);
     }
 
     /* ── Tablet (≥768px) ── */
@@ -339,6 +488,11 @@ export class LayoutComponent implements OnInit, OnDestroy {
   initials = '';
   unreadCount = 0;
   pendingCount = 0;
+  notificationsOpen = false;
+  notificationsLoading = false;
+  notifications: Notification[] = [];
+  notificationToast: { title: string; message: string; incidentId?: number } | null = null;
+  private notificationToastTimer?: ReturnType<typeof setTimeout>;
   assistantOpen = false;
   assistantLoading = false;
   assistantQuestion = '';
@@ -393,9 +547,24 @@ export class LayoutComponent implements OnInit, OnDestroy {
     });
 
     this.ws.connect();
-    this.wsSub = this.ws.notifications$.subscribe(() => {
+    this.wsSub = this.ws.notifications$.subscribe((message) => {
+      if (message.type === 'new_incident') {
+        this.showNotificationToast(
+          message.title || 'Nueva emergencia cercana',
+          message.message || 'Un cliente solicito auxilio mecanico.',
+          message.incident_id,
+        );
+        if (this.notificationsOpen) this.loadNotifications();
+      }
       this.api.getUnreadCount().subscribe({
         next: (res) => { this.unreadCount = res.count; this.cdr.markForCheck(); },
+        error: () => {}
+      });
+      this.api.getIncidents().subscribe({
+        next: (incidents) => {
+          this.pendingCount = incidents.filter(i => i.status === 'pending').length;
+          this.cdr.markForCheck();
+        },
         error: () => {}
       });
     });
@@ -403,6 +572,76 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.wsSub?.unsubscribe();
+    if (this.notificationToastTimer) clearTimeout(this.notificationToastTimer);
+  }
+
+  private showNotificationToast(title: string, message: string, incidentId?: number) {
+    this.notificationToast = { title, message, incidentId };
+    if (this.notificationToastTimer) clearTimeout(this.notificationToastTimer);
+    this.notificationToastTimer = setTimeout(() => {
+      this.notificationToast = null;
+      this.cdr.markForCheck();
+    }, 10000);
+    this.cdr.markForCheck();
+  }
+
+  openIncidentAlert() {
+    const incidentId = this.notificationToast?.incidentId;
+    this.notificationToast = null;
+    this.router.navigate(incidentId ? ['/incidents', incidentId] : ['/incidents']);
+  }
+
+  toggleNotifications() {
+    this.notificationsOpen = !this.notificationsOpen;
+    if (this.notificationsOpen) this.loadNotifications();
+  }
+
+  private loadNotifications() {
+    this.notificationsLoading = true;
+    this.api.getNotifications().subscribe({
+      next: (notifications) => {
+        this.notifications = notifications;
+        this.notificationsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.notifications = [];
+        this.notificationsLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  openNotification(notification: Notification) {
+    const navigate = () => {
+      this.notificationsOpen = false;
+      this.router.navigate(notification.incident_id ? ['/incidents', notification.incident_id] : ['/incidents']);
+    };
+
+    if (!notification.is_read) {
+      this.api.markAsRead(notification.id).subscribe({
+        next: () => {
+          notification.is_read = true;
+          this.unreadCount = Math.max(0, this.unreadCount - 1);
+          this.cdr.markForCheck();
+          navigate();
+        },
+        error: () => navigate(),
+      });
+      return;
+    }
+
+    navigate();
+  }
+
+  markAllNotificationsRead() {
+    this.api.markAllAsRead().subscribe({
+      next: () => {
+        this.unreadCount = 0;
+        this.notifications = this.notifications.map(notification => ({ ...notification, is_read: true }));
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   logout() {

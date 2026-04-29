@@ -1,8 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { ApiService } from '../../services/api.service';
+import { WebSocketService } from '../../services/websocket.service';
 import { Incident } from '../../models/interfaces';
 
 @Component({
@@ -327,7 +329,7 @@ import { Incident } from '../../models/interfaces';
     `,
   ],
 })
-export class IncidentsComponent implements OnInit {
+export class IncidentsComponent implements OnInit, OnDestroy {
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
   filterStatus = '';
@@ -335,15 +337,30 @@ export class IncidentsComponent implements OnInit {
   searchTerm = '';
   loading = true;
   error = false;
+  private wsSub?: Subscription;
 
-  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private api: ApiService,
+    private ws: WebSocketService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit() {
     this.loadData();
+    this.ws.connect();
+    this.wsSub = this.ws.notifications$.subscribe((message) => {
+      if (message.type === 'new_incident') {
+        this.loadData(false);
+      }
+    });
   }
 
-  loadData() {
-    this.loading = true;
+  ngOnDestroy() {
+    this.wsSub?.unsubscribe();
+  }
+
+  loadData(showLoading = true) {
+    if (showLoading) this.loading = true;
     this.error = false;
     this.api.getIncidents().subscribe({
       next: (data) => {

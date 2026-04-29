@@ -21,7 +21,7 @@ from app.schemas.incident import (
 )
 from app.utils.security import get_current_user
 
-from app.services.notification_service import notify_user_realtime, send_push_to_user
+from app.services.notification_service import notify_compatible_workshops, notify_user_realtime, send_push_to_user
 
 router = APIRouter(prefix="/api/incidents", tags=["Incidentes"])
 
@@ -68,6 +68,15 @@ async def create_incident(
         )
         db.add(evidence)
 
+    db.commit()
+    db.refresh(incident)
+
+    if data.description:
+        from app.services.ai_processor import process_incident
+        await process_incident(incident.id, db)
+        db.refresh(incident)
+
+    notify_compatible_workshops(db, incident)
     db.commit()
     db.refresh(incident)
     return incident

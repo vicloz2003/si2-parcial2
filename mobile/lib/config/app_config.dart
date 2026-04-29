@@ -1,12 +1,12 @@
 class AppConfig {
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://asistecar.net/api',
+    defaultValue: 'http://10.0.2.2:8000/api',
   );
 
   static const String wsBaseUrl = String.fromEnvironment(
     'WS_BASE_URL',
-    defaultValue: 'wss://asistecar.net/ws',
+    defaultValue: 'ws://10.0.2.2:8000/ws',
   );
 
   static String get serverBaseUrl =>

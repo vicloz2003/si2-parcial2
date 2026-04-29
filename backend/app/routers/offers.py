@@ -196,6 +196,7 @@ def create_workshop_offer(
     )
     offer.recommendation_reason = _reason(offer, workshop)
     db.add(offer)
+    db.flush()
     db.add(Notification(
         user_id=incident.user_id,
         incident_id=incident.id,
@@ -203,6 +204,20 @@ def create_workshop_offer(
         message=f"{workshop.name} envio una oferta por Bs. {data.cost:.2f}",
         type=NotificationType.INCIDENT_ASSIGNED,
     ))
+    notify_user_realtime(incident.user_id, {
+        "type": "new_offer",
+        "incident_id": incident.id,
+        "offer_id": offer.id,
+        "title": "Nueva oferta de taller",
+        "message": f"{workshop.name} envio una oferta por Bs. {data.cost:.2f}",
+    })
+    send_push_to_user(
+        db,
+        incident.user_id,
+        "Nueva oferta de taller",
+        f"{workshop.name} envio una oferta por Bs. {data.cost:.2f}",
+        {"type": "new_offer", "incident_id": str(incident.id)},
+    )
     db.commit()
     db.refresh(offer)
     return _serialize_offer(offer, offer.id)
