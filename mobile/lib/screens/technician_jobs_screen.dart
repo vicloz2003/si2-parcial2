@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -28,11 +29,75 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
   List<Incident> _jobs = [];
   bool _loading = true;
   bool _sharingLocation = false;
+  bool _liveTracking = false;
+  StreamSubscription<Position>? _posSub;
+
+  bool get _hasActiveJobs =>
+      _jobs.any((j) => j.status == 'assigned' || j.status == 'in_progress');
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadData().then((_) {
+      // Iniciar tracking continuo automaticamente si hay trabajos activos.
+      if (mounted && _hasActiveJobs) _startLiveTracking();
+    });
+  }
+
+  @override
+  void dispose() {
+    _posSub?.cancel();
+    super.dispose();
+  }
+
+  Future<bool> _ensureLocationPermission() async {
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    return permission != LocationPermission.denied &&
+        permission != LocationPermission.deniedForever;
+  }
+
+  /// Comparte la ubicacion de forma continua mientras haya trabajos activos
+  /// (estilo Uber): el cliente y el taller ven al tecnico moverse en el mapa.
+  Future<void> _startLiveTracking() async {
+    if (_liveTracking) return;
+    if (!await _ensureLocationPermission()) {
+      if (mounted) AppSnackBar.error(context, 'Activa el permiso de ubicacion');
+      return;
+    }
+    setState(() => _liveTracking = true);
+    _posSub = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 15, // enviar cada ~15 m de desplazamiento
+      ),
+    ).listen((position) async {
+      try {
+        final technician = await ApiService.updateTechnicianLocation(
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+        if (mounted) setState(() => _technician = technician);
+      } catch (_) {
+        // Ignorar errores puntuales de red; el stream sigue activo.
+      }
+    });
+  }
+
+  void _stopLiveTracking() {
+    _posSub?.cancel();
+    _posSub = null;
+    if (mounted) setState(() => _liveTracking = false);
+  }
+
+  void _toggleLiveTracking() {
+    if (_liveTracking) {
+      _stopLiveTracking();
+    } else {
+      _startLiveTracking();
+    }
   }
 
   Future<void> _loadData() async {
@@ -501,6 +566,8 @@ class _TechnicianJobsScreenState extends State<TechnicianJobsScreen> {
                     technician: _technician,
                     sharingLocation: _sharingLocation,
                     onShareLocation: _shareLocation,
+                    liveTracking: _liveTracking,
+                    onToggleLiveTracking: _toggleLiveTracking,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
@@ -547,11 +614,15 @@ class _TechnicianHeader extends StatelessWidget {
   final Technician? technician;
   final bool sharingLocation;
   final VoidCallback onShareLocation;
+  final bool liveTracking;
+  final VoidCallback onToggleLiveTracking;
 
   const _TechnicianHeader({
     required this.technician,
     required this.sharingLocation,
     required this.onShareLocation,
+    required this.liveTracking,
+    required this.onToggleLiveTracking,
   });
 
   @override
@@ -617,6 +688,22 @@ class _TechnicianHeader extends StatelessWidget {
                 sharingLocation
                     ? 'Enviando ubicacion...'
                     : 'Compartir ubicacion',
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onToggleLiveTracking,
+              icon: Icon(
+                liveTracking ? Icons.gps_fixed_rounded : Icons.gps_off_rounded,
+                color: liveTracking ? AppColors.primary : null,
+              ),
+              label: Text(
+                liveTracking
+                    ? 'Tracking en vivo activo (toca para detener)'
+                    : 'Activar tracking en vivo',
               ),
             ),
           ),

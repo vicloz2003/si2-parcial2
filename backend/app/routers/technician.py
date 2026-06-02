@@ -59,7 +59,7 @@ def update_my_location(
         # Primera ubicacion compartida en un trabajo asignado = "en camino".
         if incident.en_route_at is None:
             incident.en_route_at = technician.last_location_at
-        notify_user_realtime(incident.user_id, {
+        payload = {
             "type": "technician_location_update",
             "incident_id": incident.id,
             "technician_id": technician.id,
@@ -67,7 +67,11 @@ def update_my_location(
             "latitude": technician.latitude,
             "longitude": technician.longitude,
             "last_location_at": technician.last_location_at.isoformat() if technician.last_location_at else None,
-        })
+        }
+        # Notificar al cliente (app movil) y al taller asignado (panel web).
+        notify_user_realtime(incident.user_id, payload)
+        if incident.workshop and incident.workshop.user_id:
+            notify_user_realtime(incident.workshop.user_id, payload)
     db.commit()
     return technician
 

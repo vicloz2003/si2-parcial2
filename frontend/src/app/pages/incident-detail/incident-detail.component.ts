@@ -92,6 +92,10 @@ import { environment } from '../../../environments/environment';
                     'Lat: ' + incident.latitude + ', Lng: ' + incident.longitude
                 }}
               </p>
+              <div class="tracking-banner" *ngIf="trackingActive">
+                <span class="material-symbols-rounded pulse">my_location</span>
+                <span>Tecnico en camino<span *ngIf="etaText"> · ETA {{ etaText }}</span></span>
+              </div>
               <div id="incident-map" class="incident-map"></div>
             </div>
 
@@ -464,6 +468,14 @@ import { environment } from '../../../environments/environment';
         height: 11rem; border-radius: var(--radius-lg);
         margin-top: var(--space-sm); overflow: hidden; z-index: 0;
       }
+      .tracking-banner {
+        display: flex; align-items: center; gap: 0.4rem;
+        margin-top: var(--space-sm); padding: 0.5rem 0.75rem;
+        background: var(--color-primary-50); color: var(--color-primary);
+        border-radius: var(--radius-lg); font-size: 0.85rem; font-weight: 700;
+      }
+      .tracking-banner .pulse { animation: pulse 1.4s ease-in-out infinite; }
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
 
       .quote {
         font-size: 0.875rem; color: var(--color-text-primary);
@@ -766,6 +778,11 @@ export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChec
   // Map
   private map?: google.maps.Map;
   private mapInitialized = false;
+  private techMarker?: google.maps.marker.AdvancedMarkerElement;
+  private routeLine?: google.maps.Polyline;
+  private directionsRenderer?: google.maps.DirectionsRenderer;
+  trackingActive = false;
+  etaText = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -801,6 +818,89 @@ export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChec
       position: pos,
       title: `Incidente #${this.incident!.id}`,
     });
+
+    // Si el tecnico ya compartio ubicacion, dibujar tracking inicial.
+    const tlat = this.incident!.technician_latitude;
+    const tlng = this.incident!.technician_longitude;
+    if (tlat != null && tlng != null && this.isActiveStatus()) {
+      this.updateTechnicianTracking(tlat, tlng);
+    }
+  }
+
+  private isActiveStatus(): boolean {
+    return this.incident?.status === 'assigned' || this.incident?.status === 'in_progress';
+  }
+
+  /** Actualiza el marcador del tecnico, la ruta y el ETA hacia el incidente. */
+  private updateTechnicianTracking(lat: number, lng: number) {
+    if (!this.map || !this.incident) return;
+    const techPos = { lat, lng };
+    const dest = { lat: this.incident.latitude, lng: this.incident.longitude };
+    this.trackingActive = true;
+
+    // Marcador del tecnico (pin azul).
+    if (this.techMarker) {
+      this.techMarker.position = techPos;
+    } else {
+      const pin = document.createElement('div');
+      pin.title = 'Tecnico';
+      pin.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#1E88E5;border:3px solid #fff;box-shadow:0 0 0 2px #1E88E5;';
+      this.techMarker = new google.maps.marker.AdvancedMarkerElement({
+        map: this.map, position: techPos, content: pin, title: 'Tecnico',
+      });
+    }
+
+    // ETA por distancia (fallback inmediato).
+    const km = this.haversineKm(lat, lng, dest.lat, dest.lng);
+    this.etaText = `${Math.max(1, Math.round((km / 30) * 60))} min`;
+
+    // Intentar ruta real con Directions; si falla, linea recta.
+    try {
+      const svc = new google.maps.DirectionsService();
+      svc.route(
+        { origin: techPos, destination: dest, travelMode: google.maps.TravelMode.DRIVING },
+        (res, status) => {
+          if (status === 'OK' && res) {
+            this.clearStraightLine();
+            if (!this.directionsRenderer) {
+              this.directionsRenderer = new google.maps.DirectionsRenderer({ map: this.map, suppressMarkers: true, preserveViewport: true });
+            }
+            this.directionsRenderer.setDirections(res);
+            const leg = res.routes?.[0]?.legs?.[0];
+            if (leg?.duration?.text) this.etaText = leg.duration.text;
+            this.cdr.markForCheck();
+          } else {
+            this.drawStraightLine(techPos, dest);
+          }
+        },
+      );
+    } catch {
+      this.drawStraightLine(techPos, dest);
+    }
+    this.cdr.markForCheck();
+  }
+
+  private drawStraightLine(from: google.maps.LatLngLiteral, to: google.maps.LatLngLiteral) {
+    if (!this.map) return;
+    if (this.routeLine) {
+      this.routeLine.setPath([from, to]);
+    } else {
+      this.routeLine = new google.maps.Polyline({
+        path: [from, to], map: this.map, strokeColor: '#1E88E5', strokeWeight: 4, strokeOpacity: 0.85,
+      });
+    }
+  }
+
+  private clearStraightLine() {
+    this.routeLine?.setMap(null);
+    this.routeLine = undefined;
+  }
+
+  private haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const r = 6371, toRad = (d: number) => (d * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
   ngOnInit() {
@@ -821,7 +921,8 @@ export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChec
       error: () => { this.technicians = []; this.cdr.markForCheck(); },
     });
 
-    // Listen for incoming chat messages via WebSocket
+    this.ws.connect();
+    // Listen for incoming chat messages + live technician tracking via WebSocket
     this.wsSub = this.ws.notifications$.subscribe((msg: any) => {
       if (msg.type === 'chat_message' && msg.incident_id === id && msg.sender_id !== this.currentUserId) {
         this.chatMessages.push({
@@ -835,6 +936,13 @@ export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChec
         });
         this.cdr.markForCheck();
         this.scrollChat();
+      }
+      if (msg.type === 'technician_location_update' && msg.incident_id === id && msg.latitude != null && msg.longitude != null) {
+        if (this.incident) {
+          this.incident.technician_latitude = msg.latitude;
+          this.incident.technician_longitude = msg.longitude;
+        }
+        this.updateTechnicianTracking(msg.latitude, msg.longitude);
       }
     });
   }

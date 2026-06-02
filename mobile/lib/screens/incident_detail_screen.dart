@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -528,6 +529,18 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
     ).animate(delay: 150.ms).fadeIn().moveY(begin: 16, end: 0);
   }
 
+  double _distanceKm(LatLng a, LatLng b) {
+    const r = 6371.0;
+    double toRad(double d) => d * 3.141592653589793 / 180.0;
+    final dLat = toRad(b.latitude - a.latitude);
+    final dLon = toRad(b.longitude - a.longitude);
+    final h = (math.sin(dLat / 2) * math.sin(dLat / 2)) +
+        math.cos(toRad(a.latitude)) *
+            math.cos(toRad(b.latitude)) *
+            (math.sin(dLon / 2) * math.sin(dLon / 2));
+    return r * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h));
+  }
+
   Widget _buildMapCard() {
     final inc = _incident!;
     final pos = LatLng(inc.latitude, inc.longitude);
@@ -538,6 +551,10 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
     final hasTechnicianLocation =
         technicianPos != null &&
         (inc.status == 'assigned' || inc.status == 'in_progress');
+    final km = hasTechnicianLocation ? _distanceKm(technicianPos, pos) : 0.0;
+    final etaMin = hasTechnicianLocation
+        ? math.max(1, (km / 30 * 60).round())
+        : 0;
     return Container(
       decoration: BoxDecoration(
         color: context.appColors.surface,
@@ -646,7 +663,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        '${inc.technicianName ?? 'El tecnico'} compartio su ubicacion. El marcador azul muestra por donde viene.',
+                        '${inc.technicianName ?? 'El tecnico'} viene en camino · ETA ~$etaMin min · ${km.toStringAsFixed(1)} km',
                         style: TextStyle(
                           color: context.appColors.textPrimary,
                           fontWeight: FontWeight.w700,

@@ -142,6 +142,9 @@ export interface Incident {
   status_history: StatusHistory[];
   workshop_name: string | null;
   technician_name: string | null;
+  technician_latitude: number | null;
+  technician_longitude: number | null;
+  technician_last_location_at: string | null;
 }
 
 export interface Notification {
