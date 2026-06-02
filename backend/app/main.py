@@ -11,9 +11,9 @@ from app.utils.security import get_current_user_from_token
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Plataforma de Emergencias Vehiculares",
+    title="RescateYa — Plataforma de Emergencias Vehiculares",
     description="API para la gestion inteligente de emergencias vehiculares",
-    version="1.0.0",
+    version="2.0.0",
 )
 
 # CORS

@@ -13,7 +13,7 @@ import { User, Workshop } from '../../models/interfaces';
       <div class="page-header">
         <div>
           <h1 class="page-title">Talleres</h1>
-          <p class="page-subtitle">Supervision de talleres registrados en AsisteCar</p>
+          <p class="page-subtitle">Supervision de talleres registrados en RescateYa</p>
         </div>
       </div>
 

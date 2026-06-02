@@ -14,11 +14,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  runApp(const EmergenciApp());
+  runApp(const RescateYaApp());
 }
 
-class EmergenciApp extends StatelessWidget {
-  const EmergenciApp({super.key});
+class RescateYaApp extends StatelessWidget {
+  const RescateYaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class EmergenciApp extends StatelessWidget {
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
           return MaterialApp(
-            title: 'AsisteCar',
+            title: 'RescateYa',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),

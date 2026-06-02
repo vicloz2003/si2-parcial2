@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Title
                   Text(
-                    'AsisteCar',
+                    'RescateYa',
                     style: theme.textTheme.headlineLarge?.copyWith(
                       color: colors.textPrimary,
                       fontWeight: FontWeight.w700,

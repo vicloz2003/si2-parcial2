@@ -405,7 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   _ActionTile(
                     icon: Icons.info_outline_rounded,
-                    label: 'Acerca de AsisteCar',
+                    label: 'Acerca de RescateYa',
                     onTap: () => _showAbout(context),
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -428,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   Center(
                     child: Text(
-                      'AsisteCar v1.0.0',
+                      'RescateYa v2.0.0',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colors.textTertiary,
                         fontWeight: FontWeight.w500,
@@ -777,7 +777,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        title: const Text('AsisteCar'),
+        title: const Text('RescateYa'),
         content: const Text(
           'Plataforma Inteligente de Atención de Emergencias Vehiculares.\n\n'
           'Conecta conductores con talleres mecánicos mediante análisis con IA.',

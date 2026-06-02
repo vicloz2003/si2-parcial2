@@ -7,7 +7,7 @@ import 'api_service.dart';
 const _androidChannel = AndroidNotificationChannel(
   'high_importance_channel',
   'Notificaciones de emergencia',
-  description: 'Notificaciones de AsisteCar sobre tus emergencias vehiculares',
+  description: 'Notificaciones de RescateYa sobre tus emergencias vehiculares',
   importance: Importance.max,
 );
 

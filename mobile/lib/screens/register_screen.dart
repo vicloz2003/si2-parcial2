@@ -95,7 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 4),
 
                       Text(
-                        'Completa tus datos para empezar a usar AsisteCar',
+                        'Completa tus datos para empezar a usar RescateYa',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: colors.textSecondary,
                         ),

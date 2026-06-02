@@ -586,7 +586,7 @@ class _TechnicianHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      technician?.name ?? 'Tecnico AsisteCar',
+                      technician?.name ?? 'Tecnico RescateYa',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: colors.textPrimary,
                         fontWeight: FontWeight.w800,

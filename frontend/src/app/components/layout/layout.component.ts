@@ -138,7 +138,7 @@ import { Notification } from '../../models/interfaces';
         <div class="assistant-header">
           <div>
             <span class="assistant-eyebrow">Asistente IA</span>
-            <h2>AsisteCar te guia</h2>
+            <h2>RescateYa te guia</h2>
           </div>
           <button class="topbar-btn" (click)="assistantOpen = false" title="Cerrar asistente">
             <span class="material-symbols-rounded">close</span>

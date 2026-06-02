@@ -19,8 +19,8 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
               <span class="material-symbols-rounded">arrow_back</span>
               Volver al login
             </a>
-            <img src="logo.png" alt="AsisteCar" class="hero-logo">
-            <h2>Únete a la red de <span class="highlight">talleres AsisteCar</span></h2>
+            <img src="logo.png" alt="RescateYa" class="hero-logo">
+            <h2>Únete a la red de <span class="highlight">talleres RescateYa</span></h2>
             <p>Recibe solicitudes de emergencia vehicular automáticamente y gestiona tu equipo desde un solo panel.</p>
             <div class="hero-features">
               <div class="feature-item">

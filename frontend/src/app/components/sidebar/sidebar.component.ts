@@ -12,9 +12,9 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <div class="sidebar-brand">
         <a routerLink="/dashboard" class="brand-link">
           <div class="brand-icon">
-            <img src="logo.png" alt="AsisteCar" class="brand-logo">
+            <img src="logo.png" alt="RescateYa" class="brand-logo">
           </div>
-          <span class="brand-name" *ngIf="!collapsed">AsisteCar</span>
+          <span class="brand-name" *ngIf="!collapsed">RescateYa</span>
         </a>
         <button class="collapse-btn" (click)="toggle()" [title]="collapsed ? 'Expandir' : 'Colapsar'">
           <span class="material-symbols-rounded">{{ collapsed ? 'menu' : 'menu_open' }}</span>
@@ -108,7 +108,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         <div class="footer-divider"></div>
         <div class="sidebar-version" *ngIf="!collapsed">
           <span class="material-symbols-rounded">info</span>
-          <span>AsisteCar v1.0</span>
+          <span>RescateYa v2.0</span>
         </div>
       </div>
     </aside>

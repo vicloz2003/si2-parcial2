@@ -78,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'AsisteCar',
+                        'RescateYa',
                         style: Theme.of(context).textTheme.displaySmall
                             ?.copyWith(
                               color: context.appColors.textPrimary,

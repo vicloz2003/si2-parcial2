@@ -26,7 +26,7 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
             <span class="material-symbols-rounded">verified</span>
             Red operativa para talleres
           </div>
-          <h1 id="landing-title">AsisteCar para talleres</h1>
+          <h1 id="landing-title">RescateYa para talleres</h1>
           <p class="hero-copy">
             Recibe emergencias vehiculares cercanas, asigna tecnicos disponibles y gestiona cada servicio desde un panel pensado para operar rapido y con trazabilidad.
           </p>
@@ -56,7 +56,7 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
           </div>
         </div>
 
-        <div class="operations-panel" aria-label="Vista previa del panel AsisteCar">
+        <div class="operations-panel" aria-label="Vista previa del panel RescateYa">
           <div class="panel-header">
             <div>
               <span class="panel-label">Panel del taller</span>
@@ -95,7 +95,7 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
         <div class="section-heading">
           <span class="section-kicker">Lo que obtiene tu taller</span>
           <h2 id="benefits-title">Mas servicios, mejor control operativo</h2>
-          <p>AsisteCar conecta a los conductores con talleres disponibles y entrega contexto suficiente para decidir, asignar y cerrar cada atencion sin perder informacion.</p>
+          <p>RescateYa conecta a los conductores con talleres disponibles y entrega contexto suficiente para decidir, asignar y cerrar cada atencion sin perder informacion.</p>
         </div>
 
         <div class="benefit-grid">
@@ -155,7 +155,7 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
       <section class="cta-section" aria-label="Registro de taller">
         <div>
           <span class="section-kicker">Empieza hoy</span>
-          <h2>Convierte tu taller en punto de respuesta AsisteCar</h2>
+          <h2>Convierte tu taller en punto de respuesta RescateYa</h2>
         </div>
         <a routerLink="/register" class="btn btn-primary btn-large">
           <span>Crear cuenta de taller</span>

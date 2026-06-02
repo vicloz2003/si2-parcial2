@@ -11,11 +11,7 @@ def generate_json(prompt: str, image_bytes: bytes | None = None, mime_type: str 
     except Exception as exc:
         raise RuntimeError("google-genai no esta instalado. Ejecuta pip install -r requirements.txt") from exc
 
-    client = genai.Client(
-        vertexai=True,
-        project=settings.GOOGLE_CLOUD_PROJECT,
-        location=settings.GOOGLE_CLOUD_LOCATION,
-    )
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
     contents: list[Any] = [prompt]
     if image_bytes:
