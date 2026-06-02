@@ -5,8 +5,50 @@ export interface User {
   phone: string;
   role: 'client' | 'workshop' | 'technician' | 'admin';
   is_active: boolean;
+  tenant_id: number | null;
   profile_photo_url: string | null;
   created_at: string;
+}
+
+export interface WorkshopInvitation {
+  id: number;
+  incident_id: number;
+  workshop_id: number;
+  tenant_id: number;
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+  distance_km: number | null;
+  sent_at: string;
+  expires_at: string;
+  responded_at: string | null;
+  response_time_seconds: number | null;
+  incident_category: string | null;
+  incident_priority: string | null;
+  incident_address: string | null;
+  incident_status: string | null;
+}
+
+export interface MetricsSummary {
+  scope: 'global' | 'tenant';
+  tenant_id: number | null;
+  avg_assignment_min: number | null;
+  avg_arrival_min: number | null;
+  incidents_by_category: { category: string; count: number }[];
+  top_workshops: {
+    workshop_id: number;
+    workshop_name: string;
+    rating: number;
+    completed: number;
+    avg_completion_min: number | null;
+  }[];
+  zones: { latitude: number; longitude: number; count: number }[];
+  cancelled: {
+    total_incidents: number;
+    cancelled: number;
+    cancellation_rate: number;
+    reasons: { reason: string; count: number }[];
+  };
+  sla: { measured: number; within_sla: number; compliance_rate: number | null };
+  status_breakdown: { status: string; count: number }[];
 }
 
 export interface Token {

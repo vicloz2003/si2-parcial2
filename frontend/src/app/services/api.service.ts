@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AdminPayment, AdminPaymentSummary, AssistantRequest, AssistantResponse, Incident, Notification, Payment, ServiceOffer, Technician, User, Workshop, ChatMessage, Review } from '../models/interfaces';
+import { AdminPayment, AdminPaymentSummary, AssistantRequest, AssistantResponse, Incident, MetricsSummary, Notification, Payment, ServiceOffer, Technician, User, Workshop, WorkshopInvitation, ChatMessage, Review } from '../models/interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -149,5 +149,28 @@ export class ApiService {
   // Asistente IA contextual
   askAssistant(data: AssistantRequest): Observable<AssistantResponse> {
     return this.http.post<AssistantResponse>(`${this.apiUrl}/assistant/help`, data);
+  }
+
+  // Invitaciones (taller responde si/no)
+  getMyInvitations(): Observable<WorkshopInvitation[]> {
+    return this.http.get<WorkshopInvitation[]>(`${this.apiUrl}/assignment/invitations/mine`);
+  }
+
+  acceptInvitation(id: number): Observable<WorkshopInvitation> {
+    return this.http.post<WorkshopInvitation>(`${this.apiUrl}/assignment/invitations/${id}/accept`, {});
+  }
+
+  rejectInvitation(id: number): Observable<WorkshopInvitation> {
+    return this.http.post<WorkshopInvitation>(`${this.apiUrl}/assignment/invitations/${id}/reject`, {});
+  }
+
+  // KPIs / metricas (global para admin, por tenant para taller)
+  getMetricsSummary(params?: { tenant_id?: number; date_from?: string; date_to?: string }): Observable<MetricsSummary> {
+    const query = new URLSearchParams();
+    if (params?.tenant_id != null) query.set('tenant_id', String(params.tenant_id));
+    if (params?.date_from) query.set('date_from', params.date_from);
+    if (params?.date_to) query.set('date_to', params.date_to);
+    const qs = query.toString();
+    return this.http.get<MetricsSummary>(`${this.apiUrl}/metrics/summary${qs ? '?' + qs : ''}`);
   }
 }

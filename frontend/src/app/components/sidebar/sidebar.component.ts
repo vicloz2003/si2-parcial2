@@ -52,6 +52,10 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
             <span class="material-symbols-rounded">payments</span>
             <span class="nav-text" *ngIf="!collapsed">Pagos</span>
           </a>
+          <a routerLink="/kpis" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'KPIs' : ''">
+            <span class="material-symbols-rounded">insights</span>
+            <span class="nav-text" *ngIf="!collapsed">KPIs</span>
+          </a>
           <a routerLink="/reports" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Reportes' : ''">
             <span class="material-symbols-rounded">bar_chart</span>
             <span class="nav-text" *ngIf="!collapsed">Reportes</span>
@@ -75,6 +79,10 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
               <span class="nav-badge" *ngIf="pendingCount > 0 && !collapsed">{{ pendingCount }}</span>
               <span class="nav-dot" *ngIf="pendingCount > 0 && collapsed"></span>
             </a>
+            <a routerLink="/invitations" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Invitaciones' : ''">
+              <span class="material-symbols-rounded">mark_email_unread</span>
+              <span class="nav-text" *ngIf="!collapsed">Invitaciones</span>
+            </a>
           </div>
 
           <div class="nav-section">
@@ -86,6 +94,10 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
             <a routerLink="/history" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Historial' : ''">
               <span class="material-symbols-rounded">history</span>
               <span class="nav-text" *ngIf="!collapsed">Historial</span>
+            </a>
+            <a routerLink="/kpis" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'KPIs' : ''">
+              <span class="material-symbols-rounded">insights</span>
+              <span class="nav-text" *ngIf="!collapsed">KPIs</span>
             </a>
             <a routerLink="/reports" routerLinkActive="active" class="nav-item" [title]="collapsed ? 'Reportes' : ''">
               <span class="material-symbols-rounded">bar_chart</span>

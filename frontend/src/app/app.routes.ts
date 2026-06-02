@@ -20,6 +20,8 @@ export const routes: Routes = [
       { path: 'admin/payments', canActivate: [adminGuard], loadComponent: () => import('./pages/admin-payments/admin-payments.component').then(m => m.AdminPaymentsComponent) },
       { path: 'admin/notifications', canActivate: [adminGuard], loadComponent: () => import('./pages/admin-notifications/admin-notifications.component').then(m => m.AdminNotificationsComponent) },
       { path: 'technicians', canActivate: [workshopGuard], loadComponent: () => import('./pages/technicians/technicians.component').then(m => m.TechniciansComponent) },
+      { path: 'invitations', canActivate: [workshopGuard], loadComponent: () => import('./pages/invitations/invitations.component').then(m => m.InvitationsComponent) },
+      { path: 'kpis', loadComponent: () => import('./pages/kpis/kpis.component').then(m => m.KpisComponent) },
       { path: 'history', loadComponent: () => import('./pages/history/history.component').then(m => m.HistoryComponent) },
       { path: 'reports', loadComponent: () => import('./pages/reports/reports.component').then(m => m.ReportsComponent) },
       { path: 'profile', loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) },
