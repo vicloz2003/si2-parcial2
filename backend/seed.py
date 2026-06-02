@@ -1,3 +1,6 @@
+import random
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import inspect, text
 
 from app.database import Base, SessionLocal, engine
@@ -225,6 +228,43 @@ def get_or_create_vehicle(
     return vehicle
 
 
+_CANCEL_REASONS = [
+    "El cliente resolvio el problema por su cuenta",
+    "Ningun taller acepto a tiempo",
+    "El cliente cancelo por demora",
+    "Datos del vehiculo incorrectos",
+]
+
+
+def _apply_timeline(incident: Incident, status: IncidentStatus) -> None:
+    """Setea los timestamps de ciclo de vida coherentes con el estado (para KPIs).
+
+    Algunos servicios superan el SLA de llegada a proposito, para que el KPI de
+    cumplimiento no sea 100%.
+    """
+    base = datetime.now(timezone.utc) - timedelta(hours=random.randint(1, 240))
+    incident.created_at = base
+    incident.assigned_at = None
+    incident.en_route_at = None
+    incident.arrived_at = None
+    incident.completed_at = None
+    incident.cancelled_at = None
+    incident.cancel_reason = None
+
+    if status in {IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS, IncidentStatus.COMPLETED}:
+        incident.assigned_at = base + timedelta(minutes=random.randint(3, 14))
+        incident.en_route_at = incident.assigned_at + timedelta(minutes=random.randint(1, 4))
+    if status in {IncidentStatus.IN_PROGRESS, IncidentStatus.COMPLETED}:
+        # ~30% de los casos llegan tarde (sobre 40 min).
+        arrival_delta = random.randint(12, 28) if random.random() > 0.3 else random.randint(45, 70)
+        incident.arrived_at = incident.assigned_at + timedelta(minutes=arrival_delta)
+    if status == IncidentStatus.COMPLETED:
+        incident.completed_at = incident.arrived_at + timedelta(minutes=random.randint(25, 70))
+    if status == IncidentStatus.CANCELLED:
+        incident.cancelled_at = base + timedelta(minutes=random.randint(5, 30))
+        incident.cancel_reason = random.choice(_CANCEL_REASONS)
+
+
 def get_or_create_incident(
     db,
     user: User,
@@ -258,6 +298,7 @@ def get_or_create_incident(
         incident.address = address
         incident.final_cost = final_cost
         incident.commission_amount = round(final_cost * 0.10, 2) if final_cost else None
+        _apply_timeline(incident, status)
         return incident
 
     incident = Incident(
@@ -279,6 +320,7 @@ def get_or_create_incident(
         final_cost=final_cost,
         commission_amount=round(final_cost * 0.10, 2) if final_cost else None,
     )
+    _apply_timeline(incident, status)
     db.add(incident)
     db.flush()
     return incident
@@ -802,7 +844,14 @@ def run_seed() -> None:
             IncidentCategory.OTHER,
         ]
         priorities = [IncidentPriority.LOW, IncidentPriority.MEDIUM, IncidentPriority.HIGH, IncidentPriority.CRITICAL]
-        statuses = [IncidentStatus.PENDING, IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS, IncidentStatus.COMPLETED]
+        statuses = [
+            IncidentStatus.PENDING,
+            IncidentStatus.ASSIGNED,
+            IncidentStatus.IN_PROGRESS,
+            IncidentStatus.COMPLETED,
+            IncidentStatus.COMPLETED,
+            IncidentStatus.CANCELLED,
+        ]
         descriptions = {
             IncidentCategory.BATTERY: "El vehiculo no enciende y requiere revision de bateria o alternador.",
             IncidentCategory.TIRE: "Tengo una llanta baja y necesito auxilio movil para cambiarla.",
@@ -821,11 +870,15 @@ def run_seed() -> None:
                 workshop = None
                 technician = None
                 cost = None
-                if status != IncidentStatus.PENDING:
+                if status in {IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS, IncidentStatus.COMPLETED}:
                     workshop_index = (index + round_index * 7) % len(workshops)
                     workshop = workshops[workshop_index]
                     technician = technicians_by_workshop[workshop_index][(index + round_index) % 5]
                     cost = round(70 + ((index * 11 + round_index * 17) % 180), 2)
+                elif status == IncidentStatus.CANCELLED:
+                    # Cancelado tras asignacion: tiene tenant pero sin costo.
+                    workshop_index = (index + round_index * 7) % len(workshops)
+                    workshop = workshops[workshop_index]
                 incident_specs.append(
                     (
                         client,
