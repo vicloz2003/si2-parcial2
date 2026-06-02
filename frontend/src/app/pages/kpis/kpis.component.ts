@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chart, registerables } from 'chart.js';
 import { ApiService } from '../../services/api.service';
@@ -6,7 +6,6 @@ import { MetricsSummary } from '../../models/interfaces';
 
 Chart.register(...registerables);
 
-// Traducciones de valores que la BD guarda en ingles/MAYUSCULAS.
 const CATEGORY_ES: Record<string, string> = {
   BATTERY: 'Batería', TIRE: 'Llanta', CRASH: 'Choque', ENGINE: 'Motor',
   KEYS: 'Llaves', OTHER: 'Otro', UNCERTAIN: 'Sin clasificar',
@@ -21,67 +20,81 @@ const STATUS_ES: Record<string, string> = {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="page-content reveal" *ngIf="m as data; else loadingTpl">
+    <div class="page-content reveal" *ngIf="m; else loadingTpl">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Indicadores {{ data.scope === 'global' ? '— Plataforma' : '— Mi taller' }}</h1>
+          <h1 class="page-title">Indicadores {{ m!.scope === 'global' ? '— Plataforma' : '— Mi taller' }}</h1>
           <p class="page-subtitle">Métricas clave de atención de emergencias.</p>
         </div>
-        <button class="btn-refresh" (click)="load()"><span class="material-symbols-rounded">refresh</span> Actualizar</button>
+        <button class="btn-refresh" (click)="load()">
+          <span class="material-symbols-rounded">refresh</span> Actualizar
+        </button>
       </div>
 
       <!-- Tarjetas KPI -->
       <div class="kpi-grid">
         <div class="kpi-card">
           <span class="material-symbols-rounded ic">schedule</span>
-          <div><span class="val">{{ data.avg_assignment_min ?? '—' }}<small>min</small></span><span class="lbl">Tiempo prom. asignación</span></div>
+          <div>
+            <span class="val">{{ m!.avg_assignment_min ?? '—' }}<small>min</small></span>
+            <span class="lbl">Tiempo prom. asignación</span>
+          </div>
         </div>
         <div class="kpi-card">
           <span class="material-symbols-rounded ic">local_shipping</span>
-          <div><span class="val">{{ data.avg_arrival_min ?? '—' }}<small>min</small></span><span class="lbl">Tiempo prom. llegada</span></div>
+          <div>
+            <span class="val">{{ m!.avg_arrival_min ?? '—' }}<small>min</small></span>
+            <span class="lbl">Tiempo prom. llegada</span>
+          </div>
         </div>
         <div class="kpi-card">
           <span class="material-symbols-rounded ic">verified</span>
-          <div><span class="val">{{ pct(data.sla.compliance_rate) }}</span><span class="lbl">Dentro del tiempo esperado (SLA)</span></div>
+          <div>
+            <span class="val">{{ pct(m!.sla.compliance_rate) }}</span>
+            <span class="lbl">Dentro del tiempo esperado (SLA)</span>
+          </div>
         </div>
         <div class="kpi-card danger">
           <span class="material-symbols-rounded ic">cancel</span>
-          <div><span class="val">{{ pct(data.cancelled.cancellation_rate) }}</span><span class="lbl">Casos cancelados ({{ data.cancelled.cancelled }})</span></div>
+          <div>
+            <span class="val">{{ pct(m!.cancelled.cancellation_rate) }}</span>
+            <span class="lbl">Casos cancelados ({{ m!.cancelled.cancelled }})</span>
+          </div>
         </div>
       </div>
 
       <div class="grid-2">
-        <!-- Incidentes por categoria (Chart.js barras) -->
+        <!-- Gráfico de barras: categorías -->
         <div class="panel">
           <h3>Incidentes más frecuentes</h3>
-          <div class="chart-box" *ngIf="data.incidents_by_category.length; else noCat">
-            <canvas #catCanvas></canvas>
+          <div class="chart-box">
+            <canvas id="ry-cat-chart"></canvas>
           </div>
-          <ng-template #noCat><p class="muted">Sin datos aún</p></ng-template>
         </div>
 
-        <!-- Estado (Chart.js dona) -->
+        <!-- Gráfico de dona: estados -->
         <div class="panel">
           <h3>Distribución por estado</h3>
-          <div class="chart-box" *ngIf="data.status_breakdown.length; else noSt">
-            <canvas #statusCanvas></canvas>
+          <div class="chart-box">
+            <canvas id="ry-status-chart"></canvas>
           </div>
-          <ng-template #noSt><p class="muted">Sin datos aún</p></ng-template>
         </div>
 
-        <!-- Talleres mas eficientes -->
+        <!-- Talleres más eficientes -->
         <div class="panel">
           <h3>Talleres más eficientes</h3>
           <table class="tbl">
             <thead><tr><th>Taller</th><th>Compl.</th><th>Rating</th><th>Prom. atención</th></tr></thead>
             <tbody>
-              <tr *ngFor="let w of data.top_workshops">
+              <tr *ngFor="let w of m!.top_workshops">
                 <td>{{ w.workshop_name }}</td>
                 <td>{{ w.completed }}</td>
                 <td>{{ w.rating }}</td>
                 <td>{{ w.avg_completion_min != null ? w.avg_completion_min + ' min' : '—' }}</td>
               </tr>
-              <tr *ngIf="data.top_workshops.length === 0"><td colspan="4" class="muted">Sin datos aún</td></tr>
+              <tr *ngIf="m!.top_workshops.length === 0">
+                <td colspan="4" class="muted">Sin datos aún</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -92,20 +105,22 @@ const STATUS_ES: Record<string, string> = {
           <table class="tbl">
             <thead><tr><th>Lat</th><th>Lng</th><th>Incidencias</th></tr></thead>
             <tbody>
-              <tr *ngFor="let z of data.zones">
+              <tr *ngFor="let z of m!.zones">
                 <td>{{ z.latitude }}</td><td>{{ z.longitude }}</td><td>{{ z.count }}</td>
               </tr>
-              <tr *ngIf="data.zones.length === 0"><td colspan="3" class="muted">Sin datos aún</td></tr>
+              <tr *ngIf="m!.zones.length === 0">
+                <td colspan="3" class="muted">Sin datos aún</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Motivos de cancelacion -->
-      <div class="panel" *ngIf="data.cancelled.reasons.length">
+      <!-- Motivos de cancelación -->
+      <div class="panel" *ngIf="m!.cancelled.reasons.length">
         <h3>Motivos de cancelación</h3>
         <div class="chips">
-          <span class="chip" *ngFor="let r of data.cancelled.reasons">{{ r.reason }} <b>{{ r.count }}</b></span>
+          <span class="chip" *ngFor="let r of m!.cancelled.reasons">{{ r.reason }} <b>{{ r.count }}</b></span>
         </div>
       </div>
     </div>
@@ -133,79 +148,100 @@ const STATUS_ES: Record<string, string> = {
     .tbl { width:100%; border-collapse:collapse; }
     .tbl th, .tbl td { text-align:left; padding:.45rem .5rem; font-size:.82rem; border-bottom:1px solid var(--color-border); }
     .tbl th { color:var(--color-text-tertiary); text-transform:uppercase; font-size:.68rem; letter-spacing:.04em; }
-    .muted { color:var(--color-text-tertiary); }
+    .muted { color:var(--color-text-tertiary); font-size:.85rem; padding:.5rem; display:block; }
     .chips { display:flex; flex-wrap:wrap; gap:.5rem; }
     .chip { background:var(--color-surface-alt); border-radius:var(--radius-pill); padding:.35rem .7rem; font-size:.8rem; color:var(--color-text-secondary); }
     .chip b { color:var(--color-primary); }
-    @media (max-width:880px){ .kpi-grid{ grid-template-columns:repeat(2,1fr);} .grid-2{ grid-template-columns:1fr; } }
+    @media (max-width:880px){ .kpi-grid{ grid-template-columns:repeat(2,1fr); } .grid-2{ grid-template-columns:1fr; } }
   `],
 })
-export class KpisComponent implements AfterViewInit, OnDestroy {
+export class KpisComponent implements OnInit, OnDestroy {
   m: MetricsSummary | null = null;
-  @ViewChild('catCanvas') catCanvas?: ElementRef<HTMLCanvasElement>;
-  @ViewChild('statusCanvas') statusCanvas?: ElementRef<HTMLCanvasElement>;
 
   private catChart?: Chart;
   private statusChart?: Chart;
-  private viewReady = false;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
-  ngAfterViewInit(): void { this.viewReady = true; this.load(); }
+  ngOnInit(): void { this.load(); }
 
   load(): void {
     this.api.getMetricsSummary().subscribe({
       next: (data) => {
         this.m = data;
-        // Esperar a que Angular renderice los <canvas> (estan tras *ngIf).
-        setTimeout(() => this.renderCharts(), 0);
+        // detectChanges() fuerza a Angular a procesar el *ngIf y crear los <canvas>
+        // en el DOM ANTES de que intentemos dibujar los gráficos.
+        this.cdr.detectChanges();
+        this.renderCharts();
       },
     });
   }
 
   private renderCharts(): void {
-    if (!this.viewReady || !this.m) return;
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#FF6B00';
+    if (!this.m) return;
+    // Usamos getElementById en lugar de @ViewChild porque @ViewChild no
+    // actualiza su referencia de forma fiable cuando el <canvas> está dentro
+    // de un *ngIf anidado. getElementById opera directamente sobre el DOM
+    // real, que ya fue actualizado por detectChanges() arriba.
+    const catEl = document.getElementById('ry-cat-chart') as HTMLCanvasElement | null;
+    const statusEl = document.getElementById('ry-status-chart') as HTMLCanvasElement | null;
 
-    // Barras: incidentes por categoria
-    if (this.catCanvas) {
-      const cats = this.m.incidents_by_category;
+    const accent = '#FF6B00';
+    const palette = ['#FF7A00', '#007AFF', '#1E88E5', '#0fad73', '#6b7280', '#9333ea', '#14b8a6'];
+
+    if (catEl) {
       this.catChart?.destroy();
-      this.catChart = new Chart(this.catCanvas.nativeElement, {
-        type: 'bar',
-        data: {
-          labels: cats.map((c) => this.tCat(c.category)),
-          datasets: [{ label: 'Incidentes', data: cats.map((c) => c.count), backgroundColor: accent, borderRadius: 6 }],
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-        },
-      });
+      const cats = this.m.incidents_by_category;
+      if (cats.length) {
+        this.catChart = new Chart(catEl, {
+          type: 'bar',
+          data: {
+            labels: cats.map((c) => this.tCat(c.category)),
+            datasets: [{
+              label: 'Incidentes',
+              data: cats.map((c) => c.count),
+              backgroundColor: accent,
+              borderRadius: 6,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+          },
+        });
+      } else {
+        const ctx = catEl.getContext('2d');
+        if (ctx) { ctx.fillStyle = '#8c95a8'; ctx.font = '14px sans-serif'; ctx.fillText('Sin datos aún', 10, 30); }
+      }
     }
 
-    // Dona: distribucion por estado
-    if (this.statusCanvas) {
-      const st = this.m.status_breakdown;
-      const palette = ['#FF7A00', '#007AFF', '#1E88E5', '#0fad73', '#6b7280'];
+    if (statusEl) {
       this.statusChart?.destroy();
-      this.statusChart = new Chart(this.statusCanvas.nativeElement, {
-        type: 'doughnut',
-        data: {
-          labels: st.map((s) => this.tStatus(s.status)),
-          datasets: [{ data: st.map((s) => s.count), backgroundColor: palette, borderWidth: 0 }],
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
-        },
-      });
+      const st = this.m.status_breakdown;
+      if (st.length) {
+        this.statusChart = new Chart(statusEl, {
+          type: 'doughnut',
+          data: {
+            labels: st.map((s) => this.tStatus(s.status)),
+            datasets: [{ data: st.map((s) => s.count), backgroundColor: palette, borderWidth: 0 }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+          },
+        });
+      } else {
+        const ctx = statusEl.getContext('2d');
+        if (ctx) { ctx.fillStyle = '#8c95a8'; ctx.font = '14px sans-serif'; ctx.fillText('Sin datos aún', 10, 30); }
+      }
     }
   }
 
-  tCat(v: string): string { return CATEGORY_ES[(v || '').toUpperCase()] || v; }
-  tStatus(v: string): string { return STATUS_ES[(v || '').toUpperCase()] || v; }
+  tCat(v: string): string { return CATEGORY_ES[(v || '').toUpperCase()] ?? v; }
+  tStatus(v: string): string { return STATUS_ES[(v || '').toUpperCase()] ?? v; }
   pct(rate: number | null): string { return rate == null ? '—' : Math.round(rate * 100) + '%'; }
 
   ngOnDestroy(): void { this.catChart?.destroy(); this.statusChart?.destroy(); }
