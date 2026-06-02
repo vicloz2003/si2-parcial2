@@ -1,7 +1,6 @@
-import { Component, NgZone, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { timeout } from 'rxjs/operators';
 import { ApiService } from '../../services/api.service';
 import { ReportResult } from '../../models/interfaces';
 
@@ -155,7 +154,7 @@ export class ReportsAiComponent implements OnDestroy {
     'Incidentes cancelados con su motivo',
   ];
 
-  constructor(private api: ApiService, private zone: NgZone) {}
+  constructor(private api: ApiService, private zone: NgZone, private cdr: ChangeDetectorRef) {}
 
   get voiceSupported(): boolean {
     return typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
@@ -171,18 +170,25 @@ export class ReportsAiComponent implements OnDestroy {
     this.error = '';
     this.result = null;
     this.previewRows = [];
-    this.api.generateReport(this.prompt.trim()).pipe(timeout(60000)).subscribe({
+    // Sin pipe(timeout): el backend ya acota la latencia de Gemini (10s/intento
+    // + fallback de modelos). El timeout del front era el que escapaba NgZone
+    // mediante su scheduler interno, impidiendo que Angular detectara el cambio
+    // y dejando el spinner "congelado" aunque el 200 ya habia llegado.
+    this.api.generateReport(this.prompt.trim()).subscribe({
       next: (r) => {
-        // Calcular previewRows UNA sola vez aquí, no en cada ciclo de CD.
-        this.previewRows = r.rows.slice(0, this.previewLimit);
-        this.result = r;
-        this.loading = false;
+        this.zone.run(() => {
+          this.previewRows = r.rows.slice(0, this.previewLimit);
+          this.result = r;
+          this.loading = false;
+          this.cdr.markForCheck();
+        });
       },
       error: (e) => {
-        this.error = e?.name === 'TimeoutError'
-          ? 'La IA tardo demasiado en responder. Intenta de nuevo o simplifica la consulta.'
-          : (e?.error?.detail || 'No se pudo generar el reporte.');
-        this.loading = false;
+        this.zone.run(() => {
+          this.error = e?.error?.detail || 'No se pudo generar el reporte.';
+          this.loading = false;
+          this.cdr.markForCheck();
+        });
       },
     });
   }
