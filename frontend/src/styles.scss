@@ -3,7 +3,8 @@
    Logo-Matched Palette · Light/Dark Mode · Automotive Emergency
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+/* Todo el sistema heredado vive en la capa 'legacy' (menor prioridad que Tailwind) */
+@layer legacy {
 
 /* ── Light Theme (default) ── */
 :root {
@@ -814,3 +815,5 @@ img {
 @media (min-width: 576px)  { .grid-responsive { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1024px) { .grid-responsive { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 1280px) { .grid-responsive { grid-template-columns: repeat(4, 1fr); } }
+
+} /* @layer legacy */

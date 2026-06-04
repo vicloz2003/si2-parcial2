@@ -4,6 +4,9 @@
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+/* 'legacy' declarada primero = capa de MENOR prioridad: el SCSS heredado
+   nunca pisa las utilidades de Tailwind en las páginas ya migradas. */
+@layer legacy;
 @import "tailwindcss";
 
 /* Modo oscuro vía el atributo [data-theme="dark"] (toggle existente del topbar) */
