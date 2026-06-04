@@ -128,85 +128,131 @@ def incidents_by_zone(db: Session, tenant_id=None, date_from=None, date_to=None,
 
 def cancelled_stats(db: Session, tenant_id=None, date_from=None, date_to=None) -> dict:
     """Casos cancelados: cantidad, ratio sobre el total y motivos."""
-    total = _scope(db.query(func.count(Incident.id)), tenant_id, date_from, date_to).scalar() or 0
-    cancelled = _scope(
-        db.query(func.count(Incident.id)), tenant_id, date_from, date_to
-    ).filter(Incident.status == IncidentStatus.CANCELLED).scalar() or 0
-    reasons = _scope(
-        db.query(Incident.cancel_reason, func.count(Incident.id)),
-        tenant_id, date_from, date_to,
-    ).filter(Incident.status == IncidentStatus.CANCELLED).group_by(Incident.cancel_reason).all()
-    return {
-        "total_incidents": total,
-        "cancelled": cancelled,
-        "cancellation_rate": round(cancelled / total, 4) if total else 0.0,
-        "reasons": [{"reason": r or "Sin motivo", "count": c} for r, c in reasons],
-    }
+    try:
+        # Contar total de incidentes
+        q_total = db.query(func.count(Incident.id))
+        if tenant_id is not None:
+            q_total = q_total.filter(Incident.tenant_id == tenant_id)
+        if date_from is not None:
+            q_total = q_total.filter(Incident.created_at >= date_from)
+        if date_to is not None:
+            q_total = q_total.filter(Incident.created_at <= date_to)
+        total = q_total.scalar() or 0
+        
+        # Contar cancelados
+        q_cancelled = db.query(func.count(Incident.id)).filter(Incident.status == IncidentStatus.CANCELLED)
+        if tenant_id is not None:
+            q_cancelled = q_cancelled.filter(Incident.tenant_id == tenant_id)
+        if date_from is not None:
+            q_cancelled = q_cancelled.filter(Incident.created_at >= date_from)
+        if date_to is not None:
+            q_cancelled = q_cancelled.filter(Incident.created_at <= date_to)
+        cancelled = q_cancelled.scalar() or 0
+        
+        # Contar por motivo
+        q_reasons = db.query(Incident.cancel_reason, func.count(Incident.id)).filter(Incident.status == IncidentStatus.CANCELLED)
+        if tenant_id is not None:
+            q_reasons = q_reasons.filter(Incident.tenant_id == tenant_id)
+        if date_from is not None:
+            q_reasons = q_reasons.filter(Incident.created_at >= date_from)
+        if date_to is not None:
+            q_reasons = q_reasons.filter(Incident.created_at <= date_to)
+        reasons = q_reasons.group_by(Incident.cancel_reason).all()
+        
+        result = {
+            "total_incidents": int(total),
+            "cancelled": int(cancelled),
+            "cancellation_rate": round(float(cancelled) / float(total), 4) if total else 0.0,
+            "reasons": [{"reason": r or "Sin motivo", "count": int(c)} for r, c in reasons],
+        }
+        print(f"[cancelled_stats] tenant_id={tenant_id} result={result}")
+        return result
+    except Exception as e:
+        print(f"[cancelled_stats] ERROR: {e}")
+        return {
+            "total_incidents": 0,
+            "cancelled": 0,
+            "cancellation_rate": 0.0,
+            "reasons": [],
+        }
 
 
 def sla_compliance(db: Session, tenant_id=None, date_from=None, date_to=None) -> dict:
     """Servicios atendidos dentro del tiempo esperado (SLA de llegada por categoria)."""
-    # Mapa categoria -> minutos esperados de llegada (override por tenant > global).
-    sla_map: dict[str, int] = {}
-    globals_q = db.query(ServiceCategorySLA).filter(ServiceCategorySLA.tenant_id.is_(None)).all()
-    for s in globals_q:
-        sla_map[s.category] = s.expected_arrival_min
-    if tenant_id is not None:
-        for s in db.query(ServiceCategorySLA).filter(ServiceCategorySLA.tenant_id == tenant_id).all():
+    try:
+        # Mapa categoria -> minutos esperados de llegada
+        sla_map: dict[str, int] = {}
+        globals_q = db.query(ServiceCategorySLA).filter(ServiceCategorySLA.tenant_id.is_(None)).all()
+        for s in globals_q:
             sla_map[s.category] = s.expected_arrival_min
+        if tenant_id is not None:
+            for s in db.query(ServiceCategorySLA).filter(ServiceCategorySLA.tenant_id == tenant_id).all():
+                sla_map[s.category] = s.expected_arrival_min
 
-    rows = _scope(
-        db.query(Incident.category, Incident.assigned_at, Incident.arrived_at),
-        tenant_id, date_from, date_to,
-    ).filter(Incident.assigned_at.isnot(None), Incident.arrived_at.isnot(None)).all()
+        # Obtener incidentes con tiempos de asignación y llegada
+        q = db.query(Incident.category, Incident.assigned_at, Incident.arrived_at).filter(
+            Incident.assigned_at.isnot(None),
+            Incident.arrived_at.isnot(None)
+        )
+        if tenant_id is not None:
+            q = q.filter(Incident.tenant_id == tenant_id)
+        if date_from is not None:
+            q = q.filter(Incident.created_at >= date_from)
+        if date_to is not None:
+            q = q.filter(Incident.created_at <= date_to)
+        rows = q.all()
 
-    measured = 0
-    within = 0
-    for category, assigned_at, arrived_at in rows:
-        expected = sla_map.get(category.value)
-        if expected is None:
-            continue
-        measured += 1
-        arrival_min = (arrived_at - assigned_at).total_seconds() / 60
-        if arrival_min <= expected:
-            within += 1
-    return {
-        "measured": measured,
-        "within_sla": within,
-        "compliance_rate": round(within / measured, 4) if measured else None,
-    }
+        measured = 0
+        within = 0
+        for category, assigned_at, arrived_at in rows:
+            expected = sla_map.get(category.value if hasattr(category, 'value') else category)
+            if expected is None:
+                continue
+            measured += 1
+            arrival_min = (arrived_at - assigned_at).total_seconds() / 60
+            if arrival_min <= expected:
+                within += 1
+        
+        return {
+            "measured": int(measured),
+            "within_sla": int(within),
+            "compliance_rate": round(float(within) / float(measured), 4) if measured > 0 else 0.0,
+        }
+    except Exception:
+        return {
+            "measured": 0,
+            "within_sla": 0,
+            "compliance_rate": 0.0,
+        }
 
 
 def status_breakdown(db: Session, tenant_id=None, date_from=None, date_to=None) -> list[dict]:
     """Distribucion de incidentes por estado (apoyo para dashboards)."""
-    rows = _scope(
-        db.query(Incident.status, func.count(Incident.id)),
-        tenant_id, date_from, date_to,
-    ).group_by(Incident.status).all()
-    return [{"status": st.value, "count": count} for st, count in rows]
+    try:
+        q = db.query(Incident.status, func.count(Incident.id))
+        if tenant_id is not None:
+            q = q.filter(Incident.tenant_id == tenant_id)
+        if date_from is not None:
+            q = q.filter(Incident.created_at >= date_from)
+        if date_to is not None:
+            q = q.filter(Incident.created_at <= date_to)
+        rows = q.group_by(Incident.status).all()
+        return [{"status": st.value if hasattr(st, 'value') else str(st), "count": int(count)} for st, count in rows]
+    except Exception:
+        return []
 
 
 def build_summary(db: Session, tenant_id=None, date_from=None, date_to=None) -> dict:
-    """Todos los KPIs en una sola respuesta lista para dashboards.
-    
-    Cada KPI tiene manejo de errores para evitar que uno falle y rompa todo.
-    """
-    def safe_call(func, *args, **kwargs):
-        """Ejecutar función y retornar valor por defecto si falla."""
-        try:
-            return func(*args, **kwargs)
-        except Exception:
-            return None
-    
+    """Todos los KPIs en una sola respuesta lista para dashboards."""
     return {
         "scope": "tenant" if tenant_id is not None else "global",
         "tenant_id": tenant_id,
-        "avg_assignment_min": safe_call(avg_assignment_minutes, db, tenant_id, date_from, date_to),
-        "avg_arrival_min": safe_call(avg_arrival_minutes, db, tenant_id, date_from, date_to),
-        "incidents_by_category": safe_call(incidents_by_category, db, tenant_id, date_from, date_to) or [],
-        "top_workshops": safe_call(top_efficient_workshops, db, tenant_id, date_from, date_to) or [],
-        "zones": safe_call(incidents_by_zone, db, tenant_id, date_from, date_to) or [],
-        "cancelled": safe_call(cancelled_stats, db, tenant_id, date_from, date_to) or {},
-        "sla": safe_call(sla_compliance, db, tenant_id, date_from, date_to) or {},
-        "status_breakdown": safe_call(status_breakdown, db, tenant_id, date_from, date_to) or {},
+        "avg_assignment_min": avg_assignment_minutes(db, tenant_id, date_from, date_to),
+        "avg_arrival_min": avg_arrival_minutes(db, tenant_id, date_from, date_to),
+        "incidents_by_category": incidents_by_category(db, tenant_id, date_from, date_to) or [],
+        "top_workshops": top_efficient_workshops(db, tenant_id, date_from, date_to) or [],
+        "zones": incidents_by_zone(db, tenant_id, date_from, date_to) or [],
+        "cancelled": cancelled_stats(db, tenant_id, date_from, date_to) or {},
+        "sla": sla_compliance(db, tenant_id, date_from, date_to) or {},
+        "status_breakdown": status_breakdown(db, tenant_id, date_from, date_to) or {},
     }
