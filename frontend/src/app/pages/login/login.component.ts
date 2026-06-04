@@ -14,11 +14,11 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
 
     <div class="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
       <!-- Panel de marca (oscuro) -->
-      <aside class="relative hidden overflow-hidden bg-hero p-12 text-white lg:flex lg:flex-col lg:justify-between">
+      <aside class="relative hidden overflow-hidden bg-hero p-12 text-white lg:flex lg:flex-col lg:justify-center">
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_30%_10%,rgba(255,107,0,0.30),transparent_70%)]"></div>
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(45%_45%_at_90%_100%,rgba(230,57,70,0.22),transparent_70%)]"></div>
 
-        <a routerLink="/" class="relative flex items-center gap-2 font-display text-lg font-extrabold">
+        <a routerLink="/" class="absolute left-10 top-10 flex items-center gap-2 font-display text-lg font-extrabold">
           <img src="logo.svg" alt="RescateYa" class="h-10 w-10 rounded-lg object-contain ring-1 ring-white/10"> RescateYa
         </a>
 
@@ -27,19 +27,19 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
             <span class="absolute inline-flex h-full w-full rounded-full bg-brand-400 animate-beacon"></span>
             <span class="relative inline-flex h-3 w-3 rounded-full bg-brand-500"></span>
           </span>
-          <h2 class="mt-6 font-display text-4xl font-extrabold leading-tight">
+          <h2 class="mt-6 font-display text-4xl font-bold leading-[1.15]">
             Emergencias vehiculares con <span class="text-gradient">inteligencia artificial</span>
           </h2>
-          <p class="mt-4 text-lg leading-relaxed text-slate-400">
+          <p class="mt-5 text-lg leading-relaxed text-slate-400">
             Panel avanzado para talleres. Asignación automática, monitoreo GPS en tiempo real y clasificación IA.
           </p>
-        </div>
 
-        <dl class="relative grid grid-cols-3 gap-6 border-t border-white/10 pt-6">
-          <div><dt class="font-mono text-xl font-bold text-brand-400">24/7</dt><dd class="mt-1 text-xs uppercase tracking-wide text-slate-500">Disponible</dd></div>
-          <div><dt class="font-mono text-xl font-bold text-brand-400">IA</dt><dd class="mt-1 text-xs uppercase tracking-wide text-slate-500">Clasificación</dd></div>
-          <div><dt class="font-mono text-xl font-bold text-brand-400">GPS</dt><dd class="mt-1 text-xs uppercase tracking-wide text-slate-500">Tiempo real</dd></div>
-        </dl>
+          <dl class="mt-10 grid grid-cols-3 gap-6 border-t border-white/10 pt-6">
+            <div><dt class="font-mono text-xl font-bold text-brand-400">24/7</dt><dd class="mt-1 text-xs uppercase tracking-wide text-slate-500">Disponible</dd></div>
+            <div><dt class="font-mono text-xl font-bold text-brand-400">IA</dt><dd class="mt-1 text-xs uppercase tracking-wide text-slate-500">Clasificación</dd></div>
+            <div><dt class="font-mono text-xl font-bold text-brand-400">GPS</dt><dd class="mt-1 text-xs uppercase tracking-wide text-slate-500">Tiempo real</dd></div>
+          </dl>
+        </div>
       </aside>
 
       <!-- Formulario -->

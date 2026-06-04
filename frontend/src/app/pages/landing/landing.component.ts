@@ -12,7 +12,7 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
       <app-public-navbar></app-public-navbar>
 
       <!-- ===== HERO (oscuro, inmersivo) ===== -->
-      <section class="relative overflow-hidden bg-hero text-white" aria-labelledby="landing-title">
+      <section class="relative overflow-hidden border-b border-white/10 bg-hero text-white" aria-labelledby="landing-title">
         <!-- glow de marca -->
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_70%_0%,rgba(255,107,0,0.28),transparent_70%)]"></div>
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(45%_45%_at_15%_90%,rgba(230,57,70,0.20),transparent_70%)]"></div>
@@ -116,7 +116,7 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
       </section>
 
       <!-- ===== BENEFICIOS (bento) ===== -->
-      <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-12" aria-labelledby="benefits-title">
+      <section class="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-12" aria-labelledby="benefits-title">
         <div class="max-w-2xl">
           <span class="text-sm font-bold uppercase tracking-widest text-brand-500">Lo que obtiene tu taller</span>
           <h2 id="benefits-title" class="mt-3 font-display text-3xl font-extrabold text-slate-900 sm:text-4xl dark:text-white">
@@ -156,7 +156,7 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
       </section>
 
       <!-- ===== HIGHLIGHT zig-zag ===== -->
-      <section class="bg-slate-50 py-20 dark:bg-white/[0.02]">
+      <section class="border-y border-slate-200 bg-slate-50 py-24 dark:border-white/10 dark:bg-white/[0.03]">
         <div class="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-12">
           <div class="order-2 lg:order-1">
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-card-hover dark:border-white/10 dark:bg-white/5">
@@ -186,7 +186,7 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
       </section>
 
       <!-- ===== CÓMO FUNCIONA (timeline horizontal) ===== -->
-      <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-12" aria-labelledby="workflow-title">
+      <section class="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-12" aria-labelledby="workflow-title">
         <div class="text-center">
           <span class="text-sm font-bold uppercase tracking-widest text-brand-500">Cómo funciona</span>
           <h2 id="workflow-title" class="mt-3 font-display text-3xl font-extrabold text-slate-900 sm:text-4xl dark:text-white">Del aviso al servicio completado</h2>

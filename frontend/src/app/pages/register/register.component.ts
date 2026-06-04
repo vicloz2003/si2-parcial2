@@ -14,23 +14,23 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
 
     <div class="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
       <!-- Panel de marca (oscuro) -->
-      <aside class="relative hidden overflow-hidden bg-hero p-12 text-white lg:flex lg:flex-col lg:justify-between">
+      <aside class="relative hidden overflow-hidden bg-hero p-12 text-white lg:flex lg:flex-col lg:justify-center">
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_30%_10%,rgba(255,107,0,0.30),transparent_70%)]"></div>
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(45%_45%_at_90%_100%,rgba(230,57,70,0.22),transparent_70%)]"></div>
 
-        <a routerLink="/login" class="relative inline-flex items-center gap-1.5 self-start rounded-lg px-2 py-1.5 text-sm font-medium text-slate-400 transition hover:bg-white/10 hover:text-white">
+        <a routerLink="/login" class="absolute left-10 top-10 inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-400 transition hover:bg-white/10 hover:text-white">
           <span class="material-symbols-rounded text-lg">arrow_back</span> Volver al login
         </a>
 
         <div class="relative max-w-md">
           <img src="logo.svg" alt="RescateYa" class="h-12 w-12 rounded-xl object-contain ring-1 ring-white/10">
-          <h2 class="mt-6 font-display text-4xl font-extrabold leading-tight">
+          <h2 class="mt-6 font-display text-4xl font-bold leading-[1.15]">
             Únete a la red de <span class="text-gradient">talleres RescateYa</span>
           </h2>
-          <p class="mt-4 text-lg leading-relaxed text-slate-400">
+          <p class="mt-5 text-lg leading-relaxed text-slate-400">
             Recibe solicitudes de emergencia vehicular automáticamente y gestiona tu equipo desde un solo panel.
           </p>
-          <ul class="mt-6 space-y-2.5">
+          <ul class="mt-8 space-y-2.5">
             <li class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
               <span class="material-symbols-rounded text-brand-400">bolt</span> Asignación automática por cercanía
             </li>
@@ -42,7 +42,6 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
             </li>
           </ul>
         </div>
-        <span></span>
       </aside>
 
       <!-- Formulario -->

@@ -3,7 +3,7 @@
    Identidad de rescate vial: naranja #FF6B00 + rojo #E63946
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
 @import "tailwindcss";
 
 /* Modo oscuro vía el atributo [data-theme="dark"] (toggle existente del topbar) */
@@ -45,9 +45,9 @@
   --color-info: #007AFF;
   --color-danger: #e53e3e;
 
-  /* ── Tipografía ── */
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Sora", "Plus Jakarta Sans", sans-serif;
+  /* ── Tipografía (distinta a versiones previas) ── */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* ── Sombras de marca (profundidad + glow) ── */
@@ -87,6 +87,8 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  display: inline-block;
+  padding-bottom: 0.08em;
 }
 
 /* ── Base global ── */
