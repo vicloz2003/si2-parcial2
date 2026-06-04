@@ -12,7 +12,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDjRKHC367Nb9ARPE6dp_tDsXGRsLvAODw" />
+            android:value="AIzaSyDmQfNXL7IgV8879hETSoTXw3AAiY5d2EI" />
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
