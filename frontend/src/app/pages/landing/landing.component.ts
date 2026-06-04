@@ -8,628 +8,239 @@ import { PublicNavbarComponent } from '../../components/public-navbar/public-nav
   standalone: true,
   imports: [CommonModule, RouterLink, PublicNavbarComponent],
   template: `
-    <main class="landing-page">
+    <main class="min-h-screen bg-white dark:bg-[#0d1117]">
       <app-public-navbar></app-public-navbar>
 
-      <section class="hero-section" aria-labelledby="landing-title">
-        <div class="hero-media" aria-hidden="true">
-          <div class="road-scene">
-            <div class="route-line"></div>
-            <div class="service-pin pin-one"><span class="material-symbols-rounded">build</span></div>
-            <div class="service-pin pin-two"><span class="material-symbols-rounded">local_shipping</span></div>
-            <div class="service-pin pin-three"><span class="material-symbols-rounded">location_on</span></div>
+      <!-- ===== HERO (oscuro, inmersivo) ===== -->
+      <section class="relative overflow-hidden bg-hero text-white" aria-labelledby="landing-title">
+        <!-- glow de marca -->
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_70%_0%,rgba(255,107,0,0.28),transparent_70%)]"></div>
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(45%_45%_at_15%_90%,rgba(230,57,70,0.20),transparent_70%)]"></div>
+
+        <div class="relative mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-8 lg:px-12 lg:py-24">
+          <!-- columna texto -->
+          <div class="animate-reveal">
+            <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-semibold text-brand-300">
+              <span class="relative flex h-2.5 w-2.5">
+                <span class="absolute inline-flex h-full w-full rounded-full bg-brand-400 animate-beacon"></span>
+                <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-500"></span>
+              </span>
+              Red operativa para talleres
+            </div>
+
+            <h1 id="landing-title" class="mt-6 font-display text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
+              Rescate vial,<br><span class="text-gradient">al instante.</span>
+            </h1>
+
+            <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-300">
+              Recibe emergencias vehiculares cercanas, asigna técnicos disponibles y gestiona cada servicio
+              desde un panel pensado para operar rápido y con trazabilidad.
+            </p>
+
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a routerLink="/register"
+                 class="inline-flex h-13 items-center gap-2 rounded-xl bg-gradient-to-br from-brand-400 to-emergency-500 px-6 py-3.5 font-extrabold text-white shadow-brand transition-transform hover:-translate-y-0.5">
+                <span>Unir mi taller</span>
+                <span class="material-symbols-rounded">store</span>
+              </a>
+              <a routerLink="/login"
+                 class="inline-flex h-13 items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 font-bold text-white backdrop-blur transition-colors hover:bg-white/10">
+                <span>Ya tengo cuenta</span>
+                <span class="material-symbols-rounded">login</span>
+              </a>
+            </div>
+
+            <dl class="mt-10 grid max-w-md grid-cols-3 gap-6 border-t border-white/10 pt-6">
+              <div>
+                <dt class="font-mono text-2xl font-bold text-brand-400">24/7</dt>
+                <dd class="mt-1 text-sm text-slate-400">Solicitudes activas</dd>
+              </div>
+              <div>
+                <dt class="font-mono text-2xl font-bold text-brand-400">GPS</dt>
+                <dd class="mt-1 text-sm text-slate-400">Ubicación del incidente</dd>
+              </div>
+              <div>
+                <dt class="font-mono text-2xl font-bold text-brand-400">IA</dt>
+                <dd class="mt-1 text-sm text-slate-400">Clasificación inicial</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- columna mock flotante -->
+          <div class="relative lg:pl-6">
+            <div class="animate-float rounded-3xl border border-white/10 bg-white/[0.06] p-5 shadow-2xl backdrop-blur-xl">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Panel del taller</span>
+                  <h2 class="font-display text-lg font-bold text-white">Emergencias entrantes</h2>
+                </div>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-emergency-500/15 px-2.5 py-1 text-xs font-bold text-emergency-300">
+                  <span class="h-1.5 w-1.5 rounded-full bg-emergency-400 animate-beacon"></span> En vivo
+                </span>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <div class="flex items-center gap-3 rounded-2xl border border-brand-500/30 bg-brand-500/10 p-3">
+                  <div class="grid h-11 w-11 place-items-center rounded-xl bg-emergency-500/20 text-emergency-300">
+                    <span class="material-symbols-rounded">car_crash</span>
+                  </div>
+                  <div class="min-w-0">
+                    <strong class="block text-sm text-white">Auxilio por falla mecánica</strong>
+                    <span class="text-xs text-slate-400">2.4 km · Prioridad media · Bs 120 estimado</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                  <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/20 text-brand-300">
+                    <span class="material-symbols-rounded">tire_repair</span>
+                  </div>
+                  <div class="min-w-0">
+                    <strong class="block text-sm text-white">Cambio de llanta</strong>
+                    <span class="text-xs text-slate-400">4.1 km · Técnico sugerido: Luis R.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-3">
+                <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+                  <span class="text-xs text-slate-400">Asignados hoy</span>
+                  <strong class="block font-mono text-2xl font-bold text-white">18</strong>
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+                  <span class="text-xs text-slate-400">Tiempo medio</span>
+                  <strong class="block font-mono text-2xl font-bold text-white">22 min</strong>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div class="hero-content">
-          <div class="eyebrow">
-            <span class="material-symbols-rounded">verified</span>
-            Red operativa para talleres
-          </div>
-          <h1 id="landing-title">RescateYa para talleres</h1>
-          <p class="hero-copy">
-            Recibe emergencias vehiculares cercanas, asigna tecnicos disponibles y gestiona cada servicio desde un panel pensado para operar rapido y con trazabilidad.
+      <!-- ===== BENEFICIOS (bento) ===== -->
+      <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-12" aria-labelledby="benefits-title">
+        <div class="max-w-2xl">
+          <span class="text-sm font-bold uppercase tracking-widest text-brand-500">Lo que obtiene tu taller</span>
+          <h2 id="benefits-title" class="mt-3 font-display text-3xl font-extrabold text-slate-900 sm:text-4xl dark:text-white">
+            Más servicios, mejor control operativo
+          </h2>
+          <p class="mt-4 text-lg text-slate-600 dark:text-slate-400">
+            RescateYa conecta a los conductores con talleres disponibles y entrega contexto suficiente para
+            decidir, asignar y cerrar cada atención sin perder información.
           </p>
-          <div class="hero-actions">
-            <a routerLink="/register" class="btn btn-primary btn-large">
-              <span>Unir mi taller</span>
-              <span class="material-symbols-rounded">store</span>
+        </div>
+
+        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-6 lg:grid-rows-2">
+          <article class="group rounded-3xl border border-slate-200 bg-white p-6 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover lg:col-span-3 lg:row-span-2 dark:border-white/10 dark:bg-white/5">
+            <div class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-emergency-500 text-white shadow-brand">
+              <span class="material-symbols-rounded">near_me</span>
+            </div>
+            <h3 class="mt-5 font-display text-xl font-bold text-slate-900 dark:text-white">Solicitudes por cercanía</h3>
+            <p class="mt-2 text-slate-600 dark:text-slate-400">Recibe casos cerca de tu zona de cobertura con ubicación, tipo de emergencia y prioridad en tiempo real.</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover lg:col-span-3 dark:border-white/10 dark:bg-white/5">
+            <div class="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+              <span class="material-symbols-rounded">engineering</span>
+            </div>
+            <h3 class="mt-4 font-display text-lg font-bold text-slate-900 dark:text-white">Gestión de técnicos</h3>
+            <p class="mt-1.5 text-sm text-slate-600 dark:text-slate-400">Organiza tu equipo, asigna responsables y consulta el historial de atenciones.</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover lg:col-span-3 dark:border-white/10 dark:bg-white/5">
+            <div class="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+              <span class="material-symbols-rounded">payments</span>
+            </div>
+            <h3 class="mt-4 font-display text-lg font-bold text-slate-900 dark:text-white">Control de costos</h3>
+            <p class="mt-1.5 text-sm text-slate-600 dark:text-slate-400">Registra costos finales, pagos y evidencia para mantener claridad en cada servicio.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ===== HIGHLIGHT zig-zag ===== -->
+      <section class="bg-slate-50 py-20 dark:bg-white/[0.02]">
+        <div class="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-12">
+          <div class="order-2 lg:order-1">
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-card-hover dark:border-white/10 dark:bg-white/5">
+              <div class="flex items-center gap-3">
+                <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-emergency-500 text-white"><span class="material-symbols-rounded">analytics</span></div>
+                <div>
+                  <span class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Reportes del taller</span>
+                  <h3 class="font-display font-bold text-slate-900 dark:text-white">Decisiones con datos</h3>
+                </div>
+              </div>
+              <div class="mt-5 grid grid-cols-3 gap-3 text-center">
+                <div class="rounded-2xl bg-slate-50 p-3 dark:bg-white/5"><strong class="block font-mono text-xl text-brand-600 dark:text-brand-400">12m</strong><span class="text-xs text-slate-500">asignación</span></div>
+                <div class="rounded-2xl bg-slate-50 p-3 dark:bg-white/5"><strong class="block font-mono text-xl text-brand-600 dark:text-brand-400">94%</strong><span class="text-xs text-slate-500">SLA</span></div>
+                <div class="rounded-2xl bg-slate-50 p-3 dark:bg-white/5"><strong class="block font-mono text-xl text-brand-600 dark:text-brand-400">4.7</strong><span class="text-xs text-slate-500">rating</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="order-1 lg:order-2">
+            <span class="text-sm font-bold uppercase tracking-widest text-brand-500">Del panel a la calle</span>
+            <h2 class="mt-3 font-display text-3xl font-extrabold text-slate-900 sm:text-4xl dark:text-white">Volumen, rendimiento y tiempos en un solo lugar</h2>
+            <p class="mt-4 text-lg text-slate-600 dark:text-slate-400">Revisa volumen de incidentes, rendimiento del equipo y tiempos de respuesta desde el panel, con reportes que puedes generar en lenguaje natural y exportar.</p>
+            <a routerLink="/register" class="mt-6 inline-flex items-center gap-2 font-bold text-brand-600 hover:gap-3 transition-all dark:text-brand-400">
+              Explorar el panel <span class="material-symbols-rounded">arrow_forward</span>
             </a>
-            <a routerLink="/login" class="btn btn-secondary btn-large">
-              <span>Ya tengo cuenta</span>
-              <span class="material-symbols-rounded">login</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== CÓMO FUNCIONA (timeline horizontal) ===== -->
+      <section class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-12" aria-labelledby="workflow-title">
+        <div class="text-center">
+          <span class="text-sm font-bold uppercase tracking-widest text-brand-500">Cómo funciona</span>
+          <h2 id="workflow-title" class="mt-3 font-display text-3xl font-extrabold text-slate-900 sm:text-4xl dark:text-white">Del aviso al servicio completado</h2>
+        </div>
+        <div class="relative mt-12 grid gap-8 md:grid-cols-3">
+          <div class="pointer-events-none absolute left-0 right-0 top-7 hidden h-px bg-gradient-to-r from-brand-300 via-brand-400 to-emergency-400 md:block"></div>
+          <div class="relative text-center">
+            <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-emergency-500 font-mono text-lg font-bold text-white shadow-brand">01</div>
+            <h3 class="mt-5 font-display text-lg font-bold text-slate-900 dark:text-white">Llega una emergencia</h3>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">El sistema muestra el tipo de incidente, ubicación y evidencia enviada por el conductor.</p>
+          </div>
+          <div class="relative text-center">
+            <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-emergency-500 font-mono text-lg font-bold text-white shadow-brand">02</div>
+            <h3 class="mt-5 font-display text-lg font-bold text-slate-900 dark:text-white">Asignas el técnico</h3>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Seleccionas al responsable disponible y mantienes el seguimiento desde el detalle del caso.</p>
+          </div>
+          <div class="relative text-center">
+            <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-emergency-500 font-mono text-lg font-bold text-white shadow-brand">03</div>
+            <h3 class="mt-5 font-display text-lg font-bold text-slate-900 dark:text-white">Cierras con evidencia</h3>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Actualizas el estado, registras el costo y dejas historial para futuras consultas.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== CTA ===== -->
+      <section class="px-4 pb-20 sm:px-6 lg:px-12" aria-label="Registro de taller">
+        <div class="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-gradient-to-br from-brand-500 via-brand-600 to-emergency-600 px-6 py-14 text-center shadow-brand sm:px-12">
+          <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_80%_at_50%_0%,rgba(255,255,255,0.18),transparent)]"></div>
+          <div class="relative">
+            <span class="text-sm font-bold uppercase tracking-widest text-white/80">Empieza hoy</span>
+            <h2 class="mx-auto mt-3 max-w-2xl font-display text-3xl font-extrabold text-white sm:text-4xl">Convierte tu taller en punto de respuesta RescateYa</h2>
+            <a routerLink="/register"
+               class="mt-8 inline-flex h-13 items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-extrabold text-brand-600 shadow-lg transition-transform hover:-translate-y-0.5">
+              <span>Crear cuenta de taller</span>
+              <span class="material-symbols-rounded">arrow_forward</span>
             </a>
           </div>
-          <div class="hero-stats" aria-label="Indicadores del servicio">
-            <div>
-              <strong>24/7</strong>
-              <span>Solicitudes activas</span>
-            </div>
-            <div>
-              <strong>GPS</strong>
-              <span>Ubicacion del incidente</span>
-            </div>
-            <div>
-              <strong>IA</strong>
-              <span>Clasificacion inicial</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="operations-panel" aria-label="Vista previa del panel RescateYa">
-          <div class="panel-header">
-            <div>
-              <span class="panel-label">Panel del taller</span>
-              <h2>Emergencias entrantes</h2>
-            </div>
-            <span class="live-badge">En vivo</span>
-          </div>
-          <div class="incident-card active">
-            <div class="incident-icon"><span class="material-symbols-rounded">car_crash</span></div>
-            <div>
-              <strong>Auxilio por falla mecanica</strong>
-              <span>2.4 km · Prioridad media · Bs 120 estimado</span>
-            </div>
-          </div>
-          <div class="incident-card">
-            <div class="incident-icon orange"><span class="material-symbols-rounded">tire_repair</span></div>
-            <div>
-              <strong>Cambio de llanta</strong>
-              <span>4.1 km · Tecnico sugerido: Luis R.</span>
-            </div>
-          </div>
-          <div class="panel-grid">
-            <div>
-              <span>Asignados hoy</span>
-              <strong>18</strong>
-            </div>
-            <div>
-              <span>Tiempo medio</span>
-              <strong>22 min</strong>
-            </div>
-          </div>
         </div>
       </section>
 
-      <section class="info-section" aria-labelledby="benefits-title">
-        <div class="section-heading">
-          <span class="section-kicker">Lo que obtiene tu taller</span>
-          <h2 id="benefits-title">Mas servicios, mejor control operativo</h2>
-          <p>RescateYa conecta a los conductores con talleres disponibles y entrega contexto suficiente para decidir, asignar y cerrar cada atencion sin perder informacion.</p>
-        </div>
-
-        <div class="benefit-grid">
-          <article class="benefit-card">
-            <span class="material-symbols-rounded">near_me</span>
-            <h3>Solicitudes por cercania</h3>
-            <p>Recibe casos cerca de tu zona de cobertura con ubicacion, tipo de emergencia y prioridad.</p>
-          </article>
-          <article class="benefit-card">
-            <span class="material-symbols-rounded">engineering</span>
-            <h3>Gestion de tecnicos</h3>
-            <p>Organiza tu equipo, asigna responsables y consulta el historial de atenciones realizadas.</p>
-          </article>
-          <article class="benefit-card">
-            <span class="material-symbols-rounded">payments</span>
-            <h3>Control de costos</h3>
-            <p>Registra costos finales, pagos y evidencia para mantener claridad en cada servicio.</p>
-          </article>
-          <article class="benefit-card">
-            <span class="material-symbols-rounded">analytics</span>
-            <h3>Reportes del taller</h3>
-            <p>Revisa volumen de incidentes, rendimiento del equipo y tiempos de respuesta desde el panel.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="workflow-section" aria-labelledby="workflow-title">
-        <div class="workflow-copy">
-          <span class="section-kicker">Como funciona</span>
-          <h2 id="workflow-title">Del aviso al servicio completado</h2>
-        </div>
-        <div class="workflow-list">
-          <div class="workflow-item">
-            <span>01</span>
-            <div>
-              <h3>Llega una emergencia</h3>
-              <p>El sistema muestra el tipo de incidente, ubicacion y evidencia enviada por el conductor.</p>
-            </div>
-          </div>
-          <div class="workflow-item">
-            <span>02</span>
-            <div>
-              <h3>Asignas el tecnico</h3>
-              <p>Seleccionas al responsable disponible y mantienes el seguimiento desde el detalle del caso.</p>
-            </div>
-          </div>
-          <div class="workflow-item">
-            <span>03</span>
-            <div>
-              <h3>Cierras con evidencia</h3>
-              <p>Actualizas el estado, registras el costo y dejas historial para futuras consultas.</p>
-            </div>
+      <!-- ===== FOOTER ===== -->
+      <footer class="border-t border-slate-200 bg-white dark:border-white/10 dark:bg-[#0d1117]">
+        <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6 lg:px-12">
+          <a routerLink="/" class="flex items-center gap-2 font-display text-lg font-extrabold text-slate-900 dark:text-white">
+            <img src="logo.svg" alt="RescateYa" class="h-8 w-8 rounded-lg object-contain"> RescateYa
+          </a>
+          <p class="text-sm text-slate-500 dark:text-slate-400">© 2026 RescateYa · Plataforma de emergencias vehiculares</p>
+          <div class="flex items-center gap-3">
+            <a routerLink="/login" class="text-sm font-semibold text-slate-600 hover:text-brand-600 dark:text-slate-300">Ingresar</a>
+            <a routerLink="/register" class="text-sm font-semibold text-brand-600 dark:text-brand-400">Registrar taller</a>
           </div>
         </div>
-      </section>
-
-      <section class="cta-section" aria-label="Registro de taller">
-        <div>
-          <span class="section-kicker">Empieza hoy</span>
-          <h2>Convierte tu taller en punto de respuesta RescateYa</h2>
-        </div>
-        <a routerLink="/register" class="btn btn-primary btn-large">
-          <span>Crear cuenta de taller</span>
-          <span class="material-symbols-rounded">arrow_forward</span>
-        </a>
-      </section>
+      </footer>
     </main>
   `,
-  styles: [`
-    .landing-page {
-      min-height: 100vh;
-      background: var(--color-bg);
-      color: var(--color-text-primary);
-    }
-
-    :host-context([data-theme="dark"]) .hero-section {
-      background: #111820;
-    }
-
-    :host-context([data-theme="dark"]) .hero-media {
-      background:
-        linear-gradient(90deg, rgba(17,24,32,0.98) 0%, rgba(17,24,32,0.82) 46%, rgba(17,24,32,0.64) 100%),
-        repeating-linear-gradient(110deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 62px);
-    }
-
-    :host-context([data-theme="dark"]) .eyebrow,
-    :host-context([data-theme="dark"]) .hero-stats {
-      background: rgba(22, 27, 34, 0.78);
-    }
-
-    .hero-actions,
-    .eyebrow,
-    .btn,
-    .panel-header,
-    .incident-card,
-    .cta-section {
-      display: flex;
-      align-items: center;
-    }
-
-    .btn {
-      justify-content: center;
-      gap: var(--space-sm);
-      min-height: 2.75rem;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-sm);
-      font-weight: 800;
-      line-height: 1;
-      transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
-    }
-
-    .btn:hover {
-      transform: translateY(-1px);
-    }
-
-    .btn-primary {
-      background: var(--color-primary);
-      color: var(--color-text-on-primary);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .btn-primary:hover {
-      background: var(--color-primary-dark);
-      box-shadow: var(--shadow-md);
-    }
-
-    .btn-secondary {
-      color: var(--color-text-primary);
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-    }
-
-    .btn-large {
-      min-height: 3.25rem;
-      padding-inline: 1.25rem;
-    }
-
-    .material-symbols-rounded {
-      font-size: 1.25rem;
-      line-height: 1;
-    }
-
-    .hero-section {
-      position: relative;
-      min-height: 82vh;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(18rem, 29rem);
-      align-items: center;
-      gap: var(--space-2xl);
-      padding: clamp(var(--space-xl), 6vw, var(--space-3xl)) clamp(var(--space-md), 6vw, 5rem);
-      overflow: hidden;
-      background: #eef4f8;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .hero-media {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      opacity: 0.72;
-      background:
-        linear-gradient(90deg, rgba(238,244,248,0.98) 0%, rgba(238,244,248,0.8) 46%, rgba(238,244,248,0.62) 100%),
-        repeating-linear-gradient(110deg, rgba(28,43,57,0.05) 0 2px, transparent 2px 62px);
-    }
-
-    .road-scene {
-      position: absolute;
-      right: -8rem;
-      top: 8%;
-      width: min(58rem, 74vw);
-      height: 84%;
-      border-left: 7rem solid rgba(28, 43, 57, 0.08);
-      transform: skewX(-18deg);
-    }
-
-    .route-line {
-      position: absolute;
-      left: 22%;
-      top: 0;
-      width: 0.375rem;
-      height: 100%;
-      background: rgba(255, 122, 0, 0.55);
-      border-radius: var(--radius-pill);
-    }
-
-    .service-pin {
-      position: absolute;
-      display: grid;
-      place-items: center;
-      width: 3.25rem;
-      height: 3.25rem;
-      border-radius: 50%;
-      color: white;
-      background: var(--color-primary);
-      box-shadow: var(--shadow-lg);
-      transform: skewX(18deg);
-    }
-
-    .pin-one { left: 18%; top: 18%; }
-    .pin-two { left: 44%; top: 48%; background: var(--color-accent); }
-    .pin-three { left: 66%; top: 28%; background: var(--color-success); }
-
-    .hero-content,
-    .operations-panel {
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-content {
-      max-width: 45rem;
-    }
-
-    .eyebrow {
-      width: fit-content;
-      gap: var(--space-xs);
-      margin-bottom: var(--space-md);
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
-      background: rgba(255,255,255,0.78);
-      color: var(--color-primary);
-      font-size: 0.8125rem;
-      font-weight: 800;
-    }
-
-    h1 {
-      max-width: 38rem;
-      font-size: clamp(2.5rem, 8vw, 5.75rem);
-      line-height: 0.98;
-      font-weight: 800;
-      margin-bottom: var(--space-lg);
-    }
-
-    .hero-copy {
-      max-width: 42rem;
-      color: var(--color-text-secondary);
-      font-size: clamp(1rem, 2vw, 1.25rem);
-      line-height: 1.75;
-      margin-bottom: var(--space-xl);
-    }
-
-    .hero-actions {
-      flex-wrap: wrap;
-      gap: var(--space-sm);
-      margin-bottom: var(--space-xl);
-    }
-
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      max-width: 38rem;
-      overflow: hidden;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
-      background: rgba(255,255,255,0.78);
-    }
-
-    .hero-stats div {
-      padding: var(--space-md);
-      border-right: 1px solid var(--color-divider);
-    }
-
-    .hero-stats div:last-child {
-      border-right: 0;
-    }
-
-    .hero-stats strong,
-    .panel-grid strong {
-      display: block;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.25rem;
-      color: var(--color-text-primary);
-    }
-
-    .hero-stats span,
-    .incident-card span,
-    .panel-grid span,
-    .panel-label {
-      color: var(--color-text-secondary);
-      font-size: 0.8125rem;
-      font-weight: 700;
-    }
-
-    .operations-panel,
-    .benefit-card,
-    .workflow-item,
-    .cta-section {
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
-      background: var(--color-surface);
-      box-shadow: var(--shadow-md);
-    }
-
-    .operations-panel {
-      padding: var(--space-lg);
-    }
-
-    .panel-header {
-      justify-content: space-between;
-      gap: var(--space-md);
-      margin-bottom: var(--space-lg);
-    }
-
-    .panel-header h2 {
-      font-size: 1.25rem;
-      margin-top: 0.125rem;
-    }
-
-    .live-badge {
-      padding: 0.375rem 0.625rem;
-      border-radius: var(--radius-sm);
-      background: var(--color-success-light);
-      color: var(--color-success);
-      font-size: 0.75rem;
-      font-weight: 800;
-    }
-
-    .incident-card {
-      gap: var(--space-md);
-      padding: var(--space-md);
-      margin-bottom: var(--space-sm);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
-      background: var(--color-surface-alt);
-    }
-
-    .incident-card.active {
-      background: var(--color-primary-50);
-      border-color: rgba(0, 122, 255, 0.2);
-    }
-
-    .incident-card strong {
-      display: block;
-      margin-bottom: 0.125rem;
-    }
-
-    .incident-icon {
-      display: grid;
-      place-items: center;
-      flex: 0 0 2.75rem;
-      height: 2.75rem;
-      border-radius: var(--radius-sm);
-      color: white;
-      background: var(--color-primary);
-    }
-
-    .incident-icon.orange {
-      background: var(--color-accent);
-    }
-
-    .panel-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--space-sm);
-      margin-top: var(--space-md);
-    }
-
-    .panel-grid div {
-      padding: var(--space-md);
-      border-radius: var(--radius-sm);
-      background: var(--color-bg);
-    }
-
-    .info-section,
-    .workflow-section,
-    .cta-section {
-      width: min(72rem, calc(100% - 2rem));
-      margin-inline: auto;
-    }
-
-    .info-section,
-    .workflow-section {
-      padding-block: var(--space-3xl);
-    }
-
-    .section-heading {
-      max-width: 44rem;
-      margin-bottom: var(--space-xl);
-    }
-
-    .section-kicker {
-      display: block;
-      color: var(--color-accent);
-      font-size: 0.8125rem;
-      font-weight: 800;
-      margin-bottom: var(--space-sm);
-      text-transform: uppercase;
-    }
-
-    .section-heading h2,
-    .workflow-copy h2,
-    .cta-section h2 {
-      font-size: clamp(1.75rem, 4vw, 2.75rem);
-      line-height: 1.12;
-      margin-bottom: var(--space-md);
-    }
-
-    .section-heading p,
-    .workflow-item p {
-      color: var(--color-text-secondary);
-      font-size: 1rem;
-    }
-
-    .benefit-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: var(--space-md);
-    }
-
-    .benefit-card {
-      padding: var(--space-lg);
-      box-shadow: none;
-    }
-
-    .benefit-card .material-symbols-rounded {
-      display: grid;
-      place-items: center;
-      width: 2.75rem;
-      height: 2.75rem;
-      margin-bottom: var(--space-md);
-      border-radius: var(--radius-sm);
-      background: var(--color-primary-50);
-      color: var(--color-primary);
-    }
-
-    .benefit-card h3,
-    .workflow-item h3 {
-      font-size: 1rem;
-      margin-bottom: var(--space-sm);
-    }
-
-    .benefit-card p {
-      color: var(--color-text-secondary);
-    }
-
-    .workflow-section {
-      display: grid;
-      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1fr);
-      gap: var(--space-xl);
-      align-items: start;
-      border-top: 1px solid var(--color-divider);
-    }
-
-    .workflow-list {
-      display: grid;
-      gap: var(--space-md);
-    }
-
-    .workflow-item {
-      display: grid;
-      grid-template-columns: 3.5rem 1fr;
-      gap: var(--space-md);
-      padding: var(--space-lg);
-      box-shadow: none;
-    }
-
-    .workflow-item > span {
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--color-primary);
-      font-size: 1rem;
-      font-weight: 800;
-    }
-
-    .cta-section {
-      justify-content: space-between;
-      gap: var(--space-lg);
-      margin-bottom: var(--space-3xl);
-      padding: var(--space-xl);
-      background: var(--color-surface);
-      color: var(--color-text-primary);
-    }
-
-    :host-context([data-theme="dark"]) .cta-section {
-      background: var(--color-surface-alt);
-    }
-
-    .cta-section h2 {
-      max-width: 42rem;
-      margin-bottom: 0;
-    }
-
-    @media (max-width: 980px) {
-      .hero-section,
-      .workflow-section {
-        grid-template-columns: 1fr;
-      }
-
-      .operations-panel {
-        max-width: 38rem;
-      }
-
-      .benefit-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 640px) {
-      .hero-section {
-        min-height: auto;
-        padding-block: var(--space-xl);
-      }
-
-      .hero-actions,
-      .cta-section {
-        align-items: stretch;
-        flex-direction: column;
-      }
-
-      .hero-stats,
-      .benefit-grid,
-      .panel-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-stats div {
-        border-right: 0;
-        border-bottom: 1px solid var(--color-divider);
-      }
-
-      .hero-stats div:last-child {
-        border-bottom: 0;
-      }
-
-      .operations-panel,
-      .benefit-card,
-      .workflow-item,
-      .cta-section {
-        padding: var(--space-md);
-      }
-
-      .workflow-item {
-        grid-template-columns: 1fr;
-      }
-    }
-  `],
 })
 export class LandingComponent {}

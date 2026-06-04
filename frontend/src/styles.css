@@ -1,0 +1,110 @@
+/* ============================================================
+   RescateYa — Tailwind v4 design system (Bold & energético)
+   Identidad de rescate vial: naranja #FF6B00 + rojo #E63946
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+@import "tailwindcss";
+
+/* Modo oscuro vía el atributo [data-theme="dark"] (toggle existente del topbar) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  /* ── Marca: naranja rescate ── */
+  --color-brand-50: #FFF3E9;
+  --color-brand-100: #FFE2C7;
+  --color-brand-200: #FFC894;
+  --color-brand-300: #FFAA5C;
+  --color-brand-400: #FF8A33;
+  --color-brand-500: #FF6B00;
+  --color-brand-600: #E85D00;
+  --color-brand-700: #C24D00;
+  --color-brand-800: #9B3E00;
+  --color-brand-900: #7A3200;
+
+  /* ── Emergencia: rojo ── */
+  --color-emergency-50: #FDECEE;
+  --color-emergency-100: #FAD2D6;
+  --color-emergency-200: #F4A6AE;
+  --color-emergency-300: #EF7A86;
+  --color-emergency-400: #EB5460;
+  --color-emergency-500: #E63946;
+  --color-emergency-600: #CC2230;
+  --color-emergency-700: #A81A26;
+  --color-emergency-800: #84141E;
+  --color-emergency-900: #6B1018;
+
+  /* ── Hero / superficies oscuras (marketing) ── */
+  --color-hero: #14181f;
+  --color-hero-soft: #1b212b;
+  --color-hero-line: #2a323f;
+
+  /* ── Semánticos ── */
+  --color-success: #0fad73;
+  --color-warning: #FF7A00;
+  --color-info: #007AFF;
+  --color-danger: #e53e3e;
+
+  /* ── Tipografía ── */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", "Plus Jakarta Sans", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── Sombras de marca (profundidad + glow) ── */
+  --shadow-brand: 0 12px 30px -8px rgba(255, 107, 0, 0.45);
+  --shadow-emergency: 0 12px 30px -8px rgba(230, 57, 70, 0.45);
+  --shadow-card: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-card-hover: 0 18px 40px -12px rgba(16, 24, 40, 0.18);
+
+  /* ── Motivo de marca: baliza / radar / float ── */
+  --animate-beacon: beacon 2.2s ease-out infinite;
+  --animate-radar: radar 3s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-reveal: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes beacon {
+    0% { transform: scale(0.6); opacity: 0.8; }
+    70% { transform: scale(2.4); opacity: 0; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  @keyframes radar {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes reveal {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+/* ── Utilidad: texto con degradado de marca ── */
+@utility text-gradient {
+  background: linear-gradient(135deg, #FF8A33 0%, #FF6B00 45%, #E63946 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── Base global ── */
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-sans);
+    background-color: #FAF9F7;
+    color: #1C2B39;
+    -webkit-font-smoothing: antialiased;
+  }
+  body:where([data-theme="dark"], [data-theme="dark"] *) { }
+  [data-theme="dark"] body { background-color: #0d1117; color: #e6edf3; }
+  h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
+
+  .material-symbols-rounded {
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+    user-select: none;
+  }
+}
