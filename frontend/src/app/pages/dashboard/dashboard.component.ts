@@ -721,18 +721,24 @@ export class DashboardComponent implements OnInit {
     this.loading = true;
     this.error = false;
 
-    this.api.getMyWorkshop().subscribe({
-      next: (w) => {
-        this.workshop = w;
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.workshop = null;
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-    });
+    // Admins no tienen taller individual, pero pueden ver datos consolidados
+    if (!this.isAdmin) {
+      this.api.getMyWorkshop().subscribe({
+        next: (w) => {
+          this.workshop = w;
+          this.loading = false;
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.workshop = null;
+          this.loading = false;
+          this.cdr.markForCheck();
+        },
+      });
+    } else {
+      this.workshop = null;
+      this.loading = false;
+    }
 
     this.api.getIncidents().subscribe({
       next: (incidents) => {

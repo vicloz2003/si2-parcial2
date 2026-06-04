@@ -23,9 +23,10 @@ def _resolve_scope(current_user: User, db: Session, tenant_id: int | None) -> in
         return tenant_id  # None = global
     if current_user.role == UserRole.WORKSHOP:
         workshop = get_user_workshop(db, current_user)
-        if not workshop:
+        # Admins pueden no tener taller, pero los talleres deben tenerlo
+        if not workshop and current_user.role != UserRole.ADMIN:
             raise HTTPException(status_code=404, detail="No tiene taller registrado")
-        return workshop.tenant_id
+        return workshop.tenant_id if workshop else None
     raise HTTPException(status_code=403, detail="No tiene permisos para ver metricas")
 
 

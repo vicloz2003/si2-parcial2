@@ -61,6 +61,27 @@ def get_my_workshop(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Si es admin, devolver un "taller virtual" con datos consolidados
+    if current_user.role == UserRole.ADMIN:
+        # Crear una pseudo-respuesta para admins
+        return WorkshopResponse(
+            id=0,
+            tenant_id=None,
+            user_id=current_user.id,
+            name="Administración - Vista Consolidada",
+            address="Plataforma Nacional",
+            latitude=0.0,
+            longitude=0.0,
+            phone=current_user.phone,
+            email=current_user.email,
+            rating=5.0,
+            review_count=0,
+            service_types=[],
+            is_active=True,
+            created_at=None,
+            updated_at=None,
+        )
+    
     workshop = db.query(Workshop).filter(Workshop.user_id == current_user.id).first()
     if not workshop:
         # Auto-crear taller (y su tenant 1:1) para usuarios workshop existentes

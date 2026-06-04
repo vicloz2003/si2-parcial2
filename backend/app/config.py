@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.0-flash"
     UPLOAD_DIR: str = "./uploads"
     FIREBASE_CREDENTIALS_PATH: str = ""
+    FIREBASE_API_KEY: str = ""
 
     class Config:
         env_file = ".env"
