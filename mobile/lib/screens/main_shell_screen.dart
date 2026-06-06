@@ -5,7 +5,7 @@ import '../services/websocket_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_snackbar.dart';
 import 'home_screen.dart';
-import 'vehicles_screen.dart';
+import 'history_screen.dart';
 import 'new_emergency_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
@@ -24,7 +24,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   static const List<String> _screenKeys = [
     'home',
-    'vehicles',
+    'history',
     'new_emergency',
     'notifications',
     'profile',
@@ -32,7 +32,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   static const List<String> _screenLabels = [
     'Inicio',
-    'Vehiculos',
+    'Historial',
     'SOS',
     'Alertas',
     'Perfil',
@@ -40,7 +40,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    VehiclesScreen(),
+    HistoryScreen(),
     SizedBox(), // placeholder - emergencia abre pantalla completa
     NotificationsScreen(),
     ProfileScreen(),
@@ -392,9 +392,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
               label: 'Inicio',
             ),
             const BottomNavigationBarItem(
-              icon: Icon(Icons.directions_car_rounded),
-              activeIcon: Icon(Icons.directions_car_rounded),
-              label: 'Vehiculos',
+              icon: Icon(Icons.history_rounded),
+              activeIcon: Icon(Icons.history_rounded),
+              label: 'Historial',
             ),
             BottomNavigationBarItem(
               icon: Container(

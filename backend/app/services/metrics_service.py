@@ -90,16 +90,15 @@ def top_efficient_workshops(db: Session, tenant_id=None, date_from=None, date_to
 
 
 def incidents_by_zone(db: Session, tenant_id=None, date_from=None, date_to=None, limit: int = 10) -> list[dict]:
-    """Zonas con mas incidencias (celdas de ~1 km redondeando lat/lng)."""
-    lat_cell = func.round(func.cast(Incident.latitude, Numeric), 2)
-    lng_cell = func.round(func.cast(Incident.longitude, Numeric), 2)
+    """Zonas con mas incidencias — agrupa por zona/barrio extraida del campo address."""
+    zone_expr = func.split_part(Incident.address, ",", 1)
     rows = _scope(
-        db.query(lat_cell, lng_cell, func.count(Incident.id)),
+        db.query(zone_expr, func.count(Incident.id)),
         tenant_id, date_from, date_to,
-    ).group_by(lat_cell, lng_cell).order_by(func.count(Incident.id).desc()).limit(limit).all()
+    ).filter(Incident.address.isnot(None)).group_by(zone_expr).order_by(func.count(Incident.id).desc()).limit(limit).all()
     return [
-        {"latitude": float(lat), "longitude": float(lng), "count": count}
-        for lat, lng, count in rows
+        {"zone": (zone or "Sin zona").strip(), "count": count}
+        for zone, count in rows
     ]
 
 

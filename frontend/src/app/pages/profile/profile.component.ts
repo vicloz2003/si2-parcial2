@@ -5,49 +5,41 @@ import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { User, Workshop } from '../../models/interfaces';
 import { environment } from '../../../environments/environment';
+import { AppIconComponent } from '../../shared/app-icon.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AppIconComponent],
   template: `
-    <div class="profile-page" *ngIf="!loading; else loadingTpl">
-      <!-- Header -->
-      <div class="page-header">
-        <div>
-          <h1>Mi Perfil</h1>
-          <p class="subtitle">Gestiona tu informacion personal y la de tu taller</p>
-        </div>
-      </div>
+    <div class="animate-reveal mx-auto max-w-5xl space-y-6" *ngIf="!loading; else loadingTpl">
+      <header class="space-y-1">
+        <h1 class="font-display text-3xl font-bold text-slate-900 dark:text-white">Mi Perfil</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Gestiona tu información personal y la de tu taller</p>
+      </header>
 
-      <!-- Profile card -->
-      <div class="profile-section">
-        <div class="section-card avatar-card">
-          <div class="avatar-area">
-            <div class="avatar-wrapper" (click)="photoInput.click()">
-              <img *ngIf="photoUrl" [src]="photoUrl" alt="Foto de perfil" class="avatar-img">
-              <div *ngIf="!photoUrl" class="avatar-placeholder">
+      <!-- Avatar card -->
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card dark:border-hero-line dark:bg-hero-soft">
+        <div class="relative">
+          <div class="h-24 bg-[#111111] dark:bg-white dark:text-[#111111]"></div>
+          <div class="flex flex-col items-center gap-4 px-6 pb-6 text-center sm:flex-row sm:items-end sm:text-left">
+            <div class="group relative -mt-12 h-24 w-24 shrink-0 cursor-pointer overflow-hidden rounded-2xl ring-4 ring-white dark:ring-hero-soft" (click)="photoInput.click()">
+              <img *ngIf="photoUrl" [src]="photoUrl" alt="Foto de perfil" class="h-full w-full object-cover">
+              <div *ngIf="!photoUrl" class="flex h-full w-full items-center justify-center bg-[#111111] dark:bg-white dark:text-[#111111] text-2xl font-bold text-white">
                 {{ initials }}
               </div>
-              <div class="avatar-overlay">
-                <span class="material-symbols-rounded">photo_camera</span>
+              <div class="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition group-hover:opacity-100">
+                <app-icon name="photo_camera" class="text-white" />
               </div>
-              <input
-                #photoInput
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                (change)="onPhotoSelected($event)"
-                hidden
-              >
+              <input #photoInput type="file" accept="image/jpeg,image/png,image/webp" (change)="onPhotoSelected($event)" hidden>
             </div>
-            <div class="avatar-info">
-              <h2>{{ user?.full_name }}</h2>
-              <span class="role-chip">
-                <span class="material-symbols-rounded">verified</span>
-                Workshop
+            <div class="flex-1 pt-2 sm:pb-1">
+              <h2 class="font-display text-xl font-bold text-slate-900 dark:text-white">{{ user?.full_name }}</h2>
+              <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/8 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-900 dark:text-white">
+                <app-icon name="verified" [size]="14" /> Workshop
               </span>
-              <p class="member-since">
-                <span class="material-symbols-rounded">calendar_today</span>
+              <p class="mt-2 inline-flex items-center justify-center gap-1.5 text-sm text-slate-400 sm:justify-start">
+                <app-icon name="calendar_today" [size]="16" />
                 Miembro desde {{ user?.created_at | date:'MMMM yyyy' }}
               </p>
             </div>
@@ -56,172 +48,169 @@ import { environment } from '../../../environments/environment';
       </div>
 
       <!-- Forms grid -->
-      <div class="forms-grid">
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <!-- Personal info -->
-        <div class="section-card">
-          <div class="card-header">
-            <div class="header-icon">
-              <span class="material-symbols-rounded">person</span>
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card dark:border-hero-line dark:bg-hero-soft">
+          <div class="flex items-center gap-3 border-b border-slate-100 p-5 dark:border-hero-line">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/8 text-slate-900 dark:text-white">
+              <app-icon name="person" />
             </div>
             <div>
-              <h3>Informacion Personal</h3>
-              <p>Datos de tu cuenta</p>
+              <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Información Personal</h3>
+              <p class="text-xs text-slate-400">Datos de tu cuenta</p>
             </div>
           </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label>Nombre completo</label>
-              <div class="input-wrapper">
-                <span class="material-symbols-rounded input-icon">badge</span>
-                <input type="text" [(ngModel)]="form.full_name" placeholder="Tu nombre completo">
+          <div class="space-y-4 p-5">
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Nombre completo</label>
+              <div class="relative">
+                <app-icon name="badge" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+                <input type="text" [(ngModel)]="form.full_name" placeholder="Tu nombre completo" [ngClass]="inputCls">
               </div>
             </div>
-            <div class="form-group">
-              <label>Correo electronico</label>
-              <div class="input-wrapper">
-                <span class="material-symbols-rounded input-icon">mail</span>
-                <input type="email" [value]="user?.email" disabled>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Correo electrónico</label>
+              <div class="relative">
+                <app-icon name="mail" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+                <input type="email" [value]="user?.email" disabled [ngClass]="inputCls" class="opacity-60">
               </div>
-              <span class="field-hint">El correo no se puede modificar</span>
+              <span class="mt-1 block text-xs text-slate-400">El correo no se puede modificar</span>
             </div>
-            <div class="form-group">
-              <label>Telefono</label>
-              <div class="input-wrapper">
-                <span class="material-symbols-rounded input-icon">phone</span>
-                <input type="tel" [(ngModel)]="form.phone" placeholder="+591 ...">
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Teléfono</label>
+              <div class="relative">
+                <app-icon name="phone" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+                <input type="tel" [(ngModel)]="form.phone" placeholder="+591 ..." [ngClass]="inputCls">
               </div>
             </div>
-            <div class="card-actions">
-              <button class="btn btn-primary" (click)="saveProfile()" [disabled]="savingProfile">
-                <span class="material-symbols-rounded" *ngIf="!savingProfile">save</span>
-                <span *ngIf="savingProfile">Guardando...</span>
-                <span *ngIf="!savingProfile">Guardar cambios</span>
+            <div class="flex items-center gap-3 border-t border-slate-100 pt-4 dark:border-hero-line">
+              <button (click)="saveProfile()" [disabled]="savingProfile" [ngClass]="saveBtnCls">
+                <app-icon name="save" [size]="18" *ngIf="!savingProfile" />
+                {{ savingProfile ? 'Guardando...' : 'Guardar cambios' }}
               </button>
-              <span class="save-feedback" *ngIf="profileSaved">
-                <span class="material-symbols-rounded">check_circle</span> Guardado
+              <span class="inline-flex items-center gap-1 text-sm font-semibold text-success" *ngIf="profileSaved">
+                <app-icon name="check_circle" [size]="18" /> Guardado
               </span>
             </div>
           </div>
         </div>
 
         <!-- Workshop info -->
-        <div class="section-card">
-          <div class="card-header">
-            <div class="header-icon workshop-icon">
-              <span class="material-symbols-rounded">garage</span>
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card dark:border-hero-line dark:bg-hero-soft">
+          <div class="flex items-center gap-3 border-b border-slate-100 p-5 dark:border-hero-line">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emergency-500/10 text-emergency-600 dark:text-emergency-300">
+              <app-icon name="garage" />
             </div>
             <div>
-              <h3>Datos del Taller</h3>
-              <p>Informacion publica de tu taller</p>
+              <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Datos del Taller</h3>
+              <p class="text-xs text-slate-400">Información pública de tu taller</p>
             </div>
           </div>
-          <div class="card-body" *ngIf="workshop; else noWorkshopTpl">
-            <div class="form-group">
-              <label>Nombre del taller</label>
-              <div class="input-wrapper">
-                <span class="material-symbols-rounded input-icon">store</span>
-                <input type="text" [(ngModel)]="workshopForm.name" placeholder="Nombre del taller">
+          <div class="space-y-4 p-5" *ngIf="workshop; else noWorkshopTpl">
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Nombre del taller</label>
+              <div class="relative">
+                <app-icon name="store" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+                <input type="text" [(ngModel)]="workshopForm.name" placeholder="Nombre del taller" [ngClass]="inputCls">
               </div>
             </div>
-            <div class="form-group">
-              <label>Descripcion</label>
-              <div class="input-wrapper textarea-wrapper">
-                <span class="material-symbols-rounded input-icon">description</span>
-                <textarea [(ngModel)]="workshopForm.description" placeholder="Describe tu taller..." rows="3"></textarea>
+            <div>
+              <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Descripción</label>
+              <div class="relative">
+                <app-icon name="description" [size]="18" class="pointer-events-none absolute left-3 top-3.5  text-slate-400" />
+                <textarea [(ngModel)]="workshopForm.description" placeholder="Describe tu taller..." rows="3" [ngClass]="inputCls" class="resize-y"></textarea>
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Direccion</label>
-                <div class="input-wrapper">
-                  <span class="material-symbols-rounded input-icon">location_on</span>
-                  <input type="text" [(ngModel)]="workshopForm.address" placeholder="Direccion">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Dirección</label>
+                <div class="relative">
+                  <app-icon name="location_on" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+                  <input type="text" [(ngModel)]="workshopForm.address" placeholder="Dirección" [ngClass]="inputCls">
                 </div>
               </div>
-              <div class="form-group">
-                <label>Telefono del taller</label>
-                <div class="input-wrapper">
-                  <span class="material-symbols-rounded input-icon">call</span>
-                  <input type="tel" [(ngModel)]="workshopForm.phone" placeholder="+591 ...">
-                </div>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Capacidad</label>
-                <div class="input-wrapper">
-                  <span class="material-symbols-rounded input-icon">groups</span>
-                  <input type="number" [(ngModel)]="workshopForm.capacity" min="1">
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Servicios</label>
-                <div class="input-wrapper">
-                  <span class="material-symbols-rounded input-icon">build</span>
-                  <input type="text" [(ngModel)]="workshopForm.services" placeholder="battery,tire,engine...">
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Teléfono del taller</label>
+                <div class="relative">
+                  <app-icon name="call" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+                  <input type="tel" [(ngModel)]="workshopForm.phone" placeholder="+591 ..." [ngClass]="inputCls">
                 </div>
               </div>
             </div>
-            <div class="card-actions">
-              <button class="btn btn-primary" (click)="saveWorkshop()" [disabled]="savingWorkshop">
-                <span class="material-symbols-rounded" *ngIf="!savingWorkshop">save</span>
-                <span *ngIf="savingWorkshop">Guardando...</span>
-                <span *ngIf="!savingWorkshop">Guardar taller</span>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Capacidad</label>
+                <div class="relative">
+                  <app-icon name="groups" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+                  <input type="number" [(ngModel)]="workshopForm.capacity" min="1" [ngClass]="inputCls">
+                </div>
+              </div>
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Servicios</label>
+                <div class="relative">
+                  <app-icon name="build" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+                  <input type="text" [(ngModel)]="workshopForm.services" placeholder="battery,tire,engine..." [ngClass]="inputCls">
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 border-t border-slate-100 pt-4 dark:border-hero-line">
+              <button (click)="saveWorkshop()" [disabled]="savingWorkshop" [ngClass]="saveBtnCls">
+                <app-icon name="save" [size]="18" *ngIf="!savingWorkshop" />
+                {{ savingWorkshop ? 'Guardando...' : 'Guardar taller' }}
               </button>
-              <span class="save-feedback" *ngIf="workshopSaved">
-                <span class="material-symbols-rounded">check_circle</span> Guardado
+              <span class="inline-flex items-center gap-1 text-sm font-semibold text-success" *ngIf="workshopSaved">
+                <app-icon name="check_circle" [size]="18" /> Guardado
               </span>
             </div>
           </div>
           <ng-template #noWorkshopTpl>
-            <div class="empty-state">
-              <span class="material-symbols-rounded">garage</span>
-              <p>No tienes un taller registrado aun</p>
+            <div class="flex flex-col items-center gap-2 px-6 py-12 text-center text-slate-400">
+              <app-icon name="garage" [size]="36" />
+              <p class="text-sm">No tienes un taller registrado aún</p>
             </div>
           </ng-template>
         </div>
       </div>
 
       <!-- Stats summary -->
-      <div class="section-card stats-summary" *ngIf="workshop">
-        <div class="card-header">
-          <div class="header-icon stats-icon">
-            <span class="material-symbols-rounded">analytics</span>
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card dark:border-hero-line dark:bg-hero-soft" *ngIf="workshop">
+        <div class="flex items-center gap-3 border-b border-slate-100 p-5 dark:border-hero-line">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
+            <app-icon name="analytics" />
           </div>
           <div>
-            <h3>Resumen</h3>
-            <p>Estado actual de tu taller</p>
+            <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Resumen</h3>
+            <p class="text-xs text-slate-400">Estado actual de tu taller</p>
           </div>
         </div>
-        <div class="stats-row">
-          <div class="summary-stat">
-            <span class="material-symbols-rounded stat-ic">star</span>
+        <div class="grid grid-cols-2 gap-4 p-5 lg:grid-cols-4">
+          <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-4 dark:bg-white/5">
+            <app-icon name="star" [size]="24" class="text-amber-500" />
             <div>
-              <span class="stat-val">{{ workshop.rating | number:'1.1-1' }}</span>
-              <span class="stat-lbl">Rating</span>
+              <span class="block font-display text-lg font-bold text-slate-900 dark:text-white">{{ workshop.rating | number:'1.1-1' }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Rating</span>
             </div>
           </div>
-          <div class="summary-stat">
-            <span class="material-symbols-rounded stat-ic">reviews</span>
+          <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-4 dark:bg-white/5">
+            <app-icon name="reviews" [size]="24" class="text-slate-700 dark:text-white" />
             <div>
-              <span class="stat-val">{{ workshop.total_ratings }}</span>
-              <span class="stat-lbl">Valoraciones</span>
+              <span class="block font-display text-lg font-bold text-slate-900 dark:text-white">{{ workshop.total_ratings }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Valoraciones</span>
             </div>
           </div>
-          <div class="summary-stat">
-            <span class="material-symbols-rounded stat-ic">groups</span>
+          <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-4 dark:bg-white/5">
+            <app-icon name="groups" [size]="24" class="text-info" />
             <div>
-              <span class="stat-val">{{ workshop.capacity }}</span>
-              <span class="stat-lbl">Capacidad</span>
+              <span class="block font-display text-lg font-bold text-slate-900 dark:text-white">{{ workshop.capacity }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Capacidad</span>
             </div>
           </div>
-          <div class="summary-stat">
-            <span class="material-symbols-rounded stat-ic" [class.available]="workshop.is_available">
-              {{ workshop.is_available ? 'check_circle' : 'cancel' }}
-            </span>
+          <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-4 dark:bg-white/5">
+            <app-icon [name]="workshop.is_available ? 'check_circle' : 'cancel'" [size]="24"
+                      [ngClass]="workshop.is_available ? 'text-success' : 'text-slate-400'" />
             <div>
-              <span class="stat-val">{{ workshop.is_available ? 'Activo' : 'Inactivo' }}</span>
-              <span class="stat-lbl">Estado</span>
+              <span class="block font-display text-lg font-bold text-slate-900 dark:text-white">{{ workshop.is_available ? 'Activo' : 'Inactivo' }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Estado</span>
             </div>
           </div>
         </div>
@@ -229,228 +218,12 @@ import { environment } from '../../../environments/environment';
     </div>
 
     <ng-template #loadingTpl>
-      <div class="loading-state">
-        <div class="spinner"></div>
-        <p>Cargando perfil...</p>
+      <div class="flex flex-col items-center justify-center gap-3 py-24 text-slate-400">
+        <app-icon name="progress_activity" [size]="30" class="animate-spin" />
+        <p class="text-sm">Cargando perfil...</p>
       </div>
     </ng-template>
   `,
-  styles: [`
-    /* ── Mobile-first: Profile page ── */
-    .profile-page {
-      animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(0.5rem); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .page-header {
-      margin-bottom: var(--space-lg);
-      h1 { font-size: 1.375rem; font-weight: 800; color: var(--color-text-primary); margin-bottom: 0.25rem; }
-      .subtitle { color: var(--color-text-secondary); font-size: 0.875rem; }
-    }
-
-    /* Section card */
-    .section-card {
-      background: var(--color-surface); border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg); margin-bottom: var(--space-md);
-    }
-
-    .card-header {
-      display: flex; align-items: center; gap: var(--space-sm);
-      padding: var(--space-md); border-bottom: 1px solid var(--color-divider);
-      h3 { font-size: 1rem; font-weight: 700; color: var(--color-text-primary); }
-      p { font-size: 0.8125rem; color: var(--color-text-tertiary); margin-top: 0.125rem; }
-    }
-
-    .header-icon {
-      width: 2.25rem; height: 2.25rem; border-radius: var(--radius-md);
-      display: flex; align-items: center; justify-content: center;
-      background: var(--color-primary-50); flex-shrink: 0;
-      .material-symbols-rounded { font-size: 1.25rem; color: var(--color-primary); }
-    }
-
-    .workshop-icon {
-      background: rgba(255, 122, 0, 0.08);
-      .material-symbols-rounded { color: var(--color-accent); }
-    }
-
-    .stats-icon {
-      background: rgba(15, 173, 115, 0.08);
-      .material-symbols-rounded { color: var(--color-success); }
-    }
-
-    .card-body { padding: var(--space-md); }
-
-    /* Avatar card — mobile: stacked, centered */
-    .avatar-card { padding: var(--space-md); }
-
-    .avatar-area {
-      display: flex; flex-direction: column; align-items: center;
-      text-align: center; gap: var(--space-md);
-    }
-
-    .avatar-wrapper {
-      width: 5rem; height: 5rem; border-radius: 50%;
-      position: relative; cursor: pointer; flex-shrink: 0; overflow: hidden;
-      &:hover .avatar-overlay { opacity: 1; }
-    }
-
-    .avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-
-    .avatar-placeholder {
-      width: 100%; height: 100%; border-radius: 50%;
-      background: var(--color-primary); color: white;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em;
-    }
-
-    .avatar-overlay {
-      position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      opacity: 0; transition: opacity 0.2s ease;
-      .material-symbols-rounded { color: white; font-size: 1.75rem; }
-    }
-
-    .avatar-info {
-      h2 { font-size: 1.125rem; font-weight: 800; color: var(--color-text-primary); margin-bottom: 0.375rem; }
-    }
-
-    .role-chip {
-      display: inline-flex; align-items: center; gap: 0.25rem;
-      font-size: 0.75rem; font-weight: 700; color: var(--color-primary);
-      background: var(--color-primary-50);
-      padding: 0.25rem 0.75rem; border-radius: var(--radius-pill);
-      text-transform: uppercase; letter-spacing: 0.04em;
-      .material-symbols-rounded { font-size: 0.875rem; }
-    }
-
-    .member-since {
-      display: flex; align-items: center; justify-content: center; gap: 0.375rem;
-      font-size: 0.8125rem; color: var(--color-text-tertiary); margin-top: 0.5rem;
-      .material-symbols-rounded { font-size: 1rem; }
-    }
-
-    /* Forms — mobile: single column */
-    .forms-grid {
-      display: grid; grid-template-columns: 1fr; gap: var(--space-md);
-    }
-
-    .form-group {
-      margin-bottom: var(--space-sm);
-      label { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 0.375rem; }
-    }
-
-    .input-wrapper {
-      display: flex; align-items: center; gap: var(--space-sm);
-      background: var(--color-surface-alt);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md); padding: 0 var(--space-md);
-      transition: all 0.2s ease;
-      &:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-50); }
-    }
-
-    .input-icon { font-size: 1.125rem; color: var(--color-text-tertiary); flex-shrink: 0; }
-
-    .input-wrapper input, .input-wrapper textarea {
-      flex: 1; border: none; background: transparent;
-      padding: 0.625rem 0; font-size: 0.875rem;
-      color: var(--color-text-primary); outline: none;
-      &:disabled { opacity: 0.5; cursor: not-allowed; }
-      &::placeholder { color: var(--color-text-tertiary); }
-    }
-
-    .textarea-wrapper {
-      align-items: flex-start;
-      .input-icon { margin-top: 0.625rem; }
-      textarea { resize: vertical; min-height: 3.75rem; }
-    }
-
-    .field-hint { font-size: 0.6875rem; color: var(--color-text-tertiary); margin-top: 0.25rem; display: block; }
-
-    .form-row { display: grid; grid-template-columns: 1fr; gap: var(--space-sm); }
-
-    .card-actions {
-      display: flex; align-items: center; gap: var(--space-sm);
-      margin-top: var(--space-md); padding-top: var(--space-sm);
-      border-top: 1px solid var(--color-divider);
-    }
-
-    .save-feedback {
-      display: inline-flex; align-items: center; gap: 0.25rem;
-      font-size: 0.8125rem; font-weight: 600; color: var(--color-success);
-      .material-symbols-rounded { font-size: 1.125rem; }
-    }
-
-    /* Stats — mobile: 1-col */
-    .stats-row {
-      display: grid; grid-template-columns: 1fr;
-      gap: var(--space-sm); padding: var(--space-md);
-    }
-
-    .summary-stat {
-      display: flex; align-items: center; gap: var(--space-sm);
-      padding: var(--space-sm); border-radius: var(--radius-lg);
-      background: var(--color-surface-alt);
-    }
-
-    .stat-ic { font-size: 1.5rem; color: var(--color-accent); &.available { color: var(--color-success); } }
-    .stat-val { display: block; font-size: 1.125rem; font-weight: 800; color: var(--color-text-primary); line-height: 1.2; }
-    .stat-lbl { font-size: 0.6875rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
-
-    /* Empty & loading */
-    .empty-state {
-      text-align: center; padding: var(--space-xl); color: var(--color-text-tertiary);
-      .material-symbols-rounded { font-size: 2.5rem; display: block; margin: 0 auto var(--space-sm); }
-      p { font-size: 0.875rem; }
-    }
-
-    .loading-state {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: var(--space-md); padding: var(--space-2xl); color: var(--color-text-secondary);
-    }
-
-    .spinner {
-      width: 2.25rem; height: 2.25rem; border: 3px solid var(--color-border);
-      border-top-color: var(--color-primary); border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── ≥576px: 2-col stats ── */
-    @media (min-width: 576px) {
-      .stats-row { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
-      .avatar-wrapper { width: 5.5rem; height: 5.5rem; }
-      .avatar-placeholder { font-size: 2rem; }
-      .summary-stat { padding: var(--space-md); }
-    }
-
-    /* ── ≥768px: side-by-side avatar, 2-col form-row ── */
-    @media (min-width: 768px) {
-      .avatar-area { flex-direction: row; text-align: left; gap: var(--space-xl); }
-      .member-since { justify-content: flex-start; }
-      .avatar-wrapper { width: 6.25rem; height: 6.25rem; }
-      .avatar-placeholder { font-size: 2.25rem; }
-      .avatar-info h2 { font-size: 1.375rem; }
-      .form-row { grid-template-columns: 1fr 1fr; gap: var(--space-md); }
-      .section-card { border-radius: var(--radius-xl); }
-      .card-header { padding: var(--space-lg); gap: var(--space-md); }
-      .card-body { padding: var(--space-lg); }
-      .avatar-card { padding: var(--space-xl); }
-      .header-icon { width: 2.5rem; height: 2.5rem; .material-symbols-rounded { font-size: 1.375rem; } }
-    }
-
-    /* ── ≥1024px: 2-col forms grid, 4-col stats, max-width ── */
-    @media (min-width: 1024px) {
-      .profile-page { max-width: 60rem; }
-      .forms-grid { grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
-      .stats-row { grid-template-columns: repeat(4, 1fr); padding: var(--space-lg); }
-      .page-header h1 { font-size: 1.625rem; }
-    }
-  `]
 })
 export class ProfileComponent implements OnInit {
   user: User | null = null;
@@ -466,6 +239,12 @@ export class ProfileComponent implements OnInit {
   savingWorkshop = false;
   profileSaved = false;
   workshopSaved = false;
+
+  // Clases compartidas (evita repetir utilidades en cada input del template).
+  readonly inputCls =
+    'w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white focus:ring-2 focus:ring-slate-900 dark:ring-white/20 disabled:cursor-not-allowed dark:border-hero-line dark:bg-white/5 dark:text-slate-200';
+  readonly saveBtnCls =
+    'inline-flex items-center gap-2 rounded-xl bg-[#111111] dark:bg-white dark:text-[#111111] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
 
   constructor(
     private api: ApiService,

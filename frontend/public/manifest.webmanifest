@@ -2,7 +2,7 @@
   "name": "RescateYa — Panel Taller",
   "short_name": "RescateYa",
   "description": "Plataforma de emergencias vehiculares: panel de talleres y administracion.",
-  "theme_color": "#FF6B00",
+  "theme_color": "#111111",
   "background_color": "#F8F9FA",
   "display": "standalone",
   "scope": "/",

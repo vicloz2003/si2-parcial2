@@ -1,8 +1,11 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Chart, registerables } from 'chart.js';
+Chart.register(...registerables);
 import { ApiService } from '../../services/api.service';
 import { Incident, Payment } from '../../models/interfaces';
+import { AppIconComponent } from '../../shared/app-icon.component';
 
 interface MonthData {
   label: string;
@@ -29,632 +32,235 @@ interface TechStat {
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AppIconComponent],
   template: `
-    <div class="reports-page" *ngIf="!loading; else loadingTpl">
+    <div class="animate-reveal space-y-6" *ngIf="!loading; else loadingTpl">
       <!-- Header -->
-      <div class="page-header">
-        <div>
-          <h1>Reportes</h1>
-          <p class="subtitle">Analisis y metricas de tu taller</p>
+      <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="space-y-1">
+          <h1 class="font-display text-3xl font-bold text-slate-900 dark:text-white">Reportes</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Análisis y métricas de tu taller</p>
         </div>
-        <div class="header-actions">
-          <div class="period-select">
-            <span class="material-symbols-rounded">calendar_today</span>
-            <select [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()">
-              <option value="7">Ultimos 7 dias</option>
-              <option value="30">Ultimos 30 dias</option>
-              <option value="90">Ultimos 3 meses</option>
-              <option value="365">Ultimo ano</option>
-              <option value="0">Todo</option>
-            </select>
-          </div>
+        <div class="flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-hero-line dark:bg-hero-soft">
+          <app-icon name="calendar_today" [size]="18" class="text-slate-400" />
+          <select [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()"
+                  class="cursor-pointer border-0 bg-transparent text-sm font-semibold text-slate-700 outline-none dark:text-slate-200">
+            <option value="7">Últimos 7 días</option>
+            <option value="30">Últimos 30 días</option>
+            <option value="90">Últimos 3 meses</option>
+            <option value="365">Último año</option>
+            <option value="0">Todo</option>
+          </select>
         </div>
-      </div>
+      </header>
 
       <!-- KPI Cards -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-icon kpi-blue">
-            <span class="material-symbols-rounded">assignment</span>
-          </div>
-          <div class="kpi-body">
-            <span class="kpi-value">{{ filteredIncidents.length }}</span>
-            <span class="kpi-label">Total Incidentes</span>
-          </div>
-          <div class="kpi-trend" [class.up]="incidentsTrend >= 0" [class.down]="incidentsTrend < 0">
-            <span class="material-symbols-rounded">{{ incidentsTrend >= 0 ? 'trending_up' : 'trending_down' }}</span>
-            <span>{{ incidentsTrend | number:'1.0-0' }}%</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon kpi-green">
-            <span class="material-symbols-rounded">check_circle</span>
-          </div>
-          <div class="kpi-body">
-            <span class="kpi-value">{{ completedCount }}</span>
-            <span class="kpi-label">Completados</span>
-          </div>
-          <div class="kpi-mini">
-            <span>{{ completionRate | number:'1.0-0' }}% tasa</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon kpi-accent">
-            <span class="material-symbols-rounded">payments</span>
-          </div>
-          <div class="kpi-body">
-            <span class="kpi-value">Bs {{ totalRevenue | number:'1.2-2' }}</span>
-            <span class="kpi-label">Ingresos</span>
-          </div>
-          <div class="kpi-trend" [class.up]="revenueTrend >= 0" [class.down]="revenueTrend < 0">
-            <span class="material-symbols-rounded">{{ revenueTrend >= 0 ? 'trending_up' : 'trending_down' }}</span>
-            <span>{{ revenueTrend | number:'1.0-0' }}%</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon kpi-red">
-            <span class="material-symbols-rounded">receipt_long</span>
-          </div>
-          <div class="kpi-body">
-            <span class="kpi-value">Bs {{ totalCommission | number:'1.2-2' }}</span>
-            <span class="kpi-label">Comision plataforma</span>
-          </div>
-          <div class="kpi-mini">
-            <span>Neto: Bs {{ totalRevenue - totalCommission | number:'1.2-2' }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Charts row -->
-      <div class="charts-row">
-        <!-- Monthly trend -->
-        <div class="section-card">
-          <div class="card-header">
-            <div class="header-icon">
-              <span class="material-symbols-rounded">show_chart</span>
+      <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover dark:border-hero-line dark:bg-hero-soft">
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-info/10 text-info"><app-icon name="assignment" [size]="22" /></div>
+            <div class="min-w-0 flex-1">
+              <span class="block truncate font-mono text-xl font-bold text-slate-900 dark:text-white">{{ filteredIncidents.length }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total Incidentes</span>
             </div>
+            <span class="inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-bold"
+                  [ngClass]="incidentsTrend >= 0 ? 'bg-success/10 text-success' : 'bg-emergency-500/10 text-emergency-500'">
+              <app-icon [name]="incidentsTrend >= 0 ? 'trending_up' : 'trending_down'" [size]="16" />
+              {{ incidentsTrend | number:'1.0-0' }}%
+            </span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover dark:border-hero-line dark:bg-hero-soft">
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-success/10 text-success"><app-icon name="check_circle" [size]="22" /></div>
+            <div class="min-w-0 flex-1">
+              <span class="block truncate font-mono text-xl font-bold text-slate-900 dark:text-white">{{ completedCount }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Completados</span>
+            </div>
+            <span class="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500 dark:bg-white/5 dark:text-slate-400">{{ completionRate | number:'1.0-0' }}% tasa</span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover dark:border-hero-line dark:bg-hero-soft">
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/8 text-slate-900 dark:text-white"><app-icon name="payments" [size]="22" /></div>
+            <div class="min-w-0 flex-1">
+              <span class="block truncate font-mono text-xl font-bold text-slate-900 dark:text-white">Bs {{ totalRevenue | number:'1.2-2' }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Ingresos</span>
+            </div>
+            <span class="inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-bold"
+                  [ngClass]="revenueTrend >= 0 ? 'bg-success/10 text-success' : 'bg-emergency-500/10 text-emergency-500'">
+              <app-icon [name]="revenueTrend >= 0 ? 'trending_up' : 'trending_down'" [size]="16" />
+              {{ revenueTrend | number:'1.0-0' }}%
+            </span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover dark:border-hero-line dark:bg-hero-soft">
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emergency-500/10 text-emergency-600 dark:text-emergency-300"><app-icon name="receipt_long" [size]="22" /></div>
+            <div class="min-w-0 flex-1">
+              <span class="block truncate font-mono text-xl font-bold text-slate-900 dark:text-white">Bs {{ totalCommission | number:'1.2-2' }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Comisión plataforma</span>
+            </div>
+            <span class="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500 dark:bg-white/5 dark:text-slate-400">Neto: Bs {{ totalRevenue - totalCommission | number:'1.0-0' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts row (Chart.js) -->
+      <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/8 text-slate-900 dark:text-white"><app-icon name="show_chart" /></div>
             <div>
-              <h3>Tendencia Mensual</h3>
-              <p>Incidentes e ingresos por mes</p>
+              <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Tendencia Mensual</h3>
+              <p class="text-xs text-slate-400">Incidentes por mes</p>
             </div>
           </div>
-          <div class="chart-body" *ngIf="monthlyData.length > 0; else noDataTpl">
-            <div class="bar-chart">
-              <div class="bar-item" *ngFor="let m of monthlyData">
-                <div class="bar-stack">
-                  <div class="bar-fill bar-completed" [style.height.px]="getBarHeight(m.completed, maxMonthIncidents)"></div>
-                  <div class="bar-fill bar-pending" [style.height.px]="getBarHeight(m.incidents - m.completed, maxMonthIncidents)"></div>
-                </div>
-                <span class="bar-label">{{ m.label }}</span>
-                <span class="bar-value">{{ m.incidents }}</span>
-              </div>
-            </div>
-            <div class="chart-legend">
-              <span class="legend-item"><span class="legend-dot dot-completed"></span> Completados</span>
-              <span class="legend-item"><span class="legend-dot dot-pending"></span> Otros</span>
-            </div>
-          </div>
+          <div class="relative h-64" *ngIf="monthlyData.length > 0; else noDataTpl"><canvas id="rep-monthly"></canvas></div>
           <ng-template #noDataTpl>
-            <div class="empty-state">
-              <span class="material-symbols-rounded">bar_chart</span>
-              <p>Sin datos para este periodo</p>
+            <div class="flex h-64 flex-col items-center justify-center gap-2 text-slate-400">
+              <app-icon name="bar_chart" [size]="36" /><p class="text-sm">Sin datos para este periodo</p>
             </div>
           </ng-template>
         </div>
 
-        <!-- Revenue trend -->
-        <div class="section-card">
-          <div class="card-header">
-            <div class="header-icon accent-icon">
-              <span class="material-symbols-rounded">account_balance_wallet</span>
-            </div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emergency-500/10 text-emergency-600 dark:text-emergency-300"><app-icon name="account_balance_wallet" /></div>
             <div>
-              <h3>Ingresos Mensuales</h3>
-              <p>Ingresos vs comisiones</p>
+              <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Ingresos Mensuales</h3>
+              <p class="text-xs text-slate-400">Ingresos vs comisiones</p>
             </div>
           </div>
-          <div class="chart-body" *ngIf="monthlyData.length > 0; else noRevenueTpl">
-            <div class="revenue-bars">
-              <div class="rev-item" *ngFor="let m of monthlyData">
-                <div class="rev-bar-group">
-                  <div class="rev-bar rev-income" [style.height.px]="getBarHeight(m.revenue, maxMonthRevenue)">
-                    <span class="rev-tooltip" *ngIf="m.revenue > 0">Bs {{ m.revenue | number:'1.0-0' }}</span>
-                  </div>
-                  <div class="rev-bar rev-commission" [style.height.px]="getBarHeight(m.commission, maxMonthRevenue)"></div>
-                </div>
-                <span class="bar-label">{{ m.label }}</span>
-              </div>
-            </div>
-            <div class="chart-legend">
-              <span class="legend-item"><span class="legend-dot dot-income"></span> Ingresos</span>
-              <span class="legend-item"><span class="legend-dot dot-commission"></span> Comision</span>
-            </div>
-          </div>
+          <div class="relative h-64" *ngIf="monthlyData.length > 0; else noRevenueTpl"><canvas id="rep-revenue"></canvas></div>
           <ng-template #noRevenueTpl>
-            <div class="empty-state">
-              <span class="material-symbols-rounded">payments</span>
-              <p>Sin ingresos en este periodo</p>
+            <div class="flex h-64 flex-col items-center justify-center gap-2 text-slate-400">
+              <app-icon name="payments" [size]="36" /><p class="text-sm">Sin ingresos en este periodo</p>
             </div>
           </ng-template>
         </div>
-      </div>
+      </section>
 
       <!-- Bottom row -->
-      <div class="bottom-row">
-        <!-- Categories breakdown -->
-        <div class="section-card">
-          <div class="card-header">
-            <div class="header-icon cat-icon">
-              <span class="material-symbols-rounded">category</span>
-            </div>
+      <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <!-- Categories -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10 text-info"><app-icon name="category" /></div>
             <div>
-              <h3>Por Categoria</h3>
-              <p>Distribucion de incidentes</p>
+              <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Por Categoría</h3>
+              <p class="text-xs text-slate-400">Distribución de incidentes</p>
             </div>
           </div>
-          <div class="card-body" *ngIf="categoryStats.length > 0; else noCatsTpl">
-            <div class="category-row" *ngFor="let cat of categoryStats">
-              <div class="cat-icon-sm" [ngClass]="cat.cssClass">
-                <span class="material-symbols-rounded">{{ cat.icon }}</span>
+          <div class="space-y-3" *ngIf="categoryStats.length > 0; else noCatsTpl">
+            <div class="flex items-center gap-3" *ngFor="let cat of categoryStats">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg" [ngClass]="catTile(cat.cssClass)">
+                <app-icon [name]="cat.icon" [size]="18" />
               </div>
-              <div class="cat-info">
-                <div class="cat-head">
-                  <span class="cat-name">{{ cat.name }}</span>
-                  <span class="cat-count">{{ cat.count }}</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex justify-between text-sm">
+                  <span class="font-medium text-slate-700 dark:text-slate-200">{{ cat.name }}</span>
+                  <span class="font-mono font-bold text-slate-500 dark:text-slate-400">{{ cat.count }}</span>
                 </div>
-                <div class="progress-track">
-                  <div class="progress-fill" [ngClass]="'fill-' + cat.cssClass" [style.width.%]="cat.pct"></div>
+                <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+                  <div class="h-full rounded-full" [ngClass]="catBar(cat.cssClass)" [style.width.%]="cat.pct"></div>
                 </div>
               </div>
-              <span class="cat-pct">{{ cat.pct | number:'1.0-0' }}%</span>
+              <span class="w-10 text-right font-mono text-xs font-bold text-slate-400">{{ cat.pct | number:'1.0-0' }}%</span>
             </div>
           </div>
           <ng-template #noCatsTpl>
-            <div class="empty-state"><span class="material-symbols-rounded">category</span><p>Sin datos</p></div>
+            <div class="flex flex-col items-center gap-2 py-8 text-slate-400"><app-icon name="category" [size]="30" /><p class="text-sm">Sin datos</p></div>
           </ng-template>
         </div>
 
-        <!-- Status breakdown -->
-        <div class="section-card">
-          <div class="card-header">
-            <div class="header-icon status-icon">
-              <span class="material-symbols-rounded">donut_small</span>
-            </div>
+        <!-- Status -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success"><app-icon name="donut_small" /></div>
             <div>
-              <h3>Por Estado</h3>
-              <p>Estado actual de incidentes</p>
+              <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Por Estado</h3>
+              <p class="text-xs text-slate-400">Estado actual de incidentes</p>
             </div>
           </div>
-          <div class="card-body">
-            <div class="status-grid">
-              <div class="status-item" *ngFor="let s of statusStats">
-                <div class="status-ring" [ngClass]="'ring-' + s.key">
-                  <span class="status-num">{{ s.count }}</span>
-                </div>
-                <span class="status-name">{{ s.label }}</span>
-                <span class="status-pct">{{ s.pct | number:'1.0-0' }}%</span>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div *ngFor="let s of statusStats" class="flex flex-col items-center gap-1 rounded-xl bg-slate-50 p-3 dark:bg-white/5">
+              <div class="flex h-12 w-12 items-center justify-center rounded-full border-[3px]" [ngClass]="statusRing(s.key)">
+                <span class="font-mono text-base font-bold text-slate-900 dark:text-white">{{ s.count }}</span>
               </div>
+              <span class="text-xs font-medium capitalize text-slate-700 dark:text-slate-200">{{ s.label }}</span>
+              <span class="font-mono text-[11px] font-bold text-slate-400">{{ s.pct | number:'1.0-0' }}%</span>
             </div>
           </div>
         </div>
 
-        <!-- Technician performance -->
-        <div class="section-card">
-          <div class="card-header">
-            <div class="header-icon tech-icon">
-              <span class="material-symbols-rounded">engineering</span>
-            </div>
+        <!-- Technicians -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-200 text-slate-600 dark:bg-white/10 dark:text-slate-300"><app-icon name="engineering" /></div>
             <div>
-              <h3>Tecnicos</h3>
-              <p>Rendimiento por tecnico</p>
+              <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Técnicos</h3>
+              <p class="text-xs text-slate-400">Rendimiento por técnico</p>
             </div>
           </div>
-          <div class="card-body" *ngIf="techStats.length > 0; else noTechTpl">
-            <div class="tech-list">
-              <div class="tech-row" *ngFor="let t of techStats; let i = index">
-                <span class="tech-rank">{{ i + 1 }}</span>
-                <div class="tech-info">
-                  <span class="tech-name">{{ t.name }}</span>
-                  <span class="tech-meta">{{ t.completed }} completados</span>
-                </div>
-                <div class="tech-bar-wrap">
-                  <div class="tech-bar" [style.width.%]="techStats.length > 0 ? (t.completed / techStats[0].completed * 100) : 0"></div>
-                </div>
+          <div class="space-y-2" *ngIf="techStats.length > 0; else noTechTpl">
+            <div class="flex items-center gap-3" *ngFor="let t of techStats; let i = index">
+              <span class="w-6 text-center font-mono text-sm font-bold text-slate-400">{{ i + 1 }}</span>
+              <div class="min-w-0">
+                <span class="block truncate text-sm font-medium text-slate-700 dark:text-slate-200">{{ t.name }}</span>
+                <span class="text-xs text-slate-400">{{ t.completed }} completados</span>
+              </div>
+              <div class="ml-auto h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+                <div class="h-full rounded-full bg-[#111111] dark:bg-white dark:text-[#111111]" [style.width.%]="techStats.length > 0 ? (t.completed / techStats[0].completed * 100) : 0"></div>
               </div>
             </div>
           </div>
           <ng-template #noTechTpl>
-            <div class="empty-state"><span class="material-symbols-rounded">engineering</span><p>Sin datos de tecnicos</p></div>
+            <div class="flex flex-col items-center gap-2 py-8 text-slate-400"><app-icon name="engineering" [size]="30" /><p class="text-sm">Sin datos de técnicos</p></div>
           </ng-template>
         </div>
-      </div>
+      </section>
 
       <!-- Priority breakdown -->
-      <div class="section-card priority-card">
-        <div class="card-header">
-          <div class="header-icon priority-icon">
-            <span class="material-symbols-rounded">priority_high</span>
-          </div>
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft">
+        <div class="mb-4 flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emergency-500/10 text-emergency-600 dark:text-emergency-300"><app-icon name="priority_high" /></div>
           <div>
-            <h3>Por Prioridad</h3>
-            <p>Distribucion de prioridades</p>
+            <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Por Prioridad</h3>
+            <p class="text-xs text-slate-400">Distribución de prioridades</p>
           </div>
         </div>
-        <div class="priority-grid">
-          <div class="priority-item" *ngFor="let p of priorityStats">
-            <div class="priority-badge" [ngClass]="'badge-' + p.key">
-              <span class="p-count">{{ p.count }}</span>
-              <span class="p-label">{{ p.label }}</span>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div class="flex flex-col items-center gap-2" *ngFor="let p of priorityStats">
+            <div class="w-full rounded-xl p-4 text-center" [ngClass]="priorityBadge(p.key)">
+              <span class="block font-mono text-2xl font-bold text-slate-900 dark:text-white">{{ p.count }}</span>
+              <span class="text-[11px] font-bold uppercase tracking-wide" [ngClass]="priorityLabel(p.key)">{{ p.label }}</span>
             </div>
-            <div class="priority-bar">
-              <div class="priority-fill" [ngClass]="'pfill-' + p.key" [style.width.%]="p.pct"></div>
+            <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+              <div class="h-full rounded-full" [ngClass]="priorityFill(p.key)" [style.width.%]="p.pct"></div>
             </div>
-            <span class="priority-pct">{{ p.pct | number:'1.0-0' }}%</span>
+            <span class="font-mono text-xs font-bold text-slate-400">{{ p.pct | number:'1.0-0' }}%</span>
           </div>
         </div>
-      </div>
+      </section>
     </div>
 
     <ng-template #loadingTpl>
-      <div class="loading-state">
-        <div class="spinner"></div>
-        <p>Generando reportes...</p>
+      <div class="flex flex-col items-center justify-center gap-3 py-24 text-slate-400">
+        <app-icon name="progress_activity" [size]="30" class="animate-spin" />
+        <p class="text-sm">Generando reportes...</p>
       </div>
     </ng-template>
   `,
-  styles: [`
-    .reports-page { animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: translateY(0); } }
-
-    /* ── Mobile-first: Header ── */
-    .page-header {
-      display: flex; flex-direction: column; gap: var(--space-sm);
-      margin-bottom: var(--space-lg);
-      h1 { font-size: 1.375rem; font-weight: 800; color: var(--color-text-primary); margin-bottom: 0.25rem; }
-      .subtitle { color: var(--color-text-secondary); font-size: 0.875rem; }
-    }
-
-    .period-select {
-      display: flex; align-items: center; gap: var(--space-sm);
-      background: var(--color-surface); border: 1px solid var(--color-border);
-      border-radius: var(--radius-md); padding: 0.5rem 0.875rem; align-self: flex-start;
-      .material-symbols-rounded { font-size: 1.125rem; color: var(--color-text-tertiary); }
-      select {
-        border: none; background: transparent; font-size: 0.8125rem; font-weight: 600;
-        color: var(--color-text-primary); outline: none; cursor: pointer;
-        option { background: var(--color-surface); color: var(--color-text-primary); }
-      }
-    }
-
-    /* ── Mobile: KPI grid 1-col ── */
-    .kpi-grid {
-      display: grid; grid-template-columns: 1fr; gap: var(--space-sm);
-      margin-bottom: var(--space-lg);
-    }
-
-    .kpi-card {
-      background: var(--color-surface); border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl); padding: var(--space-md);
-      display: flex; align-items: center; gap: var(--space-sm);
-      transition: all 0.25s ease;
-      &:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-    }
-
-    .kpi-icon {
-      width: 2.75rem; height: 2.75rem; border-radius: var(--radius-lg);
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      .material-symbols-rounded { font-size: 1.25rem; }
-    }
-    .kpi-blue { background: var(--color-primary-50); .material-symbols-rounded { color: var(--color-primary); } }
-    .kpi-green { background: rgba(15, 173, 115, 0.08); .material-symbols-rounded { color: var(--color-success); } }
-    .kpi-accent { background: rgba(255, 122, 0, 0.08); .material-symbols-rounded { color: var(--color-accent); } }
-    .kpi-red { background: rgba(229, 62, 62, 0.08); .material-symbols-rounded { color: var(--color-danger); } }
-
-    .kpi-body { flex: 1; min-width: 0; }
-    .kpi-value {
-      display: block; font-family: 'JetBrains Mono', monospace;
-      font-size: 1.25rem; font-weight: 800; color: var(--color-text-primary);
-      line-height: 1.2; letter-spacing: -0.02em;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .kpi-label {
-      font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary);
-      text-transform: uppercase; letter-spacing: 0.04em;
-    }
-
-    .kpi-trend {
-      display: flex; align-items: center; gap: 0.125rem;
-      font-size: 0.75rem; font-weight: 700; border-radius: var(--radius-sm); padding: 0.25rem 0.5rem;
-      .material-symbols-rounded { font-size: 1rem; }
-      &.up { color: var(--color-success); background: rgba(15, 173, 115, 0.08); }
-      &.down { color: var(--color-danger); background: rgba(229, 62, 62, 0.08); }
-    }
-
-    .kpi-mini {
-      font-size: 0.6875rem; font-weight: 700; color: var(--color-text-tertiary);
-      background: var(--color-surface-alt); padding: 0.25rem 0.625rem; border-radius: var(--radius-pill);
-      white-space: nowrap;
-    }
-
-    /* Section card */
-    .section-card {
-      background: var(--color-surface); border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl); margin-bottom: var(--space-md);
-    }
-
-    .card-header {
-      display: flex; align-items: center; gap: var(--space-sm);
-      padding: var(--space-md); border-bottom: 1px solid var(--color-divider);
-      h3 { font-size: 1rem; font-weight: 700; color: var(--color-text-primary); }
-      p { font-size: 0.8125rem; color: var(--color-text-tertiary); margin-top: 0.125rem; }
-    }
-
-    .header-icon {
-      width: 2.25rem; height: 2.25rem; border-radius: var(--radius-md);
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      background: var(--color-primary-50);
-      .material-symbols-rounded { font-size: 1.25rem; color: var(--color-primary); }
-    }
-    .accent-icon { background: rgba(255, 122, 0, 0.08); .material-symbols-rounded { color: var(--color-accent); } }
-    .cat-icon { background: rgba(0, 122, 255, 0.08); .material-symbols-rounded { color: var(--color-info); } }
-    .status-icon { background: rgba(15, 173, 115, 0.08); .material-symbols-rounded { color: var(--color-success); } }
-    .tech-icon { background: rgba(108, 117, 125, 0.08); .material-symbols-rounded { color: var(--color-text-secondary); } }
-    .priority-icon { background: rgba(229, 62, 62, 0.08); .material-symbols-rounded { color: var(--color-danger); } }
-
-    .card-body { padding: var(--space-md); }
-
-    /* ── Mobile: Charts 1-col ── */
-    .charts-row {
-      display: grid; grid-template-columns: 1fr; gap: var(--space-md);
-      margin-bottom: 0;
-    }
-
-    .chart-body { padding: var(--space-md); }
-
-    /* Bar chart */
-    .bar-chart {
-      display: flex; align-items: flex-end; gap: var(--space-xs); height: 10rem;
-    }
-
-    .bar-item {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; height: 100%;
-    }
-
-    .bar-stack {
-      flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
-    }
-
-    .bar-fill {
-      width: 60%; min-width: 0.75rem; border-radius: 0.25rem 0.25rem 0 0; transition: height 0.6s ease;
-    }
-    .bar-completed { background: var(--color-success); border-radius: 0.25rem 0.25rem 0 0; }
-    .bar-pending { background: var(--color-border); border-radius: 0; }
-
-    .bar-label { font-size: 0.625rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; }
-    .bar-value { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; font-weight: 700; color: var(--color-text-secondary); }
-
-    .chart-legend {
-      display: flex; gap: var(--space-md); justify-content: center; margin-top: var(--space-sm);
-      padding-top: var(--space-sm); border-top: 1px solid var(--color-divider);
-      flex-wrap: wrap;
-    }
-    .legend-item { display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); }
-    .legend-dot { width: 0.625rem; height: 0.625rem; border-radius: 0.1875rem; }
-    .dot-completed { background: var(--color-success); }
-    .dot-pending { background: var(--color-border); }
-    .dot-income { background: var(--color-accent); }
-    .dot-commission { background: var(--color-danger); }
-
-    /* Revenue bars */
-    .revenue-bars {
-      display: flex; align-items: flex-end; gap: var(--space-sm); height: 10rem;
-    }
-
-    .rev-item {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; height: 100%;
-    }
-
-    .rev-bar-group {
-      flex: 1; width: 100%; display: flex; gap: 0.25rem; align-items: flex-end; justify-content: center;
-    }
-
-    .rev-bar {
-      width: 40%; min-width: 0.5rem; border-radius: 0.25rem 0.25rem 0 0; transition: height 0.6s ease;
-      position: relative;
-    }
-    .rev-income { background: var(--color-accent); }
-    .rev-commission { background: var(--color-danger); opacity: 0.7; }
-
-    .rev-tooltip {
-      position: absolute; top: -1.375rem; left: 50%; transform: translateX(-50%);
-      font-family: 'JetBrains Mono', monospace; font-size: 0.5625rem; font-weight: 700;
-      color: var(--color-text-secondary); white-space: nowrap;
-    }
-
-    /* ── Mobile: Bottom row 1-col ── */
-    .bottom-row {
-      display: grid; grid-template-columns: 1fr; gap: var(--space-md);
-    }
-
-    /* Category rows */
-    .category-row {
-      display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm);
-      &:last-child { margin-bottom: 0; }
-    }
-
-    .cat-icon-sm {
-      width: 2rem; height: 2rem; border-radius: var(--radius-md);
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      .material-symbols-rounded { font-size: 1rem; }
-    }
-    .cat-battery { background: rgba(247, 127, 0, 0.1); .material-symbols-rounded { color: var(--color-warning); } }
-    .cat-tire { background: rgba(0, 122, 255, 0.1); .material-symbols-rounded { color: var(--color-info); } }
-    .cat-crash { background: rgba(229, 62, 62, 0.1); .material-symbols-rounded { color: var(--color-danger); } }
-    .cat-engine { background: rgba(108, 117, 125, 0.1); .material-symbols-rounded { color: var(--color-text-secondary); } }
-    .cat-keys { background: rgba(255, 122, 0, 0.1); .material-symbols-rounded { color: var(--color-accent); } }
-    .cat-other { background: var(--color-primary-50); .material-symbols-rounded { color: var(--color-primary); } }
-
-    .cat-info { flex: 1; min-width: 0; }
-    .cat-head { display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
-    .cat-name { font-size: 0.8125rem; font-weight: 600; color: var(--color-text-primary); }
-    .cat-count { font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; font-weight: 700; color: var(--color-text-secondary); }
-    .cat-pct { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--color-text-tertiary); min-width: 2.25rem; text-align: right; }
-
-    .progress-track { height: 0.375rem; background: var(--color-surface-alt); border-radius: var(--radius-pill); overflow: hidden; }
-    .progress-fill { height: 100%; border-radius: var(--radius-pill); transition: width 0.6s ease; }
-    .fill-cat-battery { background: var(--color-warning); }
-    .fill-cat-tire { background: var(--color-info); }
-    .fill-cat-crash { background: var(--color-danger); }
-    .fill-cat-engine { background: var(--color-text-secondary); }
-    .fill-cat-keys { background: var(--color-accent); }
-    .fill-cat-other { background: var(--color-primary); }
-
-    /* ── Mobile: Status grid 2-col ── */
-    .status-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-sm);
-    }
-
-    .status-item {
-      display: flex; flex-direction: column; align-items: center; gap: var(--space-xs);
-      padding: var(--space-sm); border-radius: var(--radius-lg);
-      background: var(--color-surface-alt);
-    }
-
-    .status-ring {
-      width: 3rem; height: 3rem; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      border: 3px solid var(--color-border);
-    }
-    .ring-pending { border-color: var(--color-status-pending); background: rgba(255, 122, 0, 0.08); }
-    .ring-assigned { border-color: var(--color-status-assigned); background: rgba(0, 122, 255, 0.08); }
-    .ring-in_progress { border-color: var(--color-status-progress); background: rgba(30, 136, 229, 0.08); }
-    .ring-completed { border-color: var(--color-success); background: rgba(15, 173, 115, 0.08); }
-    .ring-cancelled { border-color: var(--color-text-tertiary); background: var(--color-surface-alt); }
-
-    .status-num { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 800; color: var(--color-text-primary); }
-    .status-name { font-size: 0.75rem; font-weight: 600; color: var(--color-text-primary); text-transform: capitalize; }
-    .status-pct { font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem; font-weight: 700; color: var(--color-text-tertiary); }
-
-    /* Tech list */
-    .tech-list { display: flex; flex-direction: column; gap: var(--space-xs); }
-
-    .tech-row {
-      display: flex; align-items: center; gap: var(--space-sm);
-      padding: var(--space-xs) 0;
-    }
-
-    .tech-rank {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; font-weight: 800;
-      color: var(--color-text-tertiary); width: 1.5rem; text-align: center;
-    }
-
-    .tech-info { min-width: 0; }
-    .tech-name { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tech-meta { font-size: 0.6875rem; color: var(--color-text-tertiary); }
-
-    .tech-bar-wrap {
-      flex: 1; height: 0.5rem; background: var(--color-surface-alt); border-radius: var(--radius-pill); overflow: hidden;
-    }
-    .tech-bar { height: 100%; background: var(--color-primary); border-radius: var(--radius-pill); transition: width 0.6s ease; }
-
-    /* ── Mobile: Priority grid 2-col ── */
-    .priority-card .priority-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-sm);
-      padding: var(--space-md);
-    }
-
-    .priority-item {
-      display: flex; flex-direction: column; align-items: center; gap: var(--space-xs);
-    }
-
-    .priority-badge {
-      width: 100%; padding: var(--space-sm); border-radius: var(--radius-lg);
-      text-align: center;
-    }
-    .badge-low { background: rgba(15, 173, 115, 0.08); }
-    .badge-medium { background: rgba(255, 122, 0, 0.08); }
-    .badge-high { background: rgba(229, 62, 62, 0.08); }
-    .badge-critical { background: rgba(153, 27, 27, 0.1); }
-
-    .p-count { display: block; font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 800; color: var(--color-text-primary); }
-    .p-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-    .badge-low .p-label { color: var(--color-success); }
-    .badge-medium .p-label { color: var(--color-accent); }
-    .badge-high .p-label { color: var(--color-danger); }
-    .badge-critical .p-label { color: #991b1b; }
-
-    .priority-bar { width: 100%; height: 0.375rem; background: var(--color-surface-alt); border-radius: var(--radius-pill); overflow: hidden; }
-    .priority-fill { height: 100%; border-radius: var(--radius-pill); transition: width 0.6s ease; }
-    .pfill-low { background: var(--color-success); }
-    .pfill-medium { background: var(--color-accent); }
-    .pfill-high { background: var(--color-danger); }
-    .pfill-critical { background: #991b1b; }
-
-    .priority-pct { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--color-text-tertiary); }
-
-    /* Empty & loading */
-    .empty-state {
-      text-align: center; padding: var(--space-xl); color: var(--color-text-tertiary);
-      .material-symbols-rounded { font-size: 2.5rem; display: block; margin: 0 auto var(--space-sm); }
-      p { font-size: 0.875rem; }
-    }
-
-    .loading-state {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: var(--space-md); padding: var(--space-2xl); color: var(--color-text-secondary);
-    }
-
-    .spinner {
-      width: 2.25rem; height: 2.25rem; border: 3px solid var(--color-border);
-      border-top-color: var(--color-primary); border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── ≥576px: 2-col KPI, larger elements ── */
-    @media (min-width: 576px) {
-      .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
-      .kpi-card { padding: var(--space-lg); gap: var(--space-md); }
-      .kpi-icon { width: 3rem; height: 3rem; .material-symbols-rounded { font-size: 1.5rem; } }
-      .kpi-value { font-size: 1.375rem; }
-      .bar-chart, .revenue-bars { height: 11.25rem; }
-      .status-ring { width: 3.5rem; height: 3.5rem; }
-      .status-num { font-size: 1.125rem; }
-      .p-count { font-size: 1.5rem; }
-    }
-
-    /* ── ≥768px: 2-col charts, header row, 3-col status ── */
-    @media (min-width: 768px) {
-      .page-header { flex-direction: row; justify-content: space-between; align-items: flex-start; }
-      .charts-row { grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
-      .card-header { padding: var(--space-lg); gap: var(--space-md); }
-      .card-body { padding: var(--space-lg); }
-      .chart-body { padding: var(--space-lg); }
-      .header-icon { width: 2.5rem; height: 2.5rem; .material-symbols-rounded { font-size: 1.375rem; } }
-      .status-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-md); }
-      .status-item { padding: var(--space-md); }
-      .cat-icon-sm { width: 2.25rem; height: 2.25rem; .material-symbols-rounded { font-size: 1.125rem; } }
-      .section-card { margin-bottom: var(--space-lg); }
-      .bottom-row { grid-template-columns: 1fr 1fr; }
-    }
-
-    /* ── ≥1024px: 4-col KPI, 3-col bottom row, 4-col priority ── */
-    @media (min-width: 1024px) {
-      .kpi-grid { grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-xl); }
-      .page-header h1 { font-size: 1.625rem; }
-      .bottom-row { grid-template-columns: 1fr 1fr 1fr; gap: var(--space-lg); }
-      .priority-card .priority-grid { grid-template-columns: repeat(4, 1fr); gap: var(--space-md); padding: var(--space-lg); }
-      .priority-badge { padding: var(--space-md); }
-    }
-  `]
 })
-export class ReportsComponent implements OnInit {
+export class ReportsComponent implements OnInit, OnDestroy {
   loading = true;
   selectedPeriod = '30';
+  private monthlyChart?: Chart;
+  private revenueChart?: Chart;
 
   allIncidents: Incident[] = [];
   allPayments: Payment[] = [];
@@ -683,14 +289,19 @@ export class ReportsComponent implements OnInit {
     this.loadData();
   }
 
+  ngOnDestroy() {
+    this.monthlyChart?.destroy();
+    this.revenueChart?.destroy();
+  }
+
   loadData() {
     this.loading = true;
     let loaded = 0;
     const checkDone = () => {
       loaded++;
       if (loaded >= 2) {
-        this.applyFilters();
         this.loading = false;
+        this.applyFilters();
         this.cdr.markForCheck();
       }
     };
@@ -730,6 +341,116 @@ export class ReportsComponent implements OnInit {
     this.computeStatuses();
     this.computePriorities();
     this.computeTechs();
+    this.renderCharts();
+  }
+
+  // ── Chart.js (sustituye las barras dibujadas con CSS) ──
+  private renderCharts() {
+    this.cdr.detectChanges();
+    this.renderMonthlyChart();
+    this.renderRevenueChart();
+  }
+
+  private renderMonthlyChart() {
+    const el = document.getElementById('rep-monthly') as HTMLCanvasElement | null;
+    if (!el) return;
+    this.monthlyChart?.destroy();
+    this.monthlyChart = new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: this.monthlyData.map((m) => m.label),
+        datasets: [
+          { label: 'Completados', data: this.monthlyData.map((m) => m.completed), backgroundColor: '#0fad73', borderRadius: 6, stack: 'a' },
+          { label: 'Otros', data: this.monthlyData.map((m) => m.incidents - m.completed), backgroundColor: '#cbd5e1', borderRadius: 6, stack: 'a' },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12, usePointStyle: true, padding: 14 } } },
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { color: '#94a3b8' } },
+          y: { stacked: true, beginAtZero: true, ticks: { color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(148,163,184,0.15)' } },
+        },
+      },
+    });
+  }
+
+  private renderRevenueChart() {
+    const el = document.getElementById('rep-revenue') as HTMLCanvasElement | null;
+    if (!el) return;
+    this.revenueChart?.destroy();
+    this.revenueChart = new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: this.monthlyData.map((m) => m.label),
+        datasets: [
+          { label: 'Ingresos', data: this.monthlyData.map((m) => m.revenue), backgroundColor: '#FFFFFF', borderRadius: 6 },
+          { label: 'Comisión', data: this.monthlyData.map((m) => m.commission), backgroundColor: '#E63946', borderRadius: 6 },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12, usePointStyle: true, padding: 14 } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+          y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.15)' } },
+        },
+      },
+    });
+  }
+
+  // ── Helpers de clase para badges/anillos (sustituyen al CSS por estado) ──
+  catTile(css: string): string {
+    const map: Record<string, string> = {
+      'cat-battery': 'bg-amber-400/15 text-amber-600 dark:text-amber-300',
+      'cat-tire': 'bg-info/10 text-info',
+      'cat-crash': 'bg-emergency-500/15 text-emergency-600 dark:text-emergency-300',
+      'cat-engine': 'bg-slate-200 text-slate-600 dark:bg-white/10 dark:text-slate-300',
+      'cat-keys': 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white',
+      'cat-other': 'bg-slate-100 dark:bg-white/8 text-slate-900 dark:text-white',
+    };
+    return map[css] || map['cat-other'];
+  }
+
+  catBar(css: string): string {
+    const map: Record<string, string> = {
+      'cat-battery': 'bg-amber-400', 'cat-tire': 'bg-info', 'cat-crash': 'bg-emergency-500',
+      'cat-engine': 'bg-slate-400', 'cat-keys': 'bg-[#111111] dark:bg-white', 'cat-other': 'bg-[#111111] dark:bg-white',
+    };
+    return map[css] || 'bg-[#111111] dark:bg-white';
+  }
+
+  statusRing(key: string): string {
+    const map: Record<string, string> = {
+      pending: 'border-slate-900 dark:border-white/60 bg-slate-50 dark:bg-white/5',
+      assigned: 'border-info bg-info/5',
+      in_progress: 'border-amber-400 bg-amber-400/5',
+      completed: 'border-success bg-success/5',
+      cancelled: 'border-slate-300 bg-slate-100 dark:bg-white/5',
+    };
+    return map[key] || 'border-slate-300';
+  }
+
+  priorityBadge(key: string): string {
+    const map: Record<string, string> = {
+      low: 'bg-success/10', medium: 'bg-amber-400/10', high: 'bg-emergency-500/10', critical: 'bg-emergency-700/15',
+    };
+    return map[key] || 'bg-slate-100';
+  }
+
+  priorityLabel(key: string): string {
+    const map: Record<string, string> = {
+      low: 'text-success', medium: 'text-amber-600 dark:text-amber-300',
+      high: 'text-emergency-600 dark:text-emergency-300', critical: 'text-emergency-700 dark:text-emergency-400',
+    };
+    return map[key] || 'text-slate-500';
+  }
+
+  priorityFill(key: string): string {
+    const map: Record<string, string> = {
+      low: 'bg-success', medium: 'bg-amber-400', high: 'bg-emergency-500', critical: 'bg-emergency-700',
+    };
+    return map[key] || 'bg-slate-400';
   }
 
   computeKPIs() {

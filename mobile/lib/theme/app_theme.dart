@@ -26,18 +26,18 @@ class AppTheme {
       primaryTextTheme: textTheme,
 
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        scrolledUnderElevation: 2,
+        scrolledUnderElevation: 1,
         centerTitle: false,
         titleTextStyle: textTheme.titleLarge?.copyWith(
-          color: AppColors.textOnPrimary,
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w700,
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
+          statusBarIconBrightness: Brightness.dark,
         ),
       ),
 
@@ -384,184 +384,126 @@ class AppTheme {
     );
   }
 
+  // ── Fuentes: Space Grotesk (display/títulos) + Inter (cuerpo)
+  // — idéntico al sistema de diseño de la web RescateYa.
   static TextTheme _buildTextTheme(TextTheme base) {
-    return GoogleFonts.plusJakartaSansTextTheme(base).copyWith(
-      displayLarge: GoogleFonts.sora(
-        fontSize: 36,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-        height: 1.08,
-        letterSpacing: -0.8,
+    return GoogleFonts.interTextTheme(base).copyWith(
+      displayLarge: GoogleFonts.spaceGrotesk(
+        fontSize: 36, fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary, height: 1.08, letterSpacing: -0.8,
       ),
-      displayMedium: GoogleFonts.sora(
-        fontSize: 30,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-        height: 1.12,
-        letterSpacing: -0.6,
+      displayMedium: GoogleFonts.spaceGrotesk(
+        fontSize: 30, fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary, height: 1.12, letterSpacing: -0.6,
       ),
-      headlineLarge: GoogleFonts.sora(
-        fontSize: 26,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.2,
+      headlineLarge: GoogleFonts.spaceGrotesk(
+        fontSize: 26, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary, height: 1.2,
       ),
-      headlineMedium: GoogleFonts.sora(
-        fontSize: 22,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.22,
+      headlineMedium: GoogleFonts.spaceGrotesk(
+        fontSize: 22, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary, height: 1.22,
       ),
-      headlineSmall: GoogleFonts.sora(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.3,
+      headlineSmall: GoogleFonts.spaceGrotesk(
+        fontSize: 18, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary, height: 1.3,
       ),
-      titleLarge: GoogleFonts.sora(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.3,
+      titleLarge: GoogleFonts.spaceGrotesk(
+        fontSize: 18, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary, height: 1.3,
       ),
-      titleMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.32,
+      titleMedium: GoogleFonts.inter(
+        fontSize: 16, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary, height: 1.32,
       ),
-      titleSmall: GoogleFonts.plusJakartaSans(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        height: 1.4,
+      titleSmall: GoogleFonts.inter(
+        fontSize: 14, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary, height: 1.4,
       ),
-      bodyLarge: GoogleFonts.plusJakartaSans(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
-        height: 1.55,
+      bodyLarge: GoogleFonts.inter(
+        fontSize: 16, fontWeight: FontWeight.w400,
+        color: AppColors.textPrimary, height: 1.55,
       ),
-      bodyMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textSecondary,
-        height: 1.55,
+      bodyMedium: GoogleFonts.inter(
+        fontSize: 14, fontWeight: FontWeight.w400,
+        color: AppColors.textSecondary, height: 1.55,
       ),
-      bodySmall: GoogleFonts.plusJakartaSans(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textTertiary,
-        height: 1.45,
+      bodySmall: GoogleFonts.inter(
+        fontSize: 12, fontWeight: FontWeight.w400,
+        color: AppColors.textTertiary, height: 1.45,
       ),
-      labelLarge: GoogleFonts.plusJakartaSans(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        letterSpacing: 0.25,
+      labelLarge: GoogleFonts.inter(
+        fontSize: 14, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary, letterSpacing: 0.25,
       ),
-      labelMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textSecondary,
-        letterSpacing: 0.35,
+      labelMedium: GoogleFonts.inter(
+        fontSize: 12, fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary, letterSpacing: 0.35,
       ),
-      labelSmall: GoogleFonts.plusJakartaSans(
-        fontSize: 10,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textTertiary,
-        letterSpacing: 0.55,
+      labelSmall: GoogleFonts.inter(
+        fontSize: 10, fontWeight: FontWeight.w700,
+        color: AppColors.textTertiary, letterSpacing: 0.55,
       ),
     );
   }
 
   static TextTheme _buildDarkTextTheme(TextTheme base) {
-    return GoogleFonts.plusJakartaSansTextTheme(base).copyWith(
-      displayLarge: GoogleFonts.sora(
-        fontSize: 36,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimaryDark,
-        height: 1.08,
-        letterSpacing: -0.8,
+    return GoogleFonts.interTextTheme(base).copyWith(
+      displayLarge: GoogleFonts.spaceGrotesk(
+        fontSize: 36, fontWeight: FontWeight.w700,
+        color: AppColors.textPrimaryDark, height: 1.08, letterSpacing: -0.8,
       ),
-      displayMedium: GoogleFonts.sora(
-        fontSize: 30,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimaryDark,
-        height: 1.12,
-        letterSpacing: -0.6,
+      displayMedium: GoogleFonts.spaceGrotesk(
+        fontSize: 30, fontWeight: FontWeight.w700,
+        color: AppColors.textPrimaryDark, height: 1.12, letterSpacing: -0.6,
       ),
-      headlineLarge: GoogleFonts.sora(
-        fontSize: 26,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimaryDark,
-        height: 1.2,
+      headlineLarge: GoogleFonts.spaceGrotesk(
+        fontSize: 26, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark, height: 1.2,
       ),
-      headlineMedium: GoogleFonts.sora(
-        fontSize: 22,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimaryDark,
-        height: 1.22,
+      headlineMedium: GoogleFonts.spaceGrotesk(
+        fontSize: 22, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark, height: 1.22,
       ),
-      headlineSmall: GoogleFonts.sora(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimaryDark,
-        height: 1.3,
+      headlineSmall: GoogleFonts.spaceGrotesk(
+        fontSize: 18, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark, height: 1.3,
       ),
-      titleLarge: GoogleFonts.sora(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimaryDark,
-        height: 1.3,
+      titleLarge: GoogleFonts.spaceGrotesk(
+        fontSize: 18, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark, height: 1.3,
       ),
-      titleMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimaryDark,
-        height: 1.32,
+      titleMedium: GoogleFonts.inter(
+        fontSize: 16, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark, height: 1.32,
       ),
-      titleSmall: GoogleFonts.plusJakartaSans(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimaryDark,
-        height: 1.4,
+      titleSmall: GoogleFonts.inter(
+        fontSize: 14, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark, height: 1.4,
       ),
-      bodyLarge: GoogleFonts.plusJakartaSans(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textPrimaryDark,
-        height: 1.55,
+      bodyLarge: GoogleFonts.inter(
+        fontSize: 16, fontWeight: FontWeight.w400,
+        color: AppColors.textPrimaryDark, height: 1.55,
       ),
-      bodyMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textSecondaryDark,
-        height: 1.55,
+      bodyMedium: GoogleFonts.inter(
+        fontSize: 14, fontWeight: FontWeight.w400,
+        color: AppColors.textSecondaryDark, height: 1.55,
       ),
-      bodySmall: GoogleFonts.plusJakartaSans(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textTertiaryDark,
-        height: 1.45,
+      bodySmall: GoogleFonts.inter(
+        fontSize: 12, fontWeight: FontWeight.w400,
+        color: AppColors.textTertiaryDark, height: 1.45,
       ),
-      labelLarge: GoogleFonts.plusJakartaSans(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimaryDark,
-        letterSpacing: 0.25,
+      labelLarge: GoogleFonts.inter(
+        fontSize: 14, fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark, letterSpacing: 0.25,
       ),
-      labelMedium: GoogleFonts.plusJakartaSans(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textSecondaryDark,
-        letterSpacing: 0.35,
+      labelMedium: GoogleFonts.inter(
+        fontSize: 12, fontWeight: FontWeight.w600,
+        color: AppColors.textSecondaryDark, letterSpacing: 0.35,
       ),
-      labelSmall: GoogleFonts.plusJakartaSans(
-        fontSize: 10,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textTertiaryDark,
-        letterSpacing: 0.55,
+      labelSmall: GoogleFonts.inter(
+        fontSize: 10, fontWeight: FontWeight.w700,
+        color: AppColors.textTertiaryDark, letterSpacing: 0.55,
       ),
     );
   }

@@ -1,697 +1,282 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Chart, registerables } from 'chart.js';
+Chart.register(...registerables);
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { Incident, Workshop, Review } from '../../models/interfaces';
+import { AppIconComponent } from '../../shared/app-icon.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AppIconComponent],
   template: `
-    <div class="page-content reveal">
-        <!-- Header -->
-        <div class="page-header">
-          <div>
-            <h1 class="page-title">{{ greeting }}, {{ firstName }} 👋</h1>
-            <p class="page-subtitle">{{ isAdmin ? 'Resumen general de la plataforma' : 'Aqui tienes un resumen de tu taller' }}</p>
+    <div class="animate-reveal space-y-6">
+      <!-- Header -->
+      <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="space-y-2">
+          <!-- Live badge — command-center aesthetic -->
+          <div class="inline-flex items-center gap-2 rounded-lg border border-slate-200/60 bg-white px-3 py-1.5 shadow-sm dark:border-white/8 dark:bg-white/5">
+            <span class="relative flex h-2 w-2">
+              <span class="absolute inline-flex h-full w-full animate-beacon rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            </span>
+            <span class="font-mono text-[0.65rem] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-white/50">Panel en vivo</span>
+            <span class="h-3.5 w-px bg-slate-200 dark:bg-white/10"></span>
+            <span class="font-mono text-[0.65rem] text-slate-400 dark:text-white/30">{{ today }}</span>
           </div>
-          <a routerLink="/incidents" class="btn btn-primary">
-            <span class="material-symbols-rounded">visibility</span>
-            Ver incidentes
-          </a>
+          <h1 class="font-display text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            {{ greeting }},&nbsp;<span class="text-slate-500 dark:text-white/50">{{ firstName }}</span>
+          </h1>
+          <p class="text-sm text-slate-400 dark:text-white/35">
+            {{ isAdmin ? 'Resumen general de la plataforma RescateYa' : 'Centro de operaciones de tu taller' }}
+          </p>
         </div>
+        <a routerLink="/incidents"
+           class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111111] dark:bg-white dark:text-[#111111] px-5 py-3 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition hover:brightness-110 active:scale-[0.98]">
+          <app-icon name="visibility" />
+          Ver incidentes
+        </a>
+      </header>
 
-        <!-- Workshop setup card -->
-        <div class="setup-card" *ngIf="!isAdmin && !workshop && !loading">
-          <div class="setup-icon">
-            <span class="material-symbols-rounded">store</span>
-          </div>
-          <div class="setup-content">
-            <h3>Configura tu taller</h3>
-            <p>
-              Necesitas registrar la informacion de tu taller para empezar a
-              recibir solicitudes de emergencia.
-            </p>
-          </div>
-          <button class="btn btn-primary">
-            <span class="material-symbols-rounded">settings</span>
-            Configurar
-          </button>
+      <!-- Workshop setup card -->
+      <div *ngIf="!isAdmin && !workshop && !loading"
+           class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:flex-row sm:items-center dark:border-slate-300 dark:border-white/15 dark:bg-white/5">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white">
+          <app-icon name="store" />
         </div>
-
-        <!-- Error banner -->
-        <div class="error-banner" *ngIf="error && !loading">
-          <span class="material-symbols-rounded">cloud_off</span>
-          <span>No se pudo cargar la informacion</span>
-          <button class="btn btn-sm" (click)="loadData()">
-            <span class="material-symbols-rounded">refresh</span>
-            Reintentar
-          </button>
+        <div class="flex-1">
+          <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Configura tu taller</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300">
+            Necesitas registrar la información de tu taller para empezar a recibir solicitudes de emergencia.
+          </p>
         </div>
+        <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111111] dark:bg-white px-4 py-2.5 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition hover:bg-slate-800 dark:hover:bg-white/90">
+          <app-icon name="settings" />
+          Configurar
+        </button>
+      </div>
 
-        <!-- Stats -->
-        <div class="stats-grid stagger" *ngIf="isAdmin || workshop || loading">
-          <div class="stat-card stat-pending">
-            <div class="stat-icon">
-              <span class="material-symbols-rounded">schedule</span>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">Pendientes</div>
-              <div class="stat-number">{{ pendingCount }}</div>
-            </div>
-            <div class="stat-trend" [class.up]="pendingCount > 0">
-              <span class="material-symbols-rounded">{{ pendingCount > 0 ? 'trending_up' : 'trending_flat' }}</span>
-            </div>
-          </div>
+      <!-- Error banner -->
+      <div *ngIf="error && !loading"
+           class="flex flex-wrap items-center gap-3 rounded-2xl border border-emergency-200 bg-emergency-50 px-4 py-3 text-sm text-emergency-700 dark:border-emergency-500/30 dark:bg-emergency-500/10 dark:text-emergency-300">
+        <app-icon name="cloud_off" />
+        <span>No se pudo cargar la información</span>
+        <button (click)="loadData()"
+                class="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-emergency-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-emergency-100 dark:border-emergency-500/40 dark:hover:bg-emergency-500/20">
+          <app-icon name="refresh" [size]="16" />
+          Reintentar
+        </button>
+      </div>
 
-          <div class="stat-card stat-progress">
-            <div class="stat-icon">
-              <span class="material-symbols-rounded">build</span>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">En proceso</div>
-              <div class="stat-number">{{ inProgressCount }}</div>
-            </div>
-            <div class="stat-trend">
-              <span class="material-symbols-rounded">trending_flat</span>
-            </div>
-          </div>
-
-          <div class="stat-card stat-completed">
-            <div class="stat-icon">
-              <span class="material-symbols-rounded">check_circle</span>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">Completados</div>
-              <div class="stat-number">{{ completedCount }}</div>
-            </div>
-            <div class="stat-trend up">
-              <span class="material-symbols-rounded">trending_up</span>
-            </div>
-          </div>
-
-          <div class="stat-card stat-rating">
-            <div class="stat-icon">
-              <span class="material-symbols-rounded">star</span>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">{{ isAdmin ? 'Comision' : 'Rating' }}</div>
-              <div class="stat-number" *ngIf="isAdmin">Bs {{ totalCommission | number: '1.0-0' }}</div>
-              <div class="stat-number" *ngIf="!isAdmin">{{ (workshop?.rating || 0) | number: '1.1-1' }}</div>
-            </div>
-            <div class="stat-trend up">
-              <span class="material-symbols-rounded">star_half</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Charts row -->
-        <div class="charts-row" *ngIf="isAdmin || workshop">
-          <!-- Weekly activity chart -->
-          <div class="card chart-card">
-            <div class="card-header">
-              <h3>
-                <span class="material-symbols-rounded">bar_chart</span>
-                Actividad semanal
-              </h3>
-              <span class="chart-period">Ultimos 7 dias</span>
-            </div>
-            <div class="bar-chart">
-              <div class="bar-item" *ngFor="let bar of weeklyBars">
-                <div class="bar-wrapper">
-                  <div class="bar-fill" [style.height.%]="bar.pct" [class]="'bar-' + bar.color"></div>
-                </div>
-                <span class="bar-label">{{ bar.day }}</span>
+      <!-- Stats -->
+      <section *ngIf="isAdmin || workshop || loading"
+               class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div *ngFor="let s of statCards()"
+             class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-1 hover:shadow-card-hover dark:border-white/8 dark:bg-hero-soft">
+          <!-- Colored left accent bar -->
+          <div class="absolute left-0 top-0 h-full w-[3px] rounded-l-2xl" [ngClass]="s.accentBar"></div>
+          <!-- Glow blob — 20% opacity, grows on hover -->
+          <span class="absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-20 blur-xl transition-all duration-500 group-hover:scale-125 group-hover:opacity-30"
+                [ngClass]="s.glow"></span>
+          <div class="p-5">
+            <div class="flex items-start justify-between">
+              <div class="flex h-11 w-11 items-center justify-center rounded-xl" [ngClass]="s.tile">
+                <app-icon [name]="s.icon" [size]="22" />
               </div>
+              <app-icon [name]="s.trendUp ? 'trending_up' : 'trending_down'" [size]="20"
+                        [ngClass]="s.trendUp ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-600'" />
+            </div>
+            <div class="mt-4">
+              <div class="font-mono text-[0.6rem] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-white/30">{{ s.label }}</div>
+              <div class="font-display mt-1 text-3xl font-black tracking-tight text-slate-900 dark:text-white">{{ s.value }}</div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <!-- Category distribution -->
-          <div class="card chart-card">
-            <div class="card-header">
-              <h3>
-                <span class="material-symbols-rounded">donut_large</span>
-                Distribucion por categoria
-              </h3>
+      <!-- Bento: charts row -->
+      <section *ngIf="isAdmin || workshop" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <!-- Weekly activity (2/3) -->
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-card lg:col-span-2 dark:border-white/8 dark:bg-hero-soft">
+          <!-- Card header with accent top strip -->
+          <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-white/6">
+            <div class="flex items-center gap-2.5">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">
+                <app-icon name="bar_chart" [size]="18" />
+              </div>
+              <h3 class="font-display text-sm font-bold text-slate-900 dark:text-white">Actividad semanal</h3>
             </div>
-            <div class="category-list">
-              <div class="category-item" *ngFor="let cat of categoryStats">
-                <div class="category-icon" [class]="'cat-icon-' + cat.key">
-                  <span class="material-symbols-rounded">{{ getCategoryIcon(cat.key) }}</span>
-                </div>
-                <div class="category-info">
-                  <div class="category-head">
-                    <span class="category-name">{{ cat.label }}</span>
-                    <span class="category-count">{{ cat.count }}</span>
-                  </div>
-                  <div class="progress-bar">
-                    <div class="progress-fill" [class]="'fill-' + cat.key" [style.width.%]="cat.pct"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="empty-categories" *ngIf="categoryStats.length === 0">
-                <span class="material-symbols-rounded">pie_chart</span>
-                <p>Sin datos de categorias aun</p>
-              </div>
+            <span class="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[0.6rem] font-semibold uppercase tracking-wide text-slate-400 dark:border-white/8 dark:bg-white/4 dark:text-white/30">7 días</span>
+          </div>
+          <div class="p-5">
+            <div class="relative h-60">
+              <canvas id="dash-weekly"></canvas>
             </div>
           </div>
         </div>
 
-        <!-- Bottom row: recent incidents + activity timeline -->
-        <div class="bottom-row" *ngIf="isAdmin || workshop">
-          <!-- Recent incidents -->
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <span class="material-symbols-rounded">notifications_active</span>
-                Solicitudes recientes
-              </h3>
-              <a routerLink="/incidents" class="see-all">
-                Ver todas
-                <span class="material-symbols-rounded">arrow_forward</span>
-              </a>
+        <!-- Category distribution (1/3) -->
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-card dark:border-white/8 dark:bg-hero-soft">
+          <div class="flex items-center gap-2.5 border-b border-slate-100 px-5 py-4 dark:border-white/6">
+            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emergency-500/10 text-emergency-600 dark:bg-emergency-500/15 dark:text-emergency-400">
+              <app-icon name="donut_large" [size]="18" />
             </div>
+            <h3 class="font-display text-sm font-bold text-slate-900 dark:text-white">Por categoría</h3>
+          </div>
+          <div class="p-5">
+            <div class="relative h-60" *ngIf="categoryStats.length > 0; else emptyCat">
+              <canvas id="dash-cat"></canvas>
+            </div>
+            <ng-template #emptyCat>
+              <div class="flex h-60 flex-col items-center justify-center gap-2 text-slate-400">
+                <app-icon name="pie_chart" [size]="36" />
+                <p class="text-sm">Sin datos aún</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </section>
 
-            <div class="incident-list" *ngIf="recentIncidents.length > 0; else emptyTpl">
-              <a
-                *ngFor="let inc of recentIncidents"
-                [routerLink]="['/incidents', inc.id]"
-                class="incident-row"
-              >
-                <div class="incident-icon" [class]="'cat-' + inc.category">
-                  <span class="material-symbols-rounded">{{
-                    getCategoryIcon(inc.category)
-                  }}</span>
+      <!-- Bottom row: recent incidents + activity timeline -->
+      <section *ngIf="isAdmin || workshop" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <!-- Recent incidents (2/3) -->
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-card lg:col-span-2 dark:border-white/8 dark:bg-hero-soft">
+          <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-white/6">
+            <div class="flex items-center gap-2.5">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-white/8 dark:text-white">
+                <app-icon name="notifications_active" [size]="18" />
+              </div>
+              <h3 class="font-display text-sm font-bold text-slate-900 dark:text-white">Solicitudes recientes</h3>
+            </div>
+            <a routerLink="/incidents"
+               class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-white/40 dark:hover:bg-white/8 dark:hover:text-white">
+              Ver todas
+              <app-icon name="arrow_forward" [size]="16" />
+            </a>
+          </div>
+
+          <div class="p-2">
+            <div *ngIf="recentIncidents.length > 0; else emptyTpl" class="divide-y divide-slate-100 dark:divide-white/5">
+              <a *ngFor="let inc of recentIncidents"
+                 [routerLink]="['/incidents', inc.id]"
+                 class="group flex items-center gap-3 rounded-xl p-3 transition hover:bg-slate-50 dark:hover:bg-white/4">
+                <!-- Category icon with priority left accent -->
+                <div class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-white/8 text-slate-600 dark:text-white/70">
+                  <app-icon [name]="getCategoryIcon(inc.category)" />
+                  <!-- Priority dot -->
+                  <span class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white dark:border-[#181818]"
+                        [ngClass]="priorityDotCls(inc.priority)"></span>
                 </div>
-                <div class="incident-body">
-                  <div class="incident-title-row">
-                    <span class="incident-id">#{{ inc.id }}</span>
-                    <span
-                      class="badge"
-                      [ngClass]="'badge-priority-' + inc.priority"
-                    >
-                      {{ inc.priority | uppercase }}
-                    </span>
-                    <span
-                      class="badge badge-soft"
-                      [ngClass]="'badge-status-' + inc.status"
-                    >
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-mono text-xs font-bold text-slate-400 dark:text-white/30">#{{ inc.id }}</span>
+                    <span class="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                          [ngClass]="priorityCls(inc.priority)">{{ inc.priority }}</span>
+                    <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-white/8 dark:text-slate-300">
                       {{ getStatusLabel(inc.status) }}
                     </span>
                   </div>
-                  <p class="incident-summary">
-                    {{ inc.ai_summary || inc.description || 'Sin descripcion' }}
+                  <p class="mt-0.5 truncate text-sm text-slate-700 dark:text-slate-200">
+                    {{ inc.ai_summary || inc.description || 'Sin descripción' }}
                   </p>
-                  <div class="incident-meta">
-                    <span>
-                      <span class="material-symbols-rounded">location_on</span>
+                  <div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                    <span class="inline-flex items-center gap-1">
+                      <app-icon name="location_on" [size]="13" />
                       {{ inc.address || ('Lat: ' + inc.latitude.toFixed(4)) }}
                     </span>
-                    <span>
-                      <span class="material-symbols-rounded">schedule</span>
+                    <span class="inline-flex items-center gap-1">
+                      <app-icon name="schedule" [size]="13" />
                       {{ inc.created_at | date: 'short' }}
                     </span>
                   </div>
                 </div>
-                <span class="material-symbols-rounded chevron">chevron_right</span>
+                <app-icon name="chevron_right" [size]="18" class="shrink-0 text-slate-300 transition group-hover:translate-x-1 group-hover:text-slate-600 dark:text-white/20 dark:group-hover:text-white/60" />
               </a>
             </div>
-
-            <ng-template #emptyTpl>
-              <div class="empty-state">
-                <div class="empty-icon">
-                  <span class="material-symbols-rounded">inbox</span>
-                </div>
-                <h3>Sin solicitudes</h3>
-                <p>Las nuevas emergencias apareceran aqui.</p>
-              </div>
-            </ng-template>
           </div>
 
-          <!-- Activity timeline -->
-          <div class="card timeline-card">
-            <div class="card-header">
-              <h3>
-                <span class="material-symbols-rounded">timeline</span>
-                Actividad reciente
-              </h3>
+          <ng-template #emptyTpl>
+            <div class="flex flex-col items-center justify-center gap-2 py-12 text-center">
+              <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-white/5">
+                <app-icon name="inbox" [size]="30" />
+              </div>
+              <h3 class="font-display text-sm font-bold text-slate-600 dark:text-slate-300">Sin solicitudes</h3>
+              <p class="text-sm text-slate-400">Las nuevas emergencias aparecerán aquí.</p>
             </div>
-            <div class="timeline" *ngIf="timelineItems.length > 0; else emptyTimelineTpl">
-              <div class="timeline-item" *ngFor="let item of timelineItems">
-                <div class="tl-dot" [class]="'tl-' + item.type"></div>
-                <div class="tl-content">
-                  <p class="tl-text">{{ item.text }}</p>
-                  <span class="tl-time">{{ item.time }}</span>
+          </ng-template>
+        </div>
+
+        <!-- Activity timeline (1/3) -->
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-card dark:border-white/8 dark:bg-hero-soft">
+          <div class="flex items-center gap-2.5 border-b border-slate-100 px-5 py-4 dark:border-white/6">
+            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emergency-500/10 text-emergency-600 dark:bg-emergency-500/15 dark:text-emergency-400">
+              <app-icon name="timeline" [size]="18" />
+            </div>
+            <h3 class="font-display text-sm font-bold text-slate-900 dark:text-white">Actividad reciente</h3>
+          </div>
+          <div class="p-5">
+            <div *ngIf="timelineItems.length > 0; else emptyTimelineTpl" class="space-y-5">
+              <div *ngFor="let item of timelineItems; let last = last" class="relative flex gap-3">
+                <!-- Connector line -->
+                <div *ngIf="!last" class="absolute left-[5px] top-4 h-full w-px bg-slate-100 dark:bg-white/6"></div>
+                <div class="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ring-[3px]" [ngClass]="timelineDotCls(item.type)"></div>
+                <div class="min-w-0 flex-1 -mt-0.5 pb-0.5">
+                  <p class="text-sm leading-snug text-slate-700 dark:text-slate-200">{{ item.text }}</p>
+                  <span class="font-mono text-[0.65rem] text-slate-400">{{ item.time }}</span>
                 </div>
               </div>
             </div>
             <ng-template #emptyTimelineTpl>
-              <div class="empty-state small">
-                <span class="material-symbols-rounded">history</span>
-                <p>Sin actividad reciente</p>
+              <div class="flex flex-col items-center justify-center gap-2 py-12 text-slate-400">
+                <app-icon name="history" [size]="30" />
+                <p class="text-sm">Sin actividad reciente</p>
               </div>
             </ng-template>
           </div>
         </div>
+      </section>
 
-        <!-- Reviews section -->
-        <div class="card reviews-card" *ngIf="workshop && reviews.length > 0">
-          <div class="card-header">
-            <h3>
-              <span class="material-symbols-rounded">reviews</span>
-              Reseñas de clientes
-            </h3>
-            <span class="reviews-avg">
-              <span class="material-symbols-rounded star-icon">star</span>
-              {{ (workshop.rating || 0) | number: '1.1-1' }}
-              <small>({{ reviews.length }})</small>
-            </span>
-          </div>
-          <div class="review-list">
-            <div class="review-item" *ngFor="let r of reviews">
-              <div class="review-header">
-                <div class="review-avatar">{{ r.user_name.charAt(0) || '?' }}</div>
-                <div class="review-meta">
-                  <span class="review-name">{{ r.user_name }}</span>
-                  <span class="review-date">{{ r.created_at | date: 'mediumDate' }}</span>
-                </div>
-                <div class="review-stars">
-                  <span *ngFor="let s of [1,2,3,4,5]" class="material-symbols-rounded"
-                    [class.filled]="s <= r.rating">
-                    {{ s <= r.rating ? 'star' : 'star_border' }}
-                  </span>
-                </div>
+      <!-- Reviews section -->
+      <section *ngIf="workshop && reviews.length > 0"
+               class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="flex items-center gap-2 font-display text-base font-bold text-slate-900 dark:text-white">
+            <app-icon name="reviews" class="text-slate-700 dark:text-white" />
+            Reseñas de clientes
+          </h3>
+          <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
+            <app-icon name="star" [size]="18" />
+            {{ (workshop.rating || 0) | number: '1.1-1' }}
+            <small class="font-medium text-amber-500/70">({{ reviews.length }})</small>
+          </span>
+        </div>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div *ngFor="let r of reviews"
+               class="rounded-xl border border-slate-200 p-4 dark:border-hero-line">
+            <div class="flex items-center gap-3">
+              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#111111] dark:bg-white dark:text-[#111111] text-sm font-bold text-white">
+                {{ r.user_name.charAt(0) || '?' }}
               </div>
-              <p class="review-comment" *ngIf="r.comment">{{ r.comment }}</p>
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{{ r.user_name }}</div>
+                <div class="text-xs text-slate-400">{{ r.created_at | date: 'mediumDate' }}</div>
+              </div>
+              <div class="flex">
+                <app-icon *ngFor="let s of [1,2,3,4,5]" name="star" [size]="16"
+                          [ngClass]="s <= r.rating ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600'" />
+              </div>
             </div>
+            <p *ngIf="r.comment" class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ r.comment }}</p>
           </div>
         </div>
+      </section>
     </div>
   `,
-  styles: [
-    `
-      .error-banner {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        background: var(--color-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-lg);
-        padding: var(--space-sm) var(--space-md);
-        margin-bottom: var(--space-lg);
-        color: var(--color-text-secondary);
-        flex-wrap: wrap;
-        .material-symbols-rounded { font-size: 1.25rem; color: var(--color-danger); }
-        .btn { margin-left: auto; }
-      }
-      .btn-sm {
-        padding: 0.375rem 0.875rem; font-size: 0.8125rem; min-height: 2.125rem;
-        border: 1px solid var(--color-border); border-radius: var(--radius-md);
-        color: var(--color-text-primary); display: flex; align-items: center; gap: 0.375rem;
-        &:hover { background: var(--color-surface-alt); }
-        .material-symbols-rounded { font-size: 1rem; }
-      }
-
-      .setup-card {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-md);
-        background: var(--color-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-xl);
-        padding: var(--space-md);
-        margin-bottom: var(--space-lg);
-      }
-
-      .setup-icon {
-        width: 3rem; height: 3rem;
-        border-radius: var(--radius-lg);
-        background: rgba(255, 107, 53, 0.1);
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
-        .material-symbols-rounded { font-size: 1.5rem; color: var(--color-accent); }
-      }
-
-      .setup-content {
-        flex: 1;
-        h3 { font-size: 1rem; font-weight: 700; color: var(--color-text-primary); margin-bottom: 0.25rem; }
-        p { color: var(--color-text-secondary); font-size: 0.875rem; }
-      }
-
-      /* ── Mobile-first: Stats grid (1 column) ── */
-      .stats-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: var(--space-sm);
-        margin-bottom: var(--space-lg);
-      }
-
-      .stat-card {
-        background: var(--color-surface);
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--color-border);
-        padding: var(--space-md);
-        display: flex; align-items: center;
-        gap: var(--space-sm);
-        transition: all 0.25s var(--ease-out);
-        &:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
-      }
-
-      .stat-icon {
-        width: 2.75rem; height: 2.75rem;
-        border-radius: var(--radius-lg);
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
-        .material-symbols-rounded { font-size: 1.375rem; }
-      }
-
-      .stat-trend {
-        margin-left: auto;
-        .material-symbols-rounded { font-size: 1.25rem; color: var(--color-text-tertiary); }
-        &.up .material-symbols-rounded { color: var(--color-success); }
-      }
-
-      .stat-pending .stat-icon { background: rgba(247, 127, 0, 0.1); .material-symbols-rounded { color: var(--color-status-pending); } }
-      .stat-progress .stat-icon { background: rgba(0, 180, 216, 0.1); .material-symbols-rounded { color: var(--color-status-progress); } }
-      .stat-completed .stat-icon { background: rgba(6, 167, 125, 0.1); .material-symbols-rounded { color: var(--color-success); } }
-      .stat-rating .stat-icon { background: rgba(255, 107, 53, 0.1); .material-symbols-rounded { color: var(--color-accent); } }
-
-      .stat-content { flex: 1; }
-
-      .stat-label {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.625rem; font-weight: 700;
-        color: var(--color-text-tertiary);
-        text-transform: uppercase; letter-spacing: 0.1em;
-        margin-bottom: 0.25rem;
-      }
-
-      .stat-number {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.5rem; font-weight: 700;
-        color: var(--color-text-primary);
-        line-height: 1; letter-spacing: -0.04em;
-      }
-
-      /* ── Mobile-first: Charts stacked ── */
-      .charts-row {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: var(--space-md);
-        margin-bottom: var(--space-lg);
-      }
-
-      .chart-card .card-header { border-bottom: 1px solid var(--color-divider); }
-
-      .chart-period {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.625rem; font-weight: 700;
-        color: var(--color-text-tertiary);
-        background: var(--color-surface-alt);
-        padding: 0.25rem 0.625rem;
-        border-radius: var(--radius-pill);
-        letter-spacing: 0.04em;
-      }
-
-      /* Bar chart */
-      .bar-chart {
-        display: flex; align-items: flex-end;
-        gap: var(--space-sm); padding: var(--space-md);
-        height: 8.75rem;
-      }
-
-      .bar-item {
-        flex: 1; display: flex; flex-direction: column;
-        align-items: center; gap: var(--space-xs); height: 100%;
-      }
-
-      .bar-wrapper { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
-
-      .bar-fill {
-        width: 65%; min-height: 0.375rem;
-        border-radius: 0.375rem 0.375rem 0.125rem 0.125rem;
-        transition: height 0.8s var(--ease-spring);
-        &.bar-primary { background: var(--color-primary); }
-        &.bar-accent { background: var(--color-accent); }
-        &.bar-success { background: var(--color-success); }
-      }
-
-      .bar-label {
-        font-size: 0.6875rem; font-weight: 600;
-        color: var(--color-text-tertiary); text-transform: uppercase;
-      }
-
-      /* Category distribution */
-      .category-list {
-        padding: var(--space-sm) var(--space-md);
-        display: flex; flex-direction: column; gap: var(--space-sm);
-      }
-
-      .category-item { display: flex; align-items: center; gap: var(--space-sm); }
-
-      .category-icon {
-        width: 2rem; height: 2rem;
-        border-radius: var(--radius-md);
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
-        .material-symbols-rounded { font-size: 1.125rem; }
-      }
-
-      .cat-icon-battery { background: rgba(247, 127, 0, 0.1); .material-symbols-rounded { color: var(--color-warning); } }
-      .cat-icon-tire { background: rgba(58, 134, 255, 0.1); .material-symbols-rounded { color: var(--color-info); } }
-      .cat-icon-crash { background: rgba(230, 57, 70, 0.1); .material-symbols-rounded { color: var(--color-danger); } }
-      .cat-icon-engine { background: rgba(108, 117, 125, 0.1); .material-symbols-rounded { color: var(--color-text-secondary); } }
-      .cat-icon-keys { background: rgba(255, 107, 53, 0.1); .material-symbols-rounded { color: var(--color-accent); } }
-      .cat-icon-other, .cat-icon-uncertain { background: var(--color-primary-50); .material-symbols-rounded { color: var(--color-primary); } }
-
-      .category-info { flex: 1; }
-      .category-head { display: flex; justify-content: space-between; margin-bottom: 0.375rem; }
-      .category-name { font-size: 0.8125rem; font-weight: 600; color: var(--color-text-primary); }
-      .category-count { font-size: 0.8125rem; font-weight: 700; color: var(--color-text-secondary); }
-
-      .progress-bar {
-        height: 0.375rem; background: var(--color-surface-alt);
-        border-radius: var(--radius-pill); overflow: hidden;
-      }
-
-      .progress-fill {
-        height: 100%; border-radius: var(--radius-pill);
-        transition: width 0.8s var(--ease-spring);
-        &.fill-battery { background: var(--color-warning); }
-        &.fill-tire { background: var(--color-info); }
-        &.fill-crash { background: var(--color-danger); }
-        &.fill-engine { background: var(--color-text-secondary); }
-        &.fill-keys { background: var(--color-accent); }
-        &.fill-other, &.fill-uncertain { background: var(--color-primary); }
-      }
-
-      .empty-categories {
-        text-align: center; padding: var(--space-lg);
-        color: var(--color-text-tertiary);
-        .material-symbols-rounded { font-size: 2.5rem; margin-bottom: var(--space-sm); display: block; }
-        p { font-size: 0.8125rem; }
-      }
-
-      /* ── Mobile-first: Bottom row stacked ── */
-      .bottom-row {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: var(--space-md);
-      }
-
-      .card-header h3 {
-        display: flex; align-items: center; gap: var(--space-sm);
-        .material-symbols-rounded { font-size: 1.25rem; color: var(--color-primary); }
-      }
-
-      .see-all {
-        display: flex; align-items: center; gap: 0.25rem;
-        font-size: 0.8125rem; font-weight: 600;
-        color: var(--color-primary);
-        padding: 0.375rem 0.625rem;
-        border-radius: var(--radius-sm);
-        transition: all 0.2s var(--ease-out);
-        .material-symbols-rounded { font-size: 1rem; }
-        &:hover { background: var(--color-primary-50); }
-      }
-
-      /* Incident list */
-      .incident-list { display: flex; flex-direction: column; }
-
-      .incident-row {
-        display: flex; align-items: flex-start;
-        gap: var(--space-sm);
-        padding: var(--space-sm) var(--space-md);
-        border-top: 1px solid var(--color-divider);
-        transition: all 0.2s var(--ease-out);
-        &:hover { background: var(--color-surface-hover); .chevron { transform: translateX(4px); color: var(--color-primary); } }
-      }
-
-      .incident-icon {
-        width: 2.5rem; height: 2.5rem;
-        border-radius: var(--radius-lg);
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0; background: var(--color-primary-50);
-        .material-symbols-rounded { font-size: 1.25rem; color: var(--color-primary); }
-        &.cat-battery { background: rgba(247, 127, 0, 0.1); .material-symbols-rounded { color: var(--color-warning); } }
-        &.cat-tire { background: rgba(58, 134, 255, 0.1); .material-symbols-rounded { color: var(--color-info); } }
-        &.cat-crash { background: rgba(230, 57, 70, 0.1); .material-symbols-rounded { color: var(--color-danger); } }
-        &.cat-engine { background: rgba(108, 117, 125, 0.1); .material-symbols-rounded { color: var(--color-text-secondary); } }
-      }
-
-      .incident-body { flex: 1; min-width: 0; }
-
-      .incident-title-row {
-        display: flex; align-items: center;
-        gap: var(--space-xs); margin-bottom: 0.25rem;
-        flex-wrap: wrap;
-      }
-
-      .incident-id {
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 700; color: var(--color-text-primary); font-size: 0.8125rem;
-      }
-
-      .incident-summary {
-        color: var(--color-text-secondary); font-size: 0.8125rem;
-        margin: 0.25rem 0 0.375rem; overflow: hidden;
-        text-overflow: ellipsis; display: -webkit-box;
-        -webkit-line-clamp: 1; -webkit-box-orient: vertical;
-      }
-
-      .incident-meta {
-        display: flex; flex-wrap: wrap;
-        gap: var(--space-sm); font-size: 0.75rem;
-        color: var(--color-text-tertiary);
-        span { display: inline-flex; align-items: center; gap: 0.25rem; }
-        .material-symbols-rounded { font-size: 0.875rem; }
-      }
-
-      .chevron { color: var(--color-text-tertiary); font-size: 1.5rem; transition: all 0.2s var(--ease-out); display: none; }
-
-      /* Timeline */
-      .timeline-card .card-header { border-bottom: 1px solid var(--color-divider); }
-
-      .timeline {
-        padding: var(--space-sm) var(--space-md);
-        display: flex; flex-direction: column;
-      }
-
-      .timeline-item {
-        display: flex; gap: var(--space-sm);
-        padding: var(--space-xs) 0; position: relative;
-        &:not(:last-child)::before {
-          content: ''; position: absolute;
-          left: 0.4375rem; top: 1.75rem; bottom: -0.25rem;
-          width: 2px; background: var(--color-divider);
-        }
-      }
-
-      .tl-dot {
-        width: 1rem; height: 1rem; border-radius: 50%;
-        flex-shrink: 0; margin-top: 0.125rem;
-        border: 3px solid var(--color-border); background: var(--color-surface);
-        &.tl-new { border-color: var(--color-status-pending); background: rgba(247, 127, 0, 0.15); }
-        &.tl-assigned { border-color: var(--color-info); background: rgba(58, 134, 255, 0.15); }
-        &.tl-progress { border-color: var(--color-status-progress); background: rgba(0, 180, 216, 0.15); }
-        &.tl-completed { border-color: var(--color-success); background: rgba(6, 167, 125, 0.15); }
-      }
-
-      .tl-content { flex: 1; }
-
-      .tl-text { font-size: 0.8125rem; font-weight: 500; color: var(--color-text-primary); line-height: 1.4; }
-
-      .tl-time {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.625rem; color: var(--color-text-tertiary);
-        margin-top: 0.125rem; display: block; letter-spacing: 0.02em;
-      }
-
-      .empty-state.small {
-        padding: var(--space-md); text-align: center;
-        color: var(--color-text-tertiary);
-        .material-symbols-rounded { font-size: 2.25rem; margin-bottom: var(--space-xs); display: block; }
-        p { font-size: 0.8125rem; }
-      }
-
-      /* ── Tablet (≥576px): 2-col stats ── */
-      @media (min-width: 576px) {
-        .stats-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
-        .stat-number { font-size: 1.75rem; }
-        .stat-icon { width: 3rem; height: 3rem; .material-symbols-rounded { font-size: 1.5rem; } }
-        .setup-card { flex-direction: row; align-items: center; gap: var(--space-lg); padding: var(--space-md) var(--space-lg); }
-        .bar-chart { height: 10rem; gap: var(--space-md); }
-      }
-
-      /* ── Tablet (≥768px): 2-col layouts ── */
-      @media (min-width: 768px) {
-        .charts-row { grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
-        .bottom-row { grid-template-columns: 1.5fr 1fr; gap: var(--space-lg); }
-        .incident-row { align-items: center; gap: var(--space-md); padding: var(--space-md) var(--space-lg); }
-        .incident-icon { width: 2.75rem; height: 2.75rem; .material-symbols-rounded { font-size: 1.5rem; } }
-        .chevron { display: block; }
-        .category-list { padding: var(--space-md) var(--space-lg); gap: var(--space-md); }
-        .category-icon { width: 2.25rem; height: 2.25rem; .material-symbols-rounded { font-size: 1.25rem; } }
-        .timeline { padding: var(--space-md) var(--space-lg); }
-      }
-
-      /* ── Desktop (≥1024px): 4-col stats, wider charts ── */
-      @media (min-width: 1024px) {
-        .stats-grid { grid-template-columns: repeat(4, 1fr); }
-        .stat-card { padding: var(--space-lg); }
-        .stat-number { font-size: 2rem; }
-        .stat-icon { width: 3.25rem; height: 3.25rem; .material-symbols-rounded { font-size: 1.625rem; } }
-        .charts-row { grid-template-columns: 1.2fr 1fr; }
-        .bar-chart { height: 12.5rem; padding: var(--space-lg); }
-        .setup-card { padding: var(--space-lg) var(--space-xl); }
-        .setup-icon { width: 3.75rem; height: 3.75rem; .material-symbols-rounded { font-size: 1.875rem; } }
-        .error-banner { gap: var(--space-md); padding: var(--space-md) var(--space-lg); }
-      }
-
-      /* Reviews */
-      .reviews-card { margin-top: var(--space-lg); }
-      .reviews-avg {
-        display: flex; align-items: center; gap: 0.25rem;
-        font-weight: 700; font-size: 1rem; color: var(--color-text-primary);
-        small { font-weight: 400; font-size: 0.8125rem; color: var(--color-text-tertiary); }
-      }
-      .star-icon { font-size: 1.25rem; color: #f59e0b; }
-      .review-list { display: flex; flex-direction: column; gap: var(--space-sm); }
-      .review-item {
-        padding: var(--space-sm);
-        background: var(--color-surface-alt);
-        border-radius: var(--radius-lg);
-      }
-      .review-header { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
-      .review-avatar {
-        width: 2rem; height: 2rem; border-radius: 50%;
-        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-        color: white; display: flex; align-items: center; justify-content: center;
-        font-weight: 700; font-size: 0.8125rem; flex-shrink: 0;
-      }
-      .review-meta { flex: 1; display: flex; flex-direction: column; }
-      .review-name { font-weight: 600; font-size: 0.875rem; color: var(--color-text-primary); }
-      .review-date { font-size: 0.75rem; color: var(--color-text-tertiary); }
-      .review-stars {
-        display: flex; gap: 1px;
-        .material-symbols-rounded { font-size: 1rem; color: #d1d5db; &.filled { color: #f59e0b; } }
-      }
-      .review-comment {
-        margin-top: var(--space-sm); font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.5;
-      }
-
-      @media (min-width: 576px) {
-        .review-item { padding: var(--space-md); }
-        .review-avatar { width: 2.25rem; height: 2.25rem; font-size: 0.875rem; }
-        .review-list { gap: var(--space-md); }
-      }
-    `,
-  ],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   workshop: Workshop | null = null;
   recentIncidents: Incident[] = [];
   allIncidents: Incident[] = [];
@@ -702,10 +287,13 @@ export class DashboardComponent implements OnInit {
   loading = true;
   error = false;
 
-  weeklyBars: { day: string; pct: number; color: string }[] = [];
+  weeklyBars: { day: string; count: number; pct: number; color: string }[] = [];
   categoryStats: { key: string; label: string; count: number; pct: number }[] = [];
   timelineItems: { type: string; text: string; time: string }[] = [];
   reviews: Review[] = [];
+
+  private weeklyChart?: Chart;
+  private catChart?: Chart;
 
   constructor(
     private api: ApiService,
@@ -717,6 +305,11 @@ export class DashboardComponent implements OnInit {
     this.loadData();
   }
 
+  ngOnDestroy() {
+    this.weeklyChart?.destroy();
+    this.catChart?.destroy();
+  }
+
   loadData() {
     this.loading = true;
     this.error = false;
@@ -726,6 +319,7 @@ export class DashboardComponent implements OnInit {
         this.workshop = w;
         this.loading = false;
         this.cdr.markForCheck();
+        this.renderCharts();
       },
       error: () => {
         this.workshop = null;
@@ -752,6 +346,7 @@ export class DashboardComponent implements OnInit {
         this.buildCategoryStats(incidents);
         this.buildTimeline(incidents);
         this.cdr.markForCheck();
+        this.renderCharts();
       },
       error: () => {
         this.error = true;
@@ -770,6 +365,184 @@ export class DashboardComponent implements OnInit {
     } else {
       this.reviews = [];
     }
+  }
+
+  /** Stat cards — colored left accent + semantic glow per KPI type. */
+  statCards() {
+    return [
+      {
+        label: 'Pendientes', value: this.pendingCount, icon: 'schedule',
+        tile: 'bg-amber-400/15 text-amber-600 dark:text-amber-400',
+        glow: 'bg-amber-400',
+        accentBar: 'bg-amber-400',
+        trendUp: this.pendingCount > 0,
+      },
+      {
+        label: 'En proceso', value: this.inProgressCount, icon: 'build',
+        tile: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+        glow: 'bg-blue-500',
+        accentBar: 'bg-blue-500',
+        trendUp: false,
+      },
+      {
+        label: 'Completados', value: this.completedCount, icon: 'check_circle',
+        tile: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+        glow: 'bg-emerald-500',
+        accentBar: 'bg-emerald-500',
+        trendUp: true,
+      },
+      {
+        label: this.isAdmin ? 'Comisión' : 'Rating',
+        value: this.isAdmin
+          ? 'Bs ' + (this.totalCommission || 0).toLocaleString('es-BO', { maximumFractionDigits: 0 })
+          : (this.workshop?.rating || 0).toFixed(1),
+        icon: 'star',
+        tile: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+        glow: 'bg-violet-500',
+        accentBar: 'bg-violet-500',
+        trendUp: true,
+      },
+    ];
+  }
+
+  priorityCls(priority: string): string {
+    const map: Record<string, string> = {
+      critical: 'bg-emergency-500/15 text-emergency-600 dark:bg-emergency-500/20 dark:text-emergency-300',
+      high:     'bg-orange-500/15 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300',
+      medium:   'bg-amber-400/15 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300',
+      low:      'bg-slate-100 text-slate-600 dark:bg-white/8 dark:text-slate-300',
+    };
+    return map[priority] || map['low'];
+  }
+
+  priorityDotCls(priority: string): string {
+    const map: Record<string, string> = {
+      critical: 'bg-emergency-500',
+      high:     'bg-orange-500',
+      medium:   'bg-amber-400',
+      low:      'bg-slate-300 dark:bg-slate-600',
+    };
+    return map[priority] || 'bg-slate-300';
+  }
+
+  timelineDotCls(type: string): string {
+    const map: Record<string, string> = {
+      new: 'bg-[#111111] dark:bg-white ring-black/8 dark:ring-white/10',
+      assigned: 'bg-info ring-info/15',
+      progress: 'bg-amber-400 ring-amber-400/15',
+      completed: 'bg-success ring-success/15',
+    };
+    return map[type] || map['new'];
+  }
+
+  private renderCharts() {
+    // Flush *ngIf so the <canvas> elements exist before we query them.
+    this.cdr.detectChanges();
+    this.renderWeeklyChart();
+    this.renderCategoryChart();
+  }
+
+  private renderWeeklyChart() {
+    const el = document.getElementById('dash-weekly') as HTMLCanvasElement | null;
+    if (!el) return;
+    this.weeklyChart?.destroy();
+    const todayIdx = this.weeklyBars.length - 1;
+    // Semantic palette: blue bars for normal days, emergency-red for today
+    const barColors = this.weeklyBars.map((_, i) =>
+      i === todayIdx ? '#E63946' : '#3B82F6',
+    );
+    this.weeklyChart = new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: this.weeklyBars.map((b) => b.day),
+        datasets: [
+          {
+            label: 'Incidentes',
+            data: this.weeklyBars.map((b) => b.count),
+            backgroundColor: barColors,
+            borderRadius: 8,
+            maxBarThickness: 40,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1e293b',
+            titleColor: '#94a3b8',
+            bodyColor: '#f8fafc',
+            padding: 10,
+            cornerRadius: 8,
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#94a3b8', font: { size: 11 } },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#94a3b8', precision: 0, font: { size: 11 } },
+            grid: { color: 'rgba(148,163,184,0.10)' },
+            border: { dash: [4, 4] },
+          },
+        },
+      },
+    });
+  }
+
+  private renderCategoryChart() {
+    const el = document.getElementById('dash-cat') as HTMLCanvasElement | null;
+    if (!el || this.categoryStats.length === 0) return;
+    this.catChart?.destroy();
+    // Semantic palette — each slice has a distinct, meaningful color
+    // battery=blue, crash=red, engine=violet, tire=emerald, keys=amber, other=slate
+    const palette = ['#3B82F6', '#E63946', '#8B5CF6', '#10B981', '#F59E0B', '#64748B'];
+    this.catChart = new Chart(el, {
+      type: 'doughnut',
+      data: {
+        labels: this.categoryStats.map((c) => c.label),
+        datasets: [
+          {
+            data: this.categoryStats.map((c) => c.count),
+            backgroundColor: this.categoryStats.map((_, i) => palette[i % palette.length]),
+            borderWidth: 2,
+            borderColor: 'transparent',
+            hoverBorderColor: '#ffffff20',
+            hoverOffset: 6,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#94a3b8',
+              boxWidth: 10,
+              boxHeight: 10,
+              padding: 16,
+              usePointStyle: true,
+              pointStyleWidth: 10,
+              font: { size: 11 },
+            },
+          },
+          tooltip: {
+            backgroundColor: '#1e293b',
+            titleColor: '#94a3b8',
+            bodyColor: '#f8fafc',
+            padding: 10,
+            cornerRadius: 8,
+          },
+        },
+      },
+    });
   }
 
   private buildWeeklyBars(incidents: Incident[]) {
@@ -791,6 +564,7 @@ export class DashboardComponent implements OnInit {
       const pct = (counts[idx] / max) * 100;
       this.weeklyBars.push({
         day: days[idx],
+        count: counts[idx],
         pct: Math.max(pct, 4),
         color: i === 0 ? 'accent' : pct > 50 ? 'primary' : 'success',
       });
@@ -864,9 +638,13 @@ export class DashboardComponent implements OnInit {
 
   get greeting(): string {
     const h = new Date().getHours();
-    if (h < 12) return 'Buenos dias';
+    if (h < 12) return 'Buenos días';
     if (h < 19) return 'Buenas tardes';
     return 'Buenas noches';
+  }
+
+  get today(): string {
+    return new Date().toLocaleDateString('es-BO', { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
   getCategoryIcon(cat: string): string {

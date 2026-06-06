@@ -336,7 +336,7 @@ def add_status_history(db, incident: Incident) -> None:
         ("pending", "Incidente registrado por el cliente", "Sistema"),
     ]
     if incident.status in {IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS, IncidentStatus.COMPLETED}:
-        steps.append(("assigned", "Taller asignado al incidente", "AsisteCar"))
+        steps.append(("assigned", "Taller asignado al incidente", "RescateYa"))
     if incident.status in {IncidentStatus.IN_PROGRESS, IncidentStatus.COMPLETED}:
         steps.append(("in_progress", "Tecnico en camino", "Taller"))
     if incident.status == IncidentStatus.COMPLETED:
@@ -363,7 +363,7 @@ def add_related_demo_data(db, incident: Incident, client: User, workshop_user: U
                 user_id=client.id,
                 incident_id=incident.id,
                 title="Incidente registrado",
-                message="Tu solicitud fue recibida por AsisteCar.",
+                message="Tu solicitud fue recibida por RescateYa.",
                 type=NotificationType.STATUS_UPDATE,
                 is_read=incident.status == IncidentStatus.COMPLETED,
             )
@@ -376,7 +376,7 @@ def add_related_demo_data(db, incident: Incident, client: User, workshop_user: U
                 sender_id=workshop_user.id,
                 sender_name=workshop_user.full_name,
                 sender_role=workshop_user.role.value,
-                message="Hola, ya recibimos tu emergencia y estamos coordinando al tecnico.",
+                message="Hola, ya recibimos tu emergencia y estamos coordinando al tecnico mas cercano.",
             )
         )
 
@@ -385,9 +385,9 @@ def add_related_demo_data(db, incident: Incident, client: User, workshop_user: U
 
 def add_demo_payment_cards(db, clients: list[User]) -> None:
     card_specs = [
-        (clients[0], "Ana Rojas", "visa", "4242"),
-        (clients[1], "Carlos Mendez", "mastercard", "4444"),
-        (clients[2], "Lucia Vargas", "visa", "1881"),
+        (clients[0], "Luciana Mendez", "visa", "4242"),
+        (clients[1], "Fernando Arce", "mastercard", "4444"),
+        (clients[2], "Claudia Vaca", "visa", "1881"),
     ]
     for client, holder_name, brand, last4 in card_specs:
         if db.query(PaymentCard).filter(PaymentCard.user_id == client.id, PaymentCard.last4 == last4).first():
@@ -607,150 +607,143 @@ def run_seed() -> None:
 
         seed_default_slas(db)
 
-        admin = get_or_create_user(db, "admin@asistecar.com", "Administrador Plataforma", "70000001", UserRole.ADMIN)
+        # ── Admin ──────────────────────────────────────────────────────────────
+        admin = get_or_create_user(db, "admin@rescateya.bo", "Administrador RescateYa", "70000001", UserRole.ADMIN)
 
+        # ── Clientes — nombres tipicos de Santa Cruz de la Sierra ─────────────
         clients = [
-            get_or_create_user(db, "ana.rojas@email.com", "Ana Rojas", "70000002", UserRole.CLIENT),
-            get_or_create_user(db, "carlos.mendez@email.com", "Carlos Mendez", "70000003", UserRole.CLIENT),
-            get_or_create_user(db, "lucia.vargas@email.com", "Lucia Vargas", "70000004", UserRole.CLIENT),
-            get_or_create_user(db, "marco.silva@email.com", "Marco Silva", "70000005", UserRole.CLIENT),
-            get_or_create_user(db, "valeria.rios@email.com", "Valeria Rios", "70000006", UserRole.CLIENT),
-            get_or_create_user(db, "diego.nunez@email.com", "Diego Nunez", "70000007", UserRole.CLIENT),
+            get_or_create_user(db, "luciana.mendez@gmail.com",   "Luciana Mendez",   "70000002", UserRole.CLIENT),
+            get_or_create_user(db, "fernando.arce@gmail.com",    "Fernando Arce",    "70000003", UserRole.CLIENT),
+            get_or_create_user(db, "claudia.vaca@gmail.com",     "Claudia Vaca",     "70000004", UserRole.CLIENT),
+            get_or_create_user(db, "rodrigo.montero@gmail.com",  "Rodrigo Montero",  "70000005", UserRole.CLIENT),
+            get_or_create_user(db, "sandra.quiroga@gmail.com",   "Sandra Quiroga",   "70000006", UserRole.CLIENT),
+            get_or_create_user(db, "javier.mercado@gmail.com",   "Javier Mercado",   "70000007", UserRole.CLIENT),
         ]
         client_first_names = [
-            "Sofia",
-            "Mateo",
-            "Camila",
-            "Gabriel",
-            "Daniela",
-            "Nicolas",
-            "Paola",
-            "Andres",
-            "Fernanda",
-            "Rodrigo",
+            "Paola", "Wilber", "Yolanda", "Marcelo", "Valeria",
+            "Gustavo", "Noemí", "Orlando", "Roxana", "Freddy",
         ]
         client_last_names = [
-            "Quiroga",
-            "Arce",
-            "Molina",
-            "Salazar",
-            "Rivero",
-            "Cespedes",
-            "Vaca",
-            "Montero",
-            "Aguilera",
-            "Ribera",
+            "Sejas", "Torrez", "Peñaranda", "Salvatierra", "Añez",
+            "Cespedes", "Ribera", "Mamani", "Suarez", "Vacaflor",
         ]
-        for index in range(len(clients) + 1, 101):
+        for index in range(len(clients) + 1, 61):
             first_name = client_first_names[(index - 1) % len(client_first_names)]
             last_name = client_last_names[(index - 1) % len(client_last_names)]
             clients.append(
                 get_or_create_user(
                     db,
-                    f"cliente{index:03d}@asistecar.demo",
+                    f"cliente{index:03d}@rescateya.demo",
                     f"{first_name} {last_name} {index:03d}",
                     f"70{index:06d}",
                     UserRole.CLIENT,
                 )
             )
 
+        # ── Talleres — 5 socios reales con ubicaciones de Santa Cruz ──────────
         workshop_specs = [
             {
-                "email": "contacto@elpiston.com",
-                "owner": "Taller El Piston",
+                # Taller 1: zona centro-sur (El Trompillo)
+                "email": "contacto@tallersanlorenzo.bo",
+                "owner": "Taller San Lorenzo Motor",
                 "phone": "71010001",
-                "name": "Taller El Piston",
-                "description": "Especialistas en motor, bateria y diagnostico electronico.",
-                "address": "Av. Cristo Redentor 4to anillo, Santa Cruz",
-                "lat": -17.7551,
-                "lng": -63.1814,
+                "name": "Taller San Lorenzo Motor",
+                "description": "Especialistas en motor, bateria y diagnostico electronico en zona El Trompillo.",
+                "address": "Av. El Trompillo 320, entre 2do y 3er anillo, Santa Cruz",
+                "lat": -17.7855,
+                "lng": -63.1798,
                 "services": "battery,engine,keys,other",
                 "capacity": 8,
                 "rating": 4.8,
-                "total_ratings": 126,
+                "total_ratings": 134,
                 "techs": [
-                    ("luis.roca@elpiston.com", "Luis Roca", "71110001", "battery,engine", -17.7580, -63.1822),
-                    ("maria.suarez@elpiston.com", "Maria Suarez", "71110002", "keys,battery,other", -17.7524, -63.1780),
-                    ("jorge.pinto@elpiston.com", "Jorge Pinto", "71110003", "engine,other", -17.7545, -63.1842),
+                    ("wilber.gutierrez@tallersanlorenzo.bo", "Wilber Gutierrez", "71110001", "battery,engine", -17.7880, -63.1805),
+                    ("miriam.aguilera@tallersanlorenzo.bo",  "Miriam Aguilera",  "71110002", "keys,battery,other", -17.7830, -63.1778),
+                    ("sergio.caballero@tallersanlorenzo.bo", "Sergio Caballero", "71110003", "engine,other", -17.7848, -63.1821),
                 ],
             },
             {
-                "email": "admin@servillantaexpress.com",
-                "owner": "ServiLlanta Express",
+                # Taller 2: zona norte (Av. Banzer 5to anillo)
+                "email": "admin@llantericrucena.bo",
+                "owner": "Llantería Cruceña Express",
                 "phone": "71010002",
-                "name": "ServiLlanta Express",
-                "description": "Auxilio movil para llantas, pinchazos y balanceo de emergencia.",
-                "address": "Av. Banzer 6to anillo, Santa Cruz",
-                "lat": -17.7358,
-                "lng": -63.1745,
+                "name": "Llanteria Crucena Express",
+                "description": "Auxilio movil para llantas pinchadas, balanceo y emergencias en via publica.",
+                "address": "Av. Banzer km 9, entre 5to y 6to anillo Norte, Santa Cruz",
+                "lat": -17.7448,
+                "lng": -63.2096,
                 "services": "tire,other",
                 "capacity": 10,
                 "rating": 4.7,
-                "total_ratings": 98,
+                "total_ratings": 108,
                 "techs": [
-                    ("ruben.antelo@servillantaexpress.com", "Ruben Antelo", "71120001", "tire", -17.7368, -63.1758),
-                    ("paola.rivero@servillantaexpress.com", "Paola Rivero", "71120002", "tire,other", -17.7338, -63.1730),
-                    ("henry.cortez@servillantaexpress.com", "Henry Cortez", "71120003", "tire,battery", -17.7380, -63.1719),
+                    ("orlando.penaranda@llantericrucena.bo", "Orlando Penaranda", "71120001", "tire", -17.7460, -63.2108),
+                    ("noemi.salinas@llantericrucena.bo",     "Noemi Salinas",     "71120002", "tire,other", -17.7435, -63.2081),
+                    ("freddy.torrez@llantericrucena.bo",     "Freddy Torrez",     "71120003", "tire,battery", -17.7472, -63.2070),
                 ],
             },
             {
-                "email": "operaciones@gruascentral.com",
-                "owner": "Gruas Central SRL",
+                # Taller 3: zona este (av. Virgen de Cotoca / Plan 3000)
+                "email": "operaciones@gruasoriente.bo",
+                "owner": "Grúas del Oriente SRL",
                 "phone": "71010003",
-                "name": "Gruas Central SRL",
-                "description": "Servicio de grua, remolque y soporte para accidentes.",
-                "address": "Av. Uruguay, zona centro, Santa Cruz",
-                "lat": -17.7794,
-                "lng": -63.1800,
+                "name": "Gruas del Oriente SRL",
+                "description": "Servicio de grua pesada, remolque y asistencia en accidentes zona este.",
+                "address": "Av. Virgen de Cotoca km 5, Plan 3000, Santa Cruz",
+                "lat": -17.8220,
+                "lng": -63.1482,
                 "services": "crash,engine,other",
                 "capacity": 6,
                 "rating": 4.5,
-                "total_ratings": 74,
+                "total_ratings": 79,
                 "techs": [
-                    ("pedro.gutierrez@gruascentral.com", "Pedro Gutierrez", "71130001", "crash,engine", -17.7801, -63.1791),
-                    ("oscar.medina@gruascentral.com", "Oscar Medina", "71130002", "crash,other", -17.7768, -63.1832),
-                    ("roxana.flores@gruascentral.com", "Roxana Flores", "71130003", "engine,other", -17.7812, -63.1774),
+                    ("rolando.suarez@gruasoriente.bo",  "Rolando Suarez",  "71130001", "crash,engine", -17.8235, -63.1470),
+                    ("alberto.mamani@gruasoriente.bo",  "Alberto Mamani",  "71130002", "crash,other",  -17.8198, -63.1498),
+                    ("claudia.ribera@gruasoriente.bo",  "Claudia Ribera",  "71130003", "engine,other", -17.8248, -63.1462),
                 ],
             },
             {
-                "email": "recepcion@electroautobolivia.com",
-                "owner": "ElectroAuto Bolivia",
+                # Taller 4: Equipetrol Norte (zona noroeste)
+                "email": "recepcion@autoelectriccsc.bo",
+                "owner": "AutoElectric Cruceño",
                 "phone": "71010004",
-                "name": "ElectroAuto Bolivia",
-                "description": "Baterias, alternadores, sensores y fallas electricas a domicilio.",
-                "address": "Av. Alemana 3er anillo, Santa Cruz",
-                "lat": -17.7637,
-                "lng": -63.1648,
+                "name": "AutoElectric Cruceno",
+                "description": "Baterias, alternadores, sensores y fallas electricas a domicilio en Equipetrol.",
+                "address": "Av. Santos Dumont 1540, Equipetrol Norte, Santa Cruz",
+                "lat": -17.7582,
+                "lng": -63.2108,
                 "services": "battery,engine,keys",
                 "capacity": 7,
                 "rating": 4.9,
-                "total_ratings": 142,
+                "total_ratings": 157,
                 "techs": [
-                    ("sofia.salvatierra@electroautobolivia.com", "Sofia Salvatierra", "71140001", "battery,keys", -17.7649, -63.1655),
-                    ("miguel.arnez@electroautobolivia.com", "Miguel Arnez", "71140002", "engine,battery", -17.7620, -63.1636),
-                    ("raul.ibanez@electroautobolivia.com", "Raul Ibanez", "71140003", "keys,other", -17.7660, -63.1662),
+                    ("ruben.salvatierra@autoelectriccsc.bo", "Ruben Salvatierra", "71140001", "battery,keys",    -17.7595, -63.2115),
+                    ("elizabeth.rios@autoelectriccsc.bo",    "Elizabeth Rios",    "71140002", "engine,battery",  -17.7565, -63.2095),
+                    ("carlos.anez@autoelectriccsc.bo",       "Carlos Anez",       "71140003", "keys,other",      -17.7606, -63.2122),
                 ],
             },
             {
-                "email": "gerencia@chaperiotusequis.com",
-                "owner": "Chaperio Los Tusequis",
+                # Taller 5: Av. Paragua, zona norte-central
+                "email": "gerencia@chaperoparagua.bo",
+                "owner": "Chaperio Paragua",
                 "phone": "71010005",
-                "name": "Chaperio Los Tusequis",
-                "description": "Chaperio, pintura express y evaluacion de danos por colision.",
-                "address": "Barrio Los Tusequis, Santa Cruz",
-                "lat": -17.7435,
-                "lng": -63.1904,
+                "name": "Chaperio Paragua",
+                "description": "Chaperio, pintura express y evaluacion de danos por colision en zona norte.",
+                "address": "Av. Paragua 890, entre 3er y 4to anillo Norte, Santa Cruz",
+                "lat": -17.7490,
+                "lng": -63.1978,
                 "services": "crash,other",
                 "capacity": 5,
                 "rating": 4.4,
-                "total_ratings": 63,
+                "total_ratings": 68,
                 "techs": [
-                    ("nelson.cuellar@chaperiotusequis.com", "Nelson Cuellar", "71150001", "crash", -17.7428, -63.1910),
-                    ("andrea.montero@chaperiotusequis.com", "Andrea Montero", "71150002", "crash,other", -17.7444, -63.1892),
-                    ("felipe.vargas@chaperiotusequis.com", "Felipe Vargas", "71150003", "other", -17.7451, -63.1922),
+                    ("nelson.cespedes@chaperoparagua.bo", "Nelson Cespedes", "71150001", "crash",       -17.7480, -63.1985),
+                    ("paola.sejas@chaperoparagua.bo",     "Paola Sejas",     "71150002", "crash,other", -17.7500, -63.1968),
+                    ("mario.vacaflor@chaperoparagua.bo",  "Mario Vacaflor",  "71150003", "other",       -17.7510, -63.1995),
                 ],
             },
         ]
+
         service_sets = [
             "battery,engine,keys,other",
             "tire,other",
@@ -758,19 +751,21 @@ def run_seed() -> None:
             "battery,engine,keys",
             "crash,other",
         ]
+        # Nombres de talleres adicionales con sabor cruceno
         workshop_names = [
-            "Auxilio Norte",
-            "Mecanica Express",
-            "Auto Rescate",
-            "ServiMotor",
-            "Ruta Segura",
-            "TecnoAuto",
-            "Llanta Movil",
-            "ElectroRuta",
-            "Gruas Rapidas",
-            "Motor Total",
+            "Mecanica del Este",
+            "Auxilio Cruceno",
+            "Motor Oriente",
+            "ServiRuta",
+            "Rescate Movil",
+            "TecnoMotor SC",
+            "Llanta Rapida",
+            "ElectroAuto SC",
+            "Gruas Paragua",
+            "Auto Solucion",
         ]
-        technician_names = ["Alex", "Bruno", "Cesar", "Dario", "Erika", "Fabian", "Gustavo", "Hugo", "Iris", "Joel"]
+        # Nombres de tecnicos adicionales — tipicos de Santa Cruz
+        technician_names = ["Wilber", "Freddy", "Orlando", "Rolando", "Noemí", "Gustavo", "Paola", "Nelson", "Elizabeth", "Carlos"]
 
         for spec_index, spec in enumerate(workshop_specs, start=1):
             while len(spec["techs"]) < 5:
@@ -778,7 +773,7 @@ def run_seed() -> None:
                 tech_name = f"Tecnico {tech_number} {spec['name']}"
                 spec["techs"].append(
                     (
-                        f"tecnico{spec_index:02d}{tech_number:02d}@demo.asistecar.net",
+                        f"tecnico{spec_index:02d}{tech_number:02d}@demo.rescateya.bo",
                         tech_name,
                         f"72{spec_index:03d}{tech_number:03d}",
                         spec["services"],
@@ -787,19 +782,36 @@ def run_seed() -> None:
                     )
                 )
 
-        for index in range(len(workshop_specs) + 1, 51):
+        # Talleres adicionales generados — distribuidos por anillos y zonas de Santa Cruz
+        sc_zones = [
+            # (nombre zona, lat_base, lng_base)
+            ("3er anillo Norte",     -17.7600, -63.1870),
+            ("4to anillo Banzer",    -17.7520, -63.2020),
+            ("Radial 26",            -17.7700, -63.1620),
+            ("Plan 3000 Este",       -17.8350, -63.1220),
+            ("Urbarí Sur",           -17.7940, -63.1910),
+            ("Las Palmas",           -17.7495, -63.2110),
+            ("Av. Monseñor Rivero",  -17.7800, -63.1820),
+            ("Barrio Palermo",       -17.7960, -63.1870),
+            ("Av. Grigota Sur",      -17.8030, -63.1810),
+            ("Av. Roca y Coronado",  -17.7920, -63.1760),
+            ("Zona Norte Condominio",-17.7210, -63.1875),
+            ("Mutualista",           -17.7950, -63.1875),
+        ]
+        for index in range(len(workshop_specs) + 1, 26):
             services = service_sets[(index - 1) % len(service_sets)]
             base_name = workshop_names[(index - 1) % len(workshop_names)]
-            lat = -17.7300 - (index % 12) * 0.006
-            lng = -63.1400 - (index % 10) * 0.007
+            zone_name, lat_base, lng_base = sc_zones[(index - 1) % len(sc_zones)]
+            lat = lat_base - (index % 6) * 0.003
+            lng = lng_base - (index % 8) * 0.004
             workshop_specs.append(
                 {
-                    "email": f"taller{index:03d}@asistecar.demo",
+                    "email": f"taller{index:03d}@rescateya.demo",
                     "owner": f"{base_name} {index:03d}",
                     "phone": f"7102{index:04d}",
                     "name": f"{base_name} {index:03d}",
-                    "description": "Taller demo con cobertura movil, tecnicos disponibles y respuesta rapida.",
-                    "address": f"Zona demo {index}, Santa Cruz",
+                    "description": f"Taller socio con cobertura en {zone_name}, tecnicos disponibles y respuesta rapida.",
+                    "address": f"{zone_name}, Santa Cruz de la Sierra",
                     "lat": lat,
                     "lng": lng,
                     "services": services,
@@ -808,7 +820,7 @@ def run_seed() -> None:
                     "total_ratings": 25 + index * 3,
                     "techs": [
                         (
-                            f"mecanico{index:03d}{tech_index:02d}@asistecar.demo",
+                            f"mecanico{index:03d}{tech_index:02d}@rescateya.demo",
                             f"{technician_names[(index + tech_index) % len(technician_names)]} Mecanico {index:03d}-{tech_index}",
                             f"711{index:03d}{tech_index:02d}",
                             services,
@@ -861,16 +873,17 @@ def run_seed() -> None:
             workshops.append(workshop)
             technicians_by_workshop.append(techs)
 
+        # ── Vehículos — marcas comunes en Santa Cruz ──────────────────────────
         vehicles = [
-            get_or_create_vehicle(db, clients[0], "Toyota", "Corolla", 2018, "Blanco", "ASC-1001"),
-            get_or_create_vehicle(db, clients[1], "Suzuki", "Vitara", 2021, "Gris", "ASC-1002"),
-            get_or_create_vehicle(db, clients[2], "Nissan", "March", 2020, "Rojo", "ASC-1003"),
-            get_or_create_vehicle(db, clients[3], "Hyundai", "Tucson", 2019, "Negro", "ASC-1004"),
-            get_or_create_vehicle(db, clients[4], "Kia", "Rio", 2022, "Azul", "ASC-1005"),
-            get_or_create_vehicle(db, clients[5], "Chevrolet", "Onix", 2020, "Plata", "ASC-1006"),
+            get_or_create_vehicle(db, clients[0], "Toyota",    "Corolla",  2019, "Blanco",  "5678-SCZ"),
+            get_or_create_vehicle(db, clients[1], "Suzuki",    "Vitara",   2021, "Gris",    "3421-SCZ"),
+            get_or_create_vehicle(db, clients[2], "Nissan",    "Kicks",    2020, "Rojo",    "9102-SCZ"),
+            get_or_create_vehicle(db, clients[3], "Hyundai",   "Tucson",   2018, "Negro",   "2847-SCZ"),
+            get_or_create_vehicle(db, clients[4], "Kia",       "Sportage", 2022, "Azul",    "7365-SCZ"),
+            get_or_create_vehicle(db, clients[5], "Chevrolet", "Sail",     2020, "Plata",   "4519-SCZ"),
         ]
         vehicle_brands = ["Toyota", "Suzuki", "Nissan", "Hyundai", "Kia", "Chevrolet", "Ford", "Mazda", "Renault", "Volkswagen"]
-        vehicle_models = ["Corolla", "Vitara", "March", "Tucson", "Rio", "Onix", "Ranger", "CX-5", "Duster", "Gol"]
+        vehicle_models = ["Hilux", "Grand Vitara", "Frontier", "Accent", "Sportage", "Captiva", "Ranger", "CX-30", "Duster", "Amarok"]
         vehicle_colors = ["Blanco", "Gris", "Rojo", "Negro", "Azul", "Plata", "Verde", "Cafe", "Dorado", "Guindo"]
         for index, client in enumerate(clients[len(vehicles):], start=len(vehicles) + 1):
             model_index = (index - 1) % len(vehicle_brands)
@@ -882,22 +895,72 @@ def run_seed() -> None:
                     vehicle_models[model_index],
                     2015 + (index % 9),
                     vehicle_colors[model_index],
-                    f"ASC-{1000 + index}",
+                    f"{1000 + index:04d}-SCZ",
                 )
             )
 
         add_demo_payment_cards(db, clients)
 
+        # ── Incidentes principales — ubicaciones reales de Santa Cruz ─────────
         incident_specs = [
-            (clients[0], vehicles[0], "El auto no enciende y parece ser problema de bateria.", IncidentCategory.BATTERY, IncidentPriority.MEDIUM, IncidentStatus.PENDING, -17.7833, -63.1821, "Segundo anillo, Santa Cruz", None, None, None),
-            (clients[1], vehicles[1], "Tengo una llanta reventada cerca del centro.", IncidentCategory.TIRE, IncidentPriority.HIGH, IncidentStatus.ASSIGNED, -17.7794, -63.1800, "Plaza 24 de Septiembre, Santa Cruz", workshops[1], technicians_by_workshop[1][0], 95.0),
-            (clients[2], vehicles[2], "El motor se apago mientras conducia y sale humo del capo.", IncidentCategory.ENGINE, IncidentPriority.CRITICAL, IncidentStatus.IN_PROGRESS, -17.8025, -63.1807, "Av. Grigota, Santa Cruz", workshops[2], technicians_by_workshop[2][0], 175.0),
-            (clients[3], vehicles[3], "Tuve un choque leve y necesito evaluar chaperio y pintura.", IncidentCategory.CRASH, IncidentPriority.HIGH, IncidentStatus.ASSIGNED, -17.7430, -63.1900, "Los Tusequis, Santa Cruz", workshops[4], technicians_by_workshop[4][1], 210.0),
-            (clients[4], vehicles[4], "Se quedaron las llaves dentro del vehiculo.", IncidentCategory.KEYS, IncidentPriority.LOW, IncidentStatus.COMPLETED, -17.7671, -63.1958, "Equipetrol, Santa Cruz", workshops[3], technicians_by_workshop[3][0], 90.0),
-            (clients[5], vehicles[5], "La camioneta necesita grua porque no puede moverse.", IncidentCategory.OTHER, IncidentPriority.MEDIUM, IncidentStatus.COMPLETED, -17.7898, -63.1563, "Av. Virgen de Cotoca, Santa Cruz", workshops[2], technicians_by_workshop[2][1], 180.0),
-            (clients[0], vehicles[0], "Falla electrica intermitente en el tablero y luces.", IncidentCategory.BATTERY, IncidentPriority.MEDIUM, IncidentStatus.IN_PROGRESS, -17.7602, -63.1650, "Av. Alemana, Santa Cruz", workshops[3], technicians_by_workshop[3][1], None),
-            (clients[1], vehicles[1], "Perdi presion en dos llantas despues de pasar por baches.", IncidentCategory.TIRE, IncidentPriority.MEDIUM, IncidentStatus.COMPLETED, -17.7350, -63.1740, "Av. Banzer, Santa Cruz", workshops[1], technicians_by_workshop[1][1], 110.0),
+            # (cliente, vehiculo, descripcion, categoria, prioridad, estado, lat, lng, direccion, taller, tecnico, costo)
+            (clients[0], vehicles[0],
+             "El auto no enciende, la bateria parece descargada por completo.",
+             IncidentCategory.BATTERY, IncidentPriority.MEDIUM, IncidentStatus.PENDING,
+             -17.7840, -63.1824,
+             "Plaza 24 de Septiembre, Centro, Santa Cruz",
+             None, None, None),
+
+            (clients[1], vehicles[1],
+             "Llanta trasera reventada circulando por el cuarto anillo.",
+             IncidentCategory.TIRE, IncidentPriority.HIGH, IncidentStatus.ASSIGNED,
+             -17.7551, -63.1814,
+             "Av. Cristo Redentor y 4to anillo, Santa Cruz",
+             workshops[1], technicians_by_workshop[1][0], 95.0),
+
+            (clients[2], vehicles[2],
+             "El motor se apago de repente y sale humo del capo cerca de Plan 3000.",
+             IncidentCategory.ENGINE, IncidentPriority.CRITICAL, IncidentStatus.IN_PROGRESS,
+             -17.8395, -63.1248,
+             "Av. Virgen de Cotoca km 7, Plan 3000, Santa Cruz",
+             workshops[2], technicians_by_workshop[2][0], 175.0),
+
+            (clients[3], vehicles[3],
+             "Choque leve en semaforo, necesito evaluacion de chaperio y pintura.",
+             IncidentCategory.CRASH, IncidentPriority.HIGH, IncidentStatus.ASSIGNED,
+             -17.7582, -63.2108,
+             "Av. Santos Dumont, Equipetrol Norte, Santa Cruz",
+             workshops[4], technicians_by_workshop[4][1], 210.0),
+
+            (clients[4], vehicles[4],
+             "Se me quedaron las llaves dentro del auto en el estacionamiento.",
+             IncidentCategory.KEYS, IncidentPriority.LOW, IncidentStatus.COMPLETED,
+             -17.7448, -63.2096,
+             "Av. Banzer km 9, zona norte, Santa Cruz",
+             workshops[3], technicians_by_workshop[3][0], 90.0),
+
+            (clients[5], vehicles[5],
+             "La camioneta no puede moverse, necesito servicio de grua urgente.",
+             IncidentCategory.OTHER, IncidentPriority.MEDIUM, IncidentStatus.COMPLETED,
+             -17.7490, -63.1978,
+             "Av. Paragua y 3er anillo Norte, Santa Cruz",
+             workshops[2], technicians_by_workshop[2][1], 180.0),
+
+            (clients[0], vehicles[0],
+             "Falla electrica intermitente, las luces y el tablero parpadean.",
+             IncidentCategory.BATTERY, IncidentPriority.MEDIUM, IncidentStatus.IN_PROGRESS,
+             -17.7800, -63.1820,
+             "Av. Monseñor Rivero 450, Santa Cruz",
+             workshops[3], technicians_by_workshop[3][1], None),
+
+            (clients[1], vehicles[1],
+             "Perdi presion en dos llantas al pasar por baches en la radial.",
+             IncidentCategory.TIRE, IncidentPriority.MEDIUM, IncidentStatus.COMPLETED,
+             -17.7700, -63.1620,
+             "Radial 26 y 3er anillo, Santa Cruz",
+             workshops[1], technicians_by_workshop[1][1], 110.0),
         ]
+
         categories = [
             IncidentCategory.BATTERY,
             IncidentCategory.TIRE,
@@ -917,16 +980,35 @@ def run_seed() -> None:
         ]
         descriptions = {
             IncidentCategory.BATTERY: "El vehiculo no enciende y requiere revision de bateria o alternador.",
-            IncidentCategory.TIRE: "Tengo una llanta baja y necesito auxilio movil para cambiarla.",
-            IncidentCategory.ENGINE: "El motor perdio fuerza y aparecen alertas en el tablero.",
-            IncidentCategory.CRASH: "Necesito evaluacion por choque leve y posible remolque.",
-            IncidentCategory.KEYS: "Las llaves quedaron dentro del vehiculo y necesito apertura segura.",
-            IncidentCategory.OTHER: "El vehiculo no puede continuar y necesito diagnostico en ruta.",
+            IncidentCategory.TIRE:    "Tengo una llanta baja y necesito auxilio movil para cambiarla.",
+            IncidentCategory.ENGINE:  "El motor perdio fuerza y aparecen alertas en el tablero.",
+            IncidentCategory.CRASH:   "Necesito evaluacion por choque leve y posible remolque.",
+            IncidentCategory.KEYS:    "Las llaves quedaron dentro del vehiculo y necesito apertura segura.",
+            IncidentCategory.OTHER:   "El vehiculo no puede continuar y necesito diagnostico en ruta.",
         }
+        # Zonas reales de Santa Cruz para incidentes generados
+        sc_incident_zones = [
+            (-17.7840, -63.1824, "Plaza 24 de Septiembre, Centro"),
+            (-17.7551, -63.1814, "Av. Cristo Redentor 4to anillo"),
+            (-17.7800, -63.1820, "Av. Monseñor Rivero"),
+            (-17.7671, -63.1958, "Equipetrol"),
+            (-17.7700, -63.1620, "Radial 26 y 3er anillo"),
+            (-17.7950, -63.1875, "Mutualista"),
+            (-17.8030, -63.1810, "Av. Grigota Sur"),
+            (-17.7920, -63.1760, "Av. Roca y Coronado"),
+            (-17.7960, -63.1870, "Barrio Palermo"),
+            (-17.7490, -63.2110, "Las Palmas"),
+            (-17.7600, -63.1870, "3er anillo Norte"),
+            (-17.8350, -63.1220, "Plan 3000 Este"),
+            (-17.7940, -63.1910, "Urbarí Sur"),
+            (-17.7210, -63.1875, "Zona Norte"),
+            (-17.7448, -63.2096, "Av. Banzer 5to anillo"),
+            (-17.7520, -63.2020, "4to anillo Banzer"),
+        ]
 
         for index, client in enumerate(clients, start=1):
             vehicle = vehicles[index - 1]
-            for round_index in range(1, 3):
+            for round_index in range(1, 4):
                 category = categories[(index + round_index) % len(categories)]
                 status = statuses[(index + round_index) % len(statuses)]
                 priority = priorities[(index + round_index) % len(priorities)]
@@ -939,9 +1021,13 @@ def run_seed() -> None:
                     technician = technicians_by_workshop[workshop_index][(index + round_index) % 5]
                     cost = round(70 + ((index * 11 + round_index * 17) % 180), 2)
                 elif status == IncidentStatus.CANCELLED:
-                    # Cancelado tras asignacion: tiene tenant pero sin costo.
                     workshop_index = (index + round_index * 7) % len(workshops)
                     workshop = workshops[workshop_index]
+                zone_index = (index + round_index * 3) % len(sc_incident_zones)
+                lat, lng, zone_label = sc_incident_zones[zone_index]
+                # Pequena variacion para no superponer pines en el mapa
+                lat += (index % 5) * 0.0008
+                lng -= (round_index % 4) * 0.0006
                 incident_specs.append(
                     (
                         client,
@@ -950,9 +1036,9 @@ def run_seed() -> None:
                         category,
                         priority,
                         status,
-                        -17.7200 - (index % 18) * 0.004 - round_index * 0.001,
-                        -63.1300 - (index % 16) * 0.005 - round_index * 0.001,
-                        f"Ubicacion demo {index:03d}-{round_index}, Santa Cruz",
+                        lat,
+                        lng,
+                        f"{zone_label}, Santa Cruz de la Sierra",
                         workshop,
                         technician,
                         cost,
@@ -996,7 +1082,7 @@ def run_seed() -> None:
             Notification(
                 user_id=admin.id,
                 title="Seed demo cargado",
-                message="AsisteCar queda como plataforma y los talleres demo son negocios independientes con tecnicos y servicios propios.",
+                message="RescateYa queda como plataforma y los talleres demo son negocios independientes de Santa Cruz de la Sierra con tecnicos y servicios propios.",
                 type=NotificationType.STATUS_UPDATE,
                 is_read=False,
             )

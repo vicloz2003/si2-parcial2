@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
-/// Sistema de colores centralizado para EmergenciApp — Logo palette.
+/// Sistema de colores centralizado para RescateYa — B&W + emergencia rojo.
 class AppColors {
   AppColors._();
 
-  // Marca — colores del logo
-  static const Color primary = Color(0xFF007AFF); // Azul Eléctrico
-  static const Color primaryDark = Color(0xFF1C2B39); // Azul Marino Oscuro
-  static const Color primaryLight = Color(0xFF1E88E5); // Azul claro
-  static const Color accent = Color(0xFFFF7A00); // Naranja Vibrante
+  // Marca — negro (reemplaza el naranja anterior)
+  static const Color primary = Color(0xFF111111);     // Negro RescateYa
+  static const Color primaryDark = Color(0xFF000000); // Negro profundo
+  static const Color primaryLight = Color(0xFF333333); // Grafito claro
+  static const Color accent = Color(0xFF111111);       // Negro acento
 
-  // Emergencia
-  static const Color emergency = Color(0xFFE53E3E);
-  static const Color emergencyDark = Color(0xFFB91C1C);
+  // Emergencia — rojo (idéntico al web emergency-500, reservado para alertas)
+  static const Color emergency = Color(0xFFE63946);
+  static const Color emergencyDark = Color(0xFFCC2230);
 
   // Estados
   static const Color success = Color(0xFF0FAD73);
@@ -34,9 +34,9 @@ class AppColors {
   static const Color statusCancelled = Color(0xFF6B7280);
 
   // Superficies — Light
-  static const Color background = Color(0xFFF8F9FA);
+  static const Color background = Color(0xFFFFFFFF);  // Fondo blanco
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceAlt = Color(0xFFF0F2F5);
+  static const Color surfaceAlt = Color(0xFFF5F5F5);
 
   // Superficies — Dark
   static const Color backgroundDark = Color(0xFF0D1117);
@@ -44,7 +44,7 @@ class AppColors {
   static const Color surfaceAltDark = Color(0xFF1C2128);
 
   // Texto — Light
-  static const Color textPrimary = Color(0xFF1C2B39);
+  static const Color textPrimary = Color(0xFF111111);
   static const Color textSecondary = Color(0xFF546E7A);
   static const Color textTertiary = Color(0xFF8C95A8);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
@@ -55,18 +55,18 @@ class AppColors {
   static const Color textTertiaryDark = Color(0xFF6E7681);
 
   // Bordes — Light
-  static const Color border = Color(0xFFDFE2EA);
-  static const Color divider = Color(0xFFEEF0F4);
+  static const Color border = Color(0xFFE5E5E5);
+  static const Color divider = Color(0xFFEEEEEE);
 
   // Bordes — Dark
   static const Color borderDark = Color(0xFF30363D);
   static const Color dividerDark = Color(0xFF21262D);
 
-  // Gradientes
+  // Gradiente principal — negro sólido (sin naranja)
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primary, primaryDark],
+    colors: [Color(0xFF333333), Color(0xFF111111)],
   );
 
   static const LinearGradient emergencyGradient = LinearGradient(
@@ -78,7 +78,7 @@ class AppColors {
   static const LinearGradient accentGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFF7A00), Color(0xFFFF8C00)],
+    colors: [Color(0xFF333333), Color(0xFF111111)],
   );
 
   static const LinearGradient successGradient = LinearGradient(

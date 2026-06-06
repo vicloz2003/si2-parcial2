@@ -11,6 +11,7 @@ import 'services/offline/connectivity_service.dart';
 import 'services/offline/sync_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
+import 'widgets/rescateya_logo.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,26 +68,30 @@ class AuthGate extends StatelessWidget {
       },
       builder: (context, state) {
         if (state is AuthInitial || state is AuthLoading) {
-          final colors = context.appColors;
-          return Scaffold(
-            backgroundColor: colors.background,
+          return const Scaffold(
+            backgroundColor: Color(0xFF14181f),
             body: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset(
-                    'assets/asistecar.png',
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.contain,
+                  RescateYaLogo(size: 88, pulse: true),
+                  SizedBox(height: 24),
+                  Text(
+                    'RescateYa',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 32),
                   SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      color: colors.textTertiary,
+                      color: Color(0xFF111111),
                     ),
                   ),
                 ],

@@ -3,149 +3,112 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { User } from '../../models/interfaces';
+import { AppIconComponent } from '../../shared/app-icon.component';
 
 @Component({
   selector: 'app-admin-notifications',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AppIconComponent],
   template: `
-    <div class="page-content reveal">
-      <div class="page-header">
-        <div>
-          <h1 class="page-title">Notificaciones push</h1>
-          <p class="page-subtitle">Envio de avisos a clientes y mecanicos de la app movil</p>
-        </div>
-      </div>
+    <div class="animate-reveal space-y-6">
+      <header class="space-y-1">
+        <h1 class="font-display text-3xl font-bold text-slate-900 dark:text-white">Notificaciones push</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Envío de avisos a clientes y mecánicos de la app móvil</p>
+      </header>
 
-      <div class="grid">
-        <section class="card composer">
-          <div class="section-title">
-            <span class="material-symbols-rounded">campaign</span>
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card dark:border-hero-line dark:bg-hero-soft">
+          <div class="mb-6 flex items-start gap-3">
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/8 text-slate-900 dark:text-white"><app-icon name="campaign" /></div>
             <div>
-              <h3>Nuevo mensaje</h3>
-              <p>Se guardara en notificaciones y se enviara como push si el usuario tiene token activo.</p>
+              <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Nuevo mensaje</h3>
+              <p class="text-xs text-slate-400">Se guardará en notificaciones y se enviará como push si el usuario tiene token activo.</p>
             </div>
           </div>
 
-          <div class="field">
-            <label>Titulo</label>
-            <input class="input" [(ngModel)]="title" maxlength="80" placeholder="Ej. Mantenimiento programado">
+          <div class="mb-4">
+            <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Título</label>
+            <input [(ngModel)]="title" maxlength="80" placeholder="Ej. Mantenimiento programado" [ngClass]="inputCls">
           </div>
 
-          <div class="field">
-            <label>Mensaje</label>
-            <textarea class="input textarea" [(ngModel)]="message" maxlength="240" rows="5" placeholder="Escribe el mensaje que recibiran en mobile"></textarea>
-            <small>{{ message.length }}/240</small>
+          <div class="mb-4">
+            <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Mensaje</label>
+            <textarea [(ngModel)]="message" maxlength="240" rows="5" placeholder="Escribe el mensaje que recibirán en mobile" [ngClass]="inputCls" class="min-h-32 resize-y"></textarea>
+            <small class="mt-1 block text-right text-xs text-slate-400">{{ message.length }}/240</small>
           </div>
 
-          <div class="field">
-            <label>Destinatarios</label>
-            <div class="role-row">
-              <button type="button" class="role-chip" [class.active]="targetClients" (click)="targetClients = !targetClients; applySelection()">
-                <span class="material-symbols-rounded">directions_car</span>
-                Clientes
+          <div class="mb-4">
+            <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Destinatarios</label>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" (click)="targetClients = !targetClients; applySelection()"
+                class="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition"
+                [ngClass]="targetClients ? 'border-slate-900 dark:border-white/60 bg-slate-100 dark:bg-white/8 text-slate-900 dark:text-white' : 'border-transparent bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300'">
+                <app-icon name="directions_car" [size]="18" /> Clientes
               </button>
-              <button type="button" class="role-chip" [class.active]="targetTechnicians" (click)="targetTechnicians = !targetTechnicians; applySelection()">
-                <span class="material-symbols-rounded">engineering</span>
-                Mecanicos
+              <button type="button" (click)="targetTechnicians = !targetTechnicians; applySelection()"
+                class="inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition"
+                [ngClass]="targetTechnicians ? 'border-slate-900 dark:border-white/60 bg-slate-100 dark:bg-white/8 text-slate-900 dark:text-white' : 'border-transparent bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300'">
+                <app-icon name="engineering" [size]="18" /> Mecánicos
               </button>
             </div>
           </div>
 
-          <div class="field">
-            <label>Alcance</label>
-            <select class="input" [(ngModel)]="scope" (change)="applySelection()">
+          <div class="mb-4">
+            <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Alcance</label>
+            <select [(ngModel)]="scope" (change)="applySelection()" [ngClass]="inputCls" class="cursor-pointer">
               <option value="roles">Todos los roles seleccionados</option>
-              <option value="manual">Seleccion manual</option>
+              <option value="manual">Selección manual</option>
             </select>
           </div>
 
-          <div class="manual-box" *ngIf="scope === 'manual'">
-            <div class="search-box">
-              <span class="material-symbols-rounded">search</span>
-              <input class="input" [(ngModel)]="searchTerm" (input)="applySelection()" placeholder="Buscar destinatario">
+          <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-hero-line dark:bg-white/5" *ngIf="scope === 'manual'">
+            <div class="relative mb-3">
+              <app-icon name="search" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+              <input [(ngModel)]="searchTerm" (input)="applySelection()" placeholder="Buscar destinatario" [ngClass]="inputCls">
             </div>
-            <div class="recipient-list">
-              <label class="recipient" *ngFor="let user of filteredRecipients">
-                <input type="checkbox" [checked]="selectedIds.has(user.id)" (change)="toggleUser(user.id)">
-                <span class="avatar">{{ initials(user.full_name) }}</span>
-                <span class="recipient-main">
-                  <strong>{{ user.full_name }}</strong>
-                  <small>{{ user.email }} · {{ roleLabel(user.role) }}</small>
+            <div class="grid max-h-80 gap-1 overflow-auto">
+              <label class="flex cursor-pointer items-center gap-3 rounded-lg bg-white p-2.5 transition hover:bg-slate-50 dark:bg-hero-soft dark:hover:bg-white/5" *ngFor="let user of filteredRecipients">
+                <input type="checkbox" [checked]="selectedIds.has(user.id)" (change)="toggleUser(user.id)" class="h-4 w-4 accent-slate-900 dark:accent-white">
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#111111] dark:bg-white dark:text-[#111111] text-xs font-bold text-white">{{ initials(user.full_name) }}</span>
+                <span class="flex min-w-0 flex-col">
+                  <strong class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ user.full_name }}</strong>
+                  <small class="truncate text-xs text-slate-400">{{ user.email }} · {{ roleLabel(user.role) }}</small>
                 </span>
               </label>
             </div>
           </div>
 
-          <div class="form-error" *ngIf="errorMessage">
-            <span class="material-symbols-rounded">error</span>
-            {{ errorMessage }}
+          <div class="mb-4 flex items-center gap-2 rounded-xl bg-emergency-500/10 px-4 py-3 text-sm font-semibold text-emergency-600 dark:text-emergency-300" *ngIf="errorMessage">
+            <app-icon name="error" /> {{ errorMessage }}
           </div>
 
-          <button class="btn btn-primary send-btn" [disabled]="sending || !canSend()" (click)="send()">
-            <span class="material-symbols-rounded">{{ sending ? 'hourglass_top' : 'send' }}</span>
-            {{ sending ? 'Enviando...' : 'Enviar notificacion' }}
+          <button [disabled]="sending || !canSend()" (click)="send()"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#111111] dark:bg-white dark:text-[#111111] px-5 py-3 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
+            <app-icon [name]="sending ? 'progress_activity' : 'send'" [size]="20" />
+            {{ sending ? 'Enviando...' : 'Enviar notificación' }}
           </button>
         </section>
 
-        <aside class="summary">
-          <div class="card stat-card">
-            <span class="material-symbols-rounded">directions_car</span>
-            <div><strong>{{ countRole('client') }}</strong><small>Clientes mobile</small></div>
+        <aside class="space-y-4">
+          <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-success/10 text-success"><app-icon name="directions_car" /></div>
+            <div><strong class="block font-mono text-2xl font-bold text-slate-900 dark:text-white">{{ countRole('client') }}</strong><small class="text-xs font-semibold uppercase tracking-wide text-slate-400">Clientes mobile</small></div>
           </div>
-          <div class="card stat-card">
-            <span class="material-symbols-rounded">engineering</span>
-            <div><strong>{{ countRole('technician') }}</strong><small>Mecanicos mobile</small></div>
+          <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-info/10 text-info"><app-icon name="engineering" /></div>
+            <div><strong class="block font-mono text-2xl font-bold text-slate-900 dark:text-white">{{ countRole('technician') }}</strong><small class="text-xs font-semibold uppercase tracking-wide text-slate-400">Mecánicos mobile</small></div>
           </div>
-          <div class="card result-card" *ngIf="lastResult">
-            <h3>Resultado del envio</h3>
-            <div class="result-row"><span>Destinatarios</span><strong>{{ lastResult.targeted }}</strong></div>
-            <div class="result-row"><span>Notificaciones creadas</span><strong>{{ lastResult.in_app_created }}</strong></div>
-            <div class="result-row"><span>Push enviados</span><strong>{{ lastResult.push_sent }}</strong></div>
-            <div class="result-row"><span>Sin token push</span><strong>{{ lastResult.without_push_token }}</strong></div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card dark:border-hero-line dark:bg-hero-soft" *ngIf="lastResult">
+            <h3 class="mb-3 font-display text-base font-bold text-slate-900 dark:text-white">Resultado del envío</h3>
+            <div class="flex justify-between border-b border-slate-100 py-2 text-sm text-slate-500 dark:border-hero-line/60 dark:text-slate-400"><span>Destinatarios</span><strong class="text-slate-900 dark:text-white">{{ lastResult.targeted }}</strong></div>
+            <div class="flex justify-between border-b border-slate-100 py-2 text-sm text-slate-500 dark:border-hero-line/60 dark:text-slate-400"><span>Notificaciones creadas</span><strong class="text-slate-900 dark:text-white">{{ lastResult.in_app_created }}</strong></div>
+            <div class="flex justify-between border-b border-slate-100 py-2 text-sm text-slate-500 dark:border-hero-line/60 dark:text-slate-400"><span>Push enviados</span><strong class="text-slate-900 dark:text-white">{{ lastResult.push_sent }}</strong></div>
+            <div class="flex justify-between py-2 text-sm text-slate-500 dark:text-slate-400"><span>Sin token push</span><strong class="text-slate-900 dark:text-white">{{ lastResult.without_push_token }}</strong></div>
           </div>
         </aside>
       </div>
     </div>
   `,
-  styles: [`
-    .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); }
-    .composer { padding: var(--space-lg); }
-    .section-title { display: flex; gap: var(--space-sm); align-items: flex-start; margin-bottom: var(--space-lg); }
-    .section-title > .material-symbols-rounded { width: 3rem; height: 3rem; display: grid; place-items: center; border-radius: var(--radius-lg); color: var(--color-primary); background: var(--color-primary-50); }
-    .section-title h3 { margin: 0; color: var(--color-text-primary); font-weight: 800; }
-    .section-title p { margin: 0.25rem 0 0; color: var(--color-text-tertiary); font-size: 0.875rem; }
-    .field { margin-bottom: var(--space-md); }
-    .field label { display: block; color: var(--color-text-secondary); font-weight: 800; margin-bottom: var(--space-xs); }
-    .field small { display: block; margin-top: 0.375rem; color: var(--color-text-tertiary); text-align: right; }
-    .textarea { resize: vertical; min-height: 8rem; }
-    .role-row { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
-    .role-chip { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; border-radius: var(--radius-pill); background: var(--color-surface-alt); color: var(--color-text-secondary); border: 1.5px solid var(--color-border); font-weight: 800; }
-    .role-chip.active { color: var(--color-primary); border-color: var(--color-primary); background: var(--color-primary-50); }
-    .manual-box { border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-md); margin-bottom: var(--space-md); background: var(--color-surface-alt); }
-    .search-box { position: relative; margin-bottom: var(--space-sm); }
-    .search-box .material-symbols-rounded { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--color-text-tertiary); }
-    .search-box .input { padding-left: 2.5rem; }
-    .recipient-list { display: grid; gap: var(--space-xs); max-height: 20rem; overflow: auto; }
-    .recipient { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-sm); border-radius: var(--radius-md); background: var(--color-surface); cursor: pointer; }
-    .avatar { width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: var(--color-primary); color: white; font-size: 0.75rem; font-weight: 800; }
-    .recipient-main { display: flex; flex-direction: column; min-width: 0; }
-    .recipient-main strong { color: var(--color-text-primary); }
-    .recipient-main small { color: var(--color-text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .form-error { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm); border-radius: var(--radius-md); color: var(--color-danger); background: var(--color-danger-light); font-weight: 800; margin-bottom: var(--space-md); }
-    .send-btn { width: 100%; justify-content: center; }
-    .summary { display: grid; gap: var(--space-md); align-content: start; }
-    .stat-card { padding: var(--space-md); display: flex; align-items: center; gap: var(--space-md); }
-    .stat-card > .material-symbols-rounded { width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--color-primary-50); color: var(--color-primary); }
-    .stat-card strong { display: block; font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; color: var(--color-text-primary); }
-    .stat-card small { color: var(--color-text-secondary); font-weight: 800; }
-    .result-card { padding: var(--space-md); }
-    .result-card h3 { margin: 0 0 var(--space-sm); color: var(--color-text-primary); }
-    .result-row { display: flex; justify-content: space-between; padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-divider); color: var(--color-text-secondary); }
-    .result-row:last-child { border-bottom: 0; }
-    .result-row strong { color: var(--color-text-primary); }
-    @media (min-width: 1024px) { .grid { grid-template-columns: minmax(0, 1fr) 20rem; } }
-  `],
 })
 export class AdminNotificationsComponent implements OnInit {
   users: User[] = [];
@@ -161,6 +124,9 @@ export class AdminNotificationsComponent implements OnInit {
   sending = false;
   errorMessage = '';
   lastResult: { targeted: number; in_app_created: number; push_sent: number; without_push_token: number } | null = null;
+
+  readonly inputCls =
+    'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white focus:ring-2 focus:ring-slate-900 dark:ring-white/20 dark:border-hero-line dark:bg-white/5 dark:text-slate-200';
 
   constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 

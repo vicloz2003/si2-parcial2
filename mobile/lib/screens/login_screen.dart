@@ -5,6 +5,7 @@ import '../blocs/blocs.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth_background.dart';
+import '../widgets/rescateya_logo.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -51,13 +52,8 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Logo
-                  Image.asset(
-                        'assets/asistecar.png',
-                        width: 72,
-                        height: 72,
-                        fit: BoxFit.contain,
-                      )
+                  // Logo RescateYa (programático, sin imagen)
+                  const RescateYaLogo(size: 80, pulse: false)
                       .animate()
                       .scale(
                         duration: 600.ms,

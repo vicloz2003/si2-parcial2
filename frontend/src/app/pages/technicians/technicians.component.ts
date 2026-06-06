@@ -3,393 +3,175 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { Technician } from '../../models/interfaces';
+import { AppIconComponent } from '../../shared/app-icon.component';
 
 @Component({
   selector: 'app-technicians',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AppIconComponent],
   template: `
-    <div class="page-content reveal">
-        <div class="page-header">
+    <div class="animate-reveal space-y-6">
+      <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="space-y-1">
+          <h1 class="font-display text-3xl font-bold text-slate-900 dark:text-white">Técnicos</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400">{{ technicians.length }} técnicos en tu equipo</p>
+        </div>
+        <button (click)="toggleForm()"
+          class="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition active:scale-[0.98]"
+          [ngClass]="showForm
+            ? 'border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-hero-line dark:text-slate-300 dark:hover:bg-white/5'
+            : 'bg-[#111111] dark:bg-white dark:text-[#111111] text-white shadow-[0_2px_12px_rgba(0,0,0,0.12)] hover:brightness-110'">
+          <app-icon [name]="showForm ? 'close' : 'person_add'" />
+          {{ showForm ? 'Cancelar' : 'Nuevo técnico' }}
+        </button>
+      </header>
+
+      <div *ngIf="error && !loading"
+           class="flex flex-wrap items-center gap-3 rounded-2xl border border-emergency-200 bg-emergency-50 px-4 py-3 text-sm text-emergency-700 dark:border-emergency-500/30 dark:bg-emergency-500/10 dark:text-emergency-300">
+        <app-icon name="cloud_off" />
+        <span>No se pudo cargar los técnicos</span>
+        <button (click)="loadData()"
+                class="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-emergency-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-emergency-100 dark:border-emergency-500/40 dark:hover:bg-emergency-500/20">
+          <app-icon name="refresh" [size]="16" /> Reintentar
+        </button>
+      </div>
+
+      <!-- Form -->
+      <div *ngIf="showForm"
+           class="overflow-hidden rounded-2xl border border-slate-200 border-l-4 border-l-slate-900 dark:border-l-white/60 bg-white shadow-card dark:border-hero-line dark:border-l-slate-900 dark:border-l-white/60 dark:bg-hero-soft">
+        <div class="flex items-center gap-3 border-b border-slate-100 p-5 dark:border-hero-line">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/8 text-slate-900 dark:text-white">
+            <app-icon [name]="editing ? 'edit' : 'person_add'" />
+          </div>
           <div>
-            <h1 class="page-title">Tecnicos</h1>
-            <p class="page-subtitle">
-              {{ technicians.length }} tecnicos en tu equipo
-            </p>
+            <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">{{ editing ? 'Editar técnico' : 'Nuevo técnico' }}</h3>
+            <p class="text-xs text-slate-400">Completa la información del técnico</p>
           </div>
-          <button
-            class="btn"
-            [class.btn-primary]="!showForm"
-            [class.btn-ghost]="showForm"
-            (click)="toggleForm()"
-          >
-            <span class="material-symbols-rounded">
-              {{ showForm ? 'close' : 'person_add' }}
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Nombre completo</label>
+            <div class="relative">
+              <app-icon name="badge" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+              <input [(ngModel)]="newTech.name" placeholder="Juan Pérez" [ngClass]="inputCls">
+            </div>
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Teléfono</label>
+            <div class="relative">
+              <app-icon name="call" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+              <input [(ngModel)]="newTech.phone" placeholder="77712345" [ngClass]="inputCls">
+            </div>
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Correo electrónico</label>
+            <div class="relative">
+              <app-icon name="mail" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+              <input type="email" [(ngModel)]="newTech.email" placeholder="tecnico@email.com" [ngClass]="inputCls">
+            </div>
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">{{ editing ? 'Nueva contraseña' : 'Contraseña' }}</label>
+            <div class="relative">
+              <app-icon name="lock_reset" [size]="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2  text-slate-400" />
+              <input type="password" [(ngModel)]="newTech.password" [placeholder]="editing ? 'Dejar vacío para no cambiar' : '12345678*'" [ngClass]="inputCls">
+            </div>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300">Especialidades</label>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" *ngFor="let opt of specOptions" (click)="toggleSpec(opt.value)"
+                class="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition"
+                [ngClass]="isSpecSelected(opt.value)
+                  ? 'border-slate-900 dark:border-white/60 bg-slate-100 dark:bg-white/8 font-semibold text-slate-900 dark:text-white'
+                  : 'border-transparent bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10'">
+                <app-icon [name]="opt.icon" [size]="16" />
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 border-t border-slate-100 p-5 dark:border-hero-line">
+          <button (click)="resetForm()"
+                  class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-hero-line dark:text-slate-300 dark:hover:bg-white/5">
+            Cancelar
+          </button>
+          <button (click)="saveTechnician()" [disabled]="!canSave()"
+            class="inline-flex items-center gap-2 rounded-xl bg-success px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
+            <app-icon [name]="editing ? 'save' : 'check'" [size]="18" />
+            {{ editing ? 'Actualizar' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div *ngIf="technicians.length > 0; else emptyTpl" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div *ngFor="let t of technicians"
+             class="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover dark:border-hero-line dark:bg-hero-soft">
+          <div class="mb-3 flex items-start justify-between">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-[#111111] dark:bg-white dark:text-[#111111] font-bold text-white">{{ getInitials(t.name) }}</div>
+            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  [ngClass]="t.is_available ? 'bg-success/10 text-success' : 'bg-emergency-500/10 text-emergency-600 dark:text-emergency-300'">
+              <span class="h-1.5 w-1.5 rounded-full" [ngClass]="t.is_available ? 'bg-success' : 'bg-emergency-500'"></span>
+              {{ t.is_available ? 'Disponible' : 'Ocupado' }}
             </span>
-            {{ showForm ? 'Cancelar' : 'Nuevo tecnico' }}
+          </div>
+
+          <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">{{ t.name }}</h3>
+
+          <div class="mt-2 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+            <app-icon name="call" [size]="16" class="text-slate-400" />
+            <a href="tel:{{ t.phone }}" class="transition hover:text-slate-900">{{ t.phone }}</a>
+          </div>
+          <div class="mt-1 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+            <app-icon name="mail" [size]="16" class="text-slate-400" />
+            <a *ngIf="t.user_email; else noEmailTpl" href="mailto:{{ t.user_email }}" class="truncate transition hover:text-slate-900">{{ t.user_email }}</a>
+            <ng-template #noEmailTpl><span>Sin correo asociado</span></ng-template>
+          </div>
+
+          <div class="mt-3 flex flex-wrap gap-1.5 border-b border-slate-100 pb-4 dark:border-hero-line/60">
+            <span *ngFor="let s of t.specialties.split(',')"
+                  class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-300">
+              <app-icon [name]="getSpecIcon(s)" [size]="14" />
+              {{ getSpecLabel(s) }}
+            </span>
+          </div>
+
+          <div class="mt-3 flex gap-2">
+            <button (click)="toggleAvailability(t)" [title]="t.is_available ? 'Marcar como ocupado' : 'Marcar como disponible'"
+              class="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 transition hover:bg-slate-50 dark:border-hero-line dark:hover:bg-white/5"
+              [ngClass]="t.is_available ? 'text-success' : 'text-amber-500'">
+              <app-icon [name]="t.is_available ? 'pause_circle' : 'play_circle'" />
+            </button>
+            <button (click)="editTechnician(t)" title="Editar"
+              class="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 text-info transition hover:bg-slate-50 dark:border-hero-line dark:hover:bg-white/5">
+              <app-icon name="edit" />
+            </button>
+            <button (click)="deleteTechnician(t.id)" title="Eliminar"
+              class="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 text-emergency-500 transition hover:bg-emergency-50 dark:border-hero-line dark:hover:bg-emergency-500/10">
+              <app-icon name="delete" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #emptyTpl>
+        <div class="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-16 text-center shadow-card dark:border-hero-line dark:bg-hero-soft">
+          <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-white/5">
+            <app-icon name="engineering" [size]="36" />
+          </div>
+          <h3 class="font-display text-lg font-bold text-slate-700 dark:text-slate-200">Sin técnicos</h3>
+          <p class="text-sm text-slate-400">Agrega tu primer técnico para empezar a asignar servicios.</p>
+          <button *ngIf="!showForm" (click)="toggleForm()"
+                  class="inline-flex items-center gap-1.5 rounded-xl bg-[#111111] dark:bg-white px-4 py-2 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition hover:bg-slate-800 dark:hover:bg-white/90">
+            <app-icon name="person_add" [size]="18" /> Agregar técnico
           </button>
         </div>
-
-        <div class="error-banner" *ngIf="error && !loading">
-          <span class="material-symbols-rounded">cloud_off</span>
-          <span>No se pudo cargar los tecnicos</span>
-          <button class="retry-btn" (click)="loadData()">
-            <span class="material-symbols-rounded">refresh</span>
-            Reintentar
-          </button>
-        </div>
-
-        <!-- Form -->
-        <div class="form-card card" *ngIf="showForm">
-          <div class="form-header">
-            <div class="form-icon">
-              <span class="material-symbols-rounded">
-                {{ editing ? 'edit' : 'person_add' }}
-              </span>
-            </div>
-            <div>
-              <h3>{{ editing ? 'Editar tecnico' : 'Nuevo tecnico' }}</h3>
-              <p>Completa la informacion del tecnico</p>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <div class="field">
-              <label>Nombre completo</label>
-              <div class="input-with-icon">
-                <span class="material-symbols-rounded">badge</span>
-                <input
-                  class="input"
-                  [(ngModel)]="newTech.name"
-                  placeholder="Juan Perez"
-                />
-              </div>
-            </div>
-
-            <div class="field">
-              <label>Telefono</label>
-              <div class="input-with-icon">
-                <span class="material-symbols-rounded">call</span>
-                <input
-                  class="input"
-                  [(ngModel)]="newTech.phone"
-                  placeholder="77712345"
-                />
-              </div>
-            </div>
-
-            <div class="field">
-              <label>Correo electronico</label>
-              <div class="input-with-icon">
-                <span class="material-symbols-rounded">mail</span>
-                <input
-                  class="input"
-                  type="email"
-                  [(ngModel)]="newTech.email"
-                  placeholder="tecnico@email.com"
-                />
-              </div>
-            </div>
-
-            <div class="field">
-              <label>{{ editing ? 'Nueva contrasena' : 'Contrasena' }}</label>
-              <div class="input-with-icon">
-                <span class="material-symbols-rounded">lock_reset</span>
-                <input
-                  class="input"
-                  type="password"
-                  [(ngModel)]="newTech.password"
-                  [placeholder]="editing ? 'Dejar vacio para no cambiar' : '12345678*'"
-                />
-              </div>
-            </div>
-
-            <div class="field full">
-              <label>Especialidades</label>
-              <div class="spec-chips">
-                <button
-                  type="button"
-                  *ngFor="let opt of specOptions"
-                  class="spec-chip"
-                  [class.active]="isSpecSelected(opt.value)"
-                  (click)="toggleSpec(opt.value)"
-                >
-                  <span class="material-symbols-rounded">{{ opt.icon }}</span>
-                  {{ opt.label }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button class="btn btn-ghost" (click)="resetForm()">
-              Cancelar
-            </button>
-            <button
-              class="btn btn-success"
-              (click)="saveTechnician()"
-              [disabled]="!canSave()"
-            >
-              <span class="material-symbols-rounded">
-                {{ editing ? 'save' : 'check' }}
-              </span>
-              {{ editing ? 'Actualizar' : 'Guardar' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- List -->
-        <div class="tech-grid" *ngIf="technicians.length > 0; else emptyTpl">
-          <div class="tech-card card" *ngFor="let t of technicians">
-            <div class="tech-top">
-              <div class="tech-avatar">{{ getInitials(t.name) }}</div>
-              <span
-                class="badge badge-soft"
-                [ngClass]="t.is_available ? 'badge-status-available' : 'badge-status-busy'"
-              >
-                <span class="status-dot" [class.online]="t.is_available"></span>
-                {{ t.is_available ? 'Disponible' : 'Ocupado' }}
-              </span>
-            </div>
-
-            <h3 class="tech-name">{{ t.name }}</h3>
-
-            <div class="tech-info">
-              <span class="material-symbols-rounded">call</span>
-              <a href="tel:{{ t.phone }}">{{ t.phone }}</a>
-            </div>
-
-            <div class="tech-info">
-              <span class="material-symbols-rounded">mail</span>
-              <a *ngIf="t.user_email; else noEmailTpl" href="mailto:{{ t.user_email }}">
-                {{ t.user_email }}
-              </a>
-              <ng-template #noEmailTpl>
-                <span>Sin correo asociado</span>
-              </ng-template>
-            </div>
-
-            <div class="specialties">
-              <span
-                *ngFor="let s of t.specialties.split(',')"
-                class="spec-tag"
-              >
-                <span class="material-symbols-rounded">{{
-                  getSpecIcon(s)
-                }}</span>
-                {{ getSpecLabel(s) }}
-              </span>
-            </div>
-
-            <div class="tech-actions">
-              <button
-                class="action-btn toggle"
-                [class.busy]="!t.is_available"
-                (click)="toggleAvailability(t)"
-                [title]="t.is_available ? 'Marcar como ocupado' : 'Marcar como disponible'"
-              >
-                <span class="material-symbols-rounded">
-                  {{ t.is_available ? 'pause_circle' : 'play_circle' }}
-                </span>
-              </button>
-              <button
-                class="action-btn edit"
-                (click)="editTechnician(t)"
-                title="Editar"
-              >
-                <span class="material-symbols-rounded">edit</span>
-              </button>
-              <button
-                class="action-btn delete"
-                (click)="deleteTechnician(t.id)"
-                title="Eliminar"
-              >
-                <span class="material-symbols-rounded">delete</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <ng-template #emptyTpl>
-          <div class="empty-state card">
-            <div class="empty-icon">
-              <span class="material-symbols-rounded">engineering</span>
-            </div>
-            <h3>Sin tecnicos</h3>
-            <p>Agrega tu primer tecnico para empezar a asignar servicios.</p>
-            <button class="btn btn-primary" (click)="toggleForm()" *ngIf="!showForm">
-              <span class="material-symbols-rounded">person_add</span>
-              Agregar tecnico
-            </button>
-          </div>
-        </ng-template>
+      </ng-template>
     </div>
   `,
-  styles: [
-    `
-      .error-banner {
-        display: flex; align-items: center; gap: var(--space-sm);
-        background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: var(--radius-lg); padding: var(--space-sm) var(--space-md);
-        margin-bottom: var(--space-md); color: var(--color-text-secondary);
-        flex-wrap: wrap;
-        .material-symbols-rounded { font-size: 1.25rem; color: var(--color-danger); }
-      }
-      .retry-btn {
-        margin-left: auto; padding: 0.375rem 0.875rem; font-size: 0.8125rem;
-        border: 1px solid var(--color-border); border-radius: var(--radius-md);
-        color: var(--color-text-primary); display: flex; align-items: center; gap: 0.375rem;
-        &:hover { background: var(--color-surface-alt); }
-        .material-symbols-rounded { font-size: 1rem; color: var(--color-text-primary); }
-      }
-
-      /* ── Mobile-first: Form card ── */
-      .form-card {
-        padding: var(--space-md);
-        margin-bottom: var(--space-md);
-        border-radius: var(--radius-xl);
-        border-left: 4px solid var(--color-primary);
-      }
-
-      .form-header {
-        display: flex; align-items: center; gap: var(--space-sm);
-        margin-bottom: var(--space-md); padding-bottom: var(--space-sm);
-        border-bottom: 1px solid var(--color-divider);
-      }
-
-      .form-icon {
-        width: 2.75rem; height: 2.75rem; border-radius: var(--radius-lg);
-        background: var(--color-primary-50);
-        display: flex; align-items: center; justify-content: center;
-        .material-symbols-rounded { font-size: 1.25rem; color: var(--color-primary); }
-      }
-
-      .form-header h3 { font-size: 1rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 0.125rem; }
-      .form-header p { font-size: 0.8125rem; color: var(--color-text-tertiary); margin: 0; }
-
-      /* Mobile: single column form */
-      .form-grid {
-        display: grid; grid-template-columns: 1fr;
-        gap: var(--space-sm); margin-bottom: var(--space-md);
-      }
-
-      .field.full { grid-column: 1 / -1; }
-
-      .spec-chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
-
-      .spec-chip {
-        display: inline-flex; align-items: center; gap: 0.375rem;
-        padding: 0.5rem 0.875rem;
-        background: var(--color-surface-alt);
-        border: 1.5px solid transparent;
-        border-radius: var(--radius-pill);
-        font-size: 0.8125rem; font-weight: 500;
-        color: var(--color-text-secondary);
-        cursor: pointer; transition: all 0.2s var(--ease-out);
-        .material-symbols-rounded { font-size: 1rem; }
-        &:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }
-        &.active { background: var(--color-primary-50); border-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
-      }
-
-      .form-actions {
-        display: flex; justify-content: flex-end; gap: var(--space-sm);
-        padding-top: var(--space-sm); border-top: 1px solid var(--color-divider);
-      }
-
-      /* Mobile: single column tech grid */
-      .tech-grid {
-        display: grid; grid-template-columns: 1fr;
-        gap: var(--space-sm);
-      }
-
-      .tech-card {
-        padding: var(--space-md); border-radius: var(--radius-xl);
-        transition: all 0.25s var(--ease-out);
-        &:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
-      }
-
-      .tech-top {
-        display: flex; justify-content: space-between;
-        align-items: flex-start; margin-bottom: var(--space-sm);
-      }
-
-      .tech-avatar {
-        width: 3rem; height: 3rem; border-radius: 50%;
-        background: var(--color-primary); color: white;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: 800; font-size: 1rem;
-      }
-
-      .badge-status-available { background: rgba(6, 167, 125, 0.1); color: var(--color-success); }
-      .badge-status-busy { background: rgba(230, 57, 70, 0.1); color: var(--color-danger); }
-
-      .status-dot {
-        width: 0.5rem; height: 0.5rem; border-radius: 50%;
-        background: var(--color-danger); display: inline-block; margin-right: 0.375rem;
-        &.online { background: var(--color-success); box-shadow: 0 0 0 3px rgba(6, 167, 125, 0.18); animation: pulse 2s infinite; }
-      }
-
-      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-      .tech-name { font-size: 1.0625rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 var(--space-xs); }
-
-      .tech-info {
-        display: flex; align-items: center; gap: 0.375rem;
-        margin-bottom: var(--space-sm); font-size: 0.8125rem; color: var(--color-text-secondary);
-        .material-symbols-rounded { font-size: 1rem; color: var(--color-text-tertiary); }
-        a { color: var(--color-text-secondary); text-decoration: none; font-weight: 500; transition: color 0.2s; &:hover { color: var(--color-primary); } }
-      }
-
-      .specialties {
-        display: flex; flex-wrap: wrap; gap: 0.375rem;
-        margin-bottom: var(--space-sm); padding-bottom: var(--space-sm);
-        border-bottom: 1px solid var(--color-divider);
-      }
-
-      .spec-tag {
-        display: inline-flex; align-items: center; gap: 0.25rem;
-        background: var(--color-surface-alt); color: var(--color-text-secondary);
-        padding: 0.25rem 0.625rem; border-radius: var(--radius-pill);
-        font-size: 0.6875rem; font-weight: 600;
-        .material-symbols-rounded { font-size: 0.875rem; }
-      }
-
-      .tech-actions { display: flex; gap: var(--space-xs); }
-
-      .action-btn {
-        flex: 1; height: 2.25rem; border-radius: var(--radius-md);
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; transition: all 0.2s var(--ease-out);
-        border: 1px solid var(--color-border); background: var(--color-surface);
-        .material-symbols-rounded { font-size: 1.25rem; }
-        &:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-        &.toggle { color: var(--color-success); &.busy { color: var(--color-warning); } &:hover { background: rgba(6, 167, 125, 0.06); } }
-        &.edit { color: var(--color-info); &:hover { background: rgba(58, 134, 255, 0.06); } }
-        &.delete { color: var(--color-danger); &:hover { background: var(--color-danger-light); } }
-      }
-
-      /* ── Tablet (≥576px): 2-col tech grid ── */
-      @media (min-width: 576px) {
-        .tech-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
-        .tech-card { padding: var(--space-lg); }
-        .tech-avatar { width: 3.375rem; height: 3.375rem; font-size: 1.125rem; }
-        .action-btn { height: 2.375rem; }
-      }
-
-      /* ── Tablet (≥768px): 2-col form ── */
-      @media (min-width: 768px) {
-        .form-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
-        .form-card { padding: var(--space-lg) var(--space-xl); }
-        .form-icon { width: 3rem; height: 3rem; .material-symbols-rounded { font-size: 1.5rem; } }
-        .spec-chips { gap: var(--space-sm); }
-      }
-
-      /* ── Desktop (≥1024px): auto-fill grid ── */
-      @media (min-width: 1024px) {
-        .tech-grid { grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); }
-      }
-    `,
-  ],
 })
 export class TechniciansComponent implements OnInit {
   technicians: Technician[] = [];
@@ -404,6 +186,9 @@ export class TechniciansComponent implements OnInit {
     password: '',
     specialties: 'battery,tire,crash,engine',
   };
+
+  readonly inputCls =
+    'w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white focus:ring-2 focus:ring-slate-900 dark:ring-white/20 dark:border-hero-line dark:bg-white/5 dark:text-slate-200';
 
   specOptions = [
     { value: 'battery', label: 'Bateria', icon: 'battery_alert' },

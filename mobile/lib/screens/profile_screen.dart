@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_snackbar.dart';
+import 'vehicles_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -381,6 +382,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                   ],
+                  const SizedBox(height: AppSpacing.xl),
+                  // Acceso rápido a vehículos (movido desde la barra inferior)
+                  _ActionTile(
+                    icon: Icons.directions_car_rounded,
+                    label: 'Mis vehículos',
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const VehiclesScreen())),
+                  ),
                   const SizedBox(height: AppSpacing.xl),
                   Text(
                     'Ajustes',

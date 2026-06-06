@@ -5,11 +5,12 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
 import { WebSocketService } from '../../services/websocket.service';
+import { AppIconComponent } from '../../shared/app-icon.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, AppIconComponent],
   template: `
     <nav class="navbar">
       <div class="nav-inner">
@@ -25,26 +26,26 @@ import { WebSocketService } from '../../services/websocket.service';
 
         <div class="nav-links">
           <a routerLink="/dashboard" routerLinkActive="active">
-            <span class="material-symbols-rounded">dashboard</span>
+            <app-icon name="dashboard" />
             <span>Dashboard</span>
           </a>
           <a routerLink="/incidents" routerLinkActive="active">
-            <span class="material-symbols-rounded">warning</span>
+            <app-icon name="warning" />
             <span>Incidentes</span>
           </a>
           <a routerLink="/technicians" routerLinkActive="active">
-            <span class="material-symbols-rounded">engineering</span>
+            <app-icon name="engineering" />
             <span>Tecnicos</span>
           </a>
           <a routerLink="/history" routerLinkActive="active">
-            <span class="material-symbols-rounded">history</span>
+            <app-icon name="history" />
             <span>Historial</span>
           </a>
         </div>
 
         <div class="nav-right">
           <button class="icon-btn" title="Notificaciones">
-            <span class="material-symbols-rounded">notifications</span>
+            <app-icon name="notifications" />
             <span class="notification-dot" *ngIf="unreadCount > 0">
               {{ unreadCount > 9 ? '9+' : unreadCount }}
             </span>
@@ -61,7 +62,7 @@ import { WebSocketService } from '../../services/websocket.service';
           </div>
 
           <button class="icon-btn logout-btn" (click)="logout()" title="Cerrar sesion">
-            <span class="material-symbols-rounded">logout</span>
+            <app-icon name="logout" />
           </button>
         </div>
       </div>
@@ -152,8 +153,8 @@ import { WebSocketService } from '../../services/websocket.service';
         transition: all var(--transition-fast);
         position: relative;
 
-        .material-symbols-rounded {
-          font-size: 20px;
+        app-icon {
+          flex-shrink: 0;
         }
 
         &:hover {
@@ -184,10 +185,6 @@ import { WebSocketService } from '../../services/websocket.service';
         justify-content: center;
         color: var(--color-text-secondary);
         transition: all var(--transition-fast);
-
-        .material-symbols-rounded {
-          font-size: 22px;
-        }
 
         &:hover {
           background: var(--color-surface-alt);
@@ -270,7 +267,7 @@ import { WebSocketService } from '../../services/websocket.service';
       }
 
       @media (max-width: 900px) {
-        .nav-links a span:not(.material-symbols-rounded) {
+        .nav-links a span:not(app-icon) {
           display: none;
         }
         .user-meta {

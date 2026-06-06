@@ -9,13 +9,14 @@ import { ApiService } from '../../services/api.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { ThemeService } from '../../services/theme.service';
 import { Notification } from '../../models/interfaces';
+import { AppIconComponent } from '../../shared/app-icon.component';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, SidebarComponent, AppIconComponent],
   template: `
-    <div class="flex min-h-screen bg-slate-50 dark:bg-[#0b0f14]">
+    <div class="flex min-h-screen bg-slate-50 dark:bg-[#111111]">
       <app-sidebar
         [collapsed]="sidebarCollapsed"
         [pendingCount]="pendingCount"
@@ -28,41 +29,41 @@ import { Notification } from '../../models/interfaces';
       <div class="flex min-w-0 flex-1 flex-col transition-all duration-300"
            [ngClass]="sidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-64'">
         <!-- Top bar -->
-        <header class="sticky top-0 z-[100] flex h-16 flex-shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/80 px-4 backdrop-blur-md md:px-6 lg:px-8 dark:border-white/10 dark:bg-[#0b0f14]/80">
+        <header class="sticky top-0 z-[100] flex h-16 flex-shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/80 px-4 backdrop-blur-md md:px-6 lg:px-8 dark:border-white/8 dark:bg-[#111111]/80">
           <div class="flex items-center gap-2">
             <button class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 md:hidden dark:text-slate-400 dark:hover:bg-white/5" (click)="mobileOpen = !mobileOpen">
-              <span class="material-symbols-rounded">menu</span>
+              <app-icon name="menu" />
             </button>
             <div class="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400">
-              <span class="material-symbols-rounded text-lg">home</span>
+              <app-icon name="home" [size]="18" />
               <span>{{ getWorkspaceLabel() }}</span>
             </div>
           </div>
 
           <div class="flex items-center gap-1 md:gap-2">
-            <button class="grid h-9 w-9 place-items-center rounded-lg text-brand-500 transition hover:bg-brand-50 dark:hover:bg-brand-500/10" (click)="toggleAssistant()" title="Asistente IA">
-              <span class="material-symbols-rounded">support_agent</span>
+            <button class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-white/50 dark:hover:bg-white/8 dark:hover:text-white" (click)="toggleAssistant()" title="Asistente IA">
+              <app-icon name="support_agent" />
             </button>
 
             <button class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5" (click)="toggleTheme()" [title]="themeSvc.theme() === 'dark' ? 'Modo claro' : 'Modo oscuro'">
-              <span class="material-symbols-rounded">{{ themeSvc.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</span>
+              <app-icon [name]="themeSvc.theme() === 'dark' ? 'light_mode' : 'dark_mode'" />
             </button>
 
             <div class="relative">
               <button class="relative grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5" title="Notificaciones" (click)="toggleNotifications()">
-                <span class="material-symbols-rounded">notifications</span>
+                <app-icon name="notifications" />
                 <span class="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full border-2 border-slate-50 bg-emergency-500 px-1 font-mono text-[0.55rem] font-bold text-white dark:border-[#0b0f14]" *ngIf="unreadCount > 0">
                   {{ unreadCount > 9 ? '9+' : unreadCount }}
                 </span>
               </button>
 
-              <section class="absolute right-0 top-[calc(100%+0.625rem)] z-[250] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#161b22]" *ngIf="notificationsOpen">
+              <section class="absolute right-0 top-[calc(100%+0.625rem)] z-[250] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/8 dark:bg-[#181818]" *ngIf="notificationsOpen">
                 <header class="flex items-center justify-between gap-2 border-b border-slate-200 p-4 dark:border-white/10">
                   <div class="grid">
                     <strong class="text-slate-900 dark:text-white">Notificaciones</strong>
                     <span class="text-xs text-slate-500 dark:text-slate-400">{{ unreadCount }} sin leer</span>
                   </div>
-                  <button class="rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-600 disabled:text-slate-400 dark:text-brand-400" (click)="markAllNotificationsRead()" [disabled]="unreadCount === 0 || notificationsLoading">
+                  <button class="rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 disabled:text-slate-400 dark:text-white dark:disabled:text-white/30" (click)="markAllNotificationsRead()" [disabled]="unreadCount === 0 || notificationsLoading">
                     Marcar leidas
                   </button>
                 </header>
@@ -71,28 +72,28 @@ import { Notification } from '../../models/interfaces';
                   <button
                     class="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 rounded-xl p-2.5 text-left text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"
                     *ngFor="let notification of notifications"
-                    [class.bg-brand-50]="!notification.is_read"
-                    [class.dark:bg-brand-500/10]="!notification.is_read"
+                    [class.bg-slate-50]="!notification.is_read"
+                    [class.dark:bg-white/5]="!notification.is_read"
                     (click)="openNotification(notification)"
                   >
-                    <span class="mt-1.5 h-2 w-2 rounded-full" [class.bg-brand-500]="!notification.is_read"></span>
+                    <span class="mt-1.5 h-2 w-2 rounded-full" [class.bg-slate-900]="!notification.is_read" [class.dark:bg-white]="!notification.is_read"></span>
                     <span class="grid min-w-0 gap-0.5">
                       <strong class="truncate text-[0.8rem] text-slate-900 dark:text-white">{{ notification.title }}</strong>
                       <span class="line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{{ notification.message }}</span>
                       <small class="text-[0.7rem] text-slate-400">{{ notification.created_at | date: 'dd/MM HH:mm' }}</small>
                     </span>
-                    <span class="material-symbols-rounded text-slate-400" *ngIf="notification.incident_id">chevron_right</span>
+                    <app-icon name="chevron_right" class="text-slate-400" *ngIf="notification.incident_id" />
                   </button>
 
                   <div class="grid place-items-center gap-1 p-8 text-center text-slate-400" *ngIf="notifications.length === 0">
-                    <span class="material-symbols-rounded text-3xl">notifications_off</span>
+                    <app-icon name="notifications_off" [size]="30" />
                     <p class="text-sm">No tienes notificaciones.</p>
                   </div>
                 </div>
 
                 <ng-template #notificationsLoadingTpl>
                   <div class="grid place-items-center gap-1 p-8 text-center text-slate-400">
-                    <span class="material-symbols-rounded text-3xl">hourglass_top</span>
+                    <app-icon name="hourglass_top" [size]="30" />
                     <p class="text-sm">Cargando notificaciones...</p>
                   </div>
                 </ng-template>
@@ -102,7 +103,7 @@ import { Notification } from '../../models/interfaces';
             <div class="mx-1 hidden h-6 w-px bg-slate-200 md:block dark:bg-white/10"></div>
 
             <a class="flex items-center gap-2.5 rounded-full p-1 transition hover:bg-slate-100 lg:py-1 lg:pl-1 lg:pr-3 dark:hover:bg-white/5" routerLink="/profile" title="Mi Perfil">
-              <div class="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-400 to-emergency-500 text-xs font-bold text-white">{{ initials }}</div>
+              <div class="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-[#111111] text-xs font-bold text-white dark:bg-white dark:text-[#111111]">{{ initials }}</div>
               <div class="hidden flex-col leading-tight lg:flex">
                 <span class="max-w-32 truncate text-sm font-semibold text-slate-900 dark:text-white">{{ userName || 'Taller' }}</span>
                 <span class="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-slate-400">{{ getRoleLabel() }}</span>
@@ -110,45 +111,45 @@ import { Notification } from '../../models/interfaces';
             </a>
 
             <button class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-emergency-50 hover:text-emergency-600 dark:text-slate-400 dark:hover:bg-emergency-500/10" (click)="logout()" title="Cerrar sesion">
-              <span class="material-symbols-rounded">logout</span>
+              <app-icon name="logout" />
             </button>
           </div>
         </header>
 
         <!-- Page content -->
         <main class="w-full max-w-full flex-1 overflow-x-hidden p-3 md:p-5 lg:p-7 2xl:mx-auto 2xl:max-w-[1500px]">
-          <div class="mb-4 grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-2xl border border-brand-100 bg-white p-3 shadow-card dark:border-brand-500/20 dark:bg-[#161b22]" *ngIf="notificationToast">
-            <div class="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-              <span class="material-symbols-rounded">notifications_active</span>
+          <div class="mb-4 grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-card dark:border-white/8 dark:bg-[#181818]" *ngIf="notificationToast">
+            <div class="grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white">
+              <app-icon name="notifications_active" />
             </div>
             <div class="grid min-w-0 gap-0.5">
               <strong class="text-sm text-slate-900 dark:text-white">{{ notificationToast.title }}</strong>
               <span class="truncate text-xs text-slate-500 dark:text-slate-400">{{ notificationToast.message }}</span>
             </div>
-            <button class="rounded-lg bg-gradient-to-br from-brand-400 to-emergency-500 px-3 py-2 text-xs font-bold text-white" (click)="openIncidentAlert()">
+            <button class="rounded-lg bg-[#111111] px-3 py-2 text-xs font-bold text-white dark:bg-white dark:text-[#111111]" (click)="openIncidentAlert()">
               Ver solicitudes
             </button>
             <button class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5" (click)="notificationToast = null" title="Cerrar">
-              <span class="material-symbols-rounded">close</span>
+              <app-icon name="close" />
             </button>
           </div>
           <router-outlet></router-outlet>
         </main>
       </div>
 
-      <section class="fixed bottom-4 right-4 z-[220] flex w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#161b22]" *ngIf="assistantOpen" aria-label="Asistente IA contextual">
+      <section class="fixed bottom-4 right-4 z-[220] flex w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/8 dark:bg-[#181818]" *ngIf="assistantOpen" aria-label="Asistente IA contextual">
         <div class="flex items-start justify-between gap-3 border-b border-slate-200 p-4 dark:border-white/10">
           <div>
-            <span class="block text-[0.7rem] font-extrabold uppercase tracking-wide text-brand-500">Asistente IA</span>
+            <span class="block text-[0.7rem] font-extrabold uppercase tracking-wide text-slate-500 dark:text-white/40">Asistente IA</span>
             <h2 class="mt-0.5 font-display text-base font-extrabold text-slate-900 dark:text-white">RescateYa te guia</h2>
           </div>
           <button class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5" (click)="assistantOpen = false" title="Cerrar asistente">
-            <span class="material-symbols-rounded">close</span>
+            <app-icon name="close" />
           </button>
         </div>
 
         <div class="grid max-h-[48vh] gap-2 overflow-y-auto p-4">
-          <div class="rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm leading-relaxed text-slate-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-slate-200">
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700 dark:border-white/8 dark:bg-white/5 dark:text-slate-200">
             {{ assistantMessage || 'Puedo ayudarte segun la pantalla actual. Preguntame que hacer ahora o pulsa el boton para recibir una guia rapida.' }}
           </div>
 
@@ -160,17 +161,20 @@ import { Notification } from '../../models/interfaces';
           </div>
         </div>
 
-        <form class="flex gap-1.5 border-t border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#0d1117]" (ngSubmit)="askAssistant(assistantQuestion)">
+        <form class="flex gap-1.5 border-t border-slate-200 bg-slate-50 p-4 dark:border-white/8 dark:bg-[#121212]" (ngSubmit)="askAssistant(assistantQuestion)">
           <input
             name="assistantQuestion"
             [(ngModel)]="assistantQuestion"
             placeholder="Pregunta sobre esta pantalla"
             [disabled]="assistantLoading"
-            class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 dark:border-white/10 dark:bg-white/5 dark:text-white"
+            class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none
+                   focus:border-slate-400 focus:ring-2 focus:ring-black/8
+                   dark:border-white/10 dark:bg-[#282828] dark:text-white
+                   dark:focus:border-white/40 dark:focus:ring-white/8"
           />
           <button type="submit" [disabled]="assistantLoading"
-            class="grid w-11 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-emergency-500 text-white disabled:opacity-60">
-            <span class="material-symbols-rounded">send</span>
+            class="grid w-11 place-items-center rounded-xl bg-[#111111] text-white disabled:opacity-60 dark:bg-white dark:text-[#111111]">
+            <app-icon name="send" />
           </button>
         </form>
       </section>

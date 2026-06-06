@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Color hero oscuro para la splash screen nativa -->
+    <color name="rescateya_hero">#14181F</color>
+    <!-- Color primario naranja RescateYa (para el Android 12 splash background) -->
+    <color name="rescateya_primary">#FF6B00</color>
+</resources>

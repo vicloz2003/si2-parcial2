@@ -40,7 +40,7 @@ export interface MetricsSummary {
     completed: number;
     avg_completion_min: number | null;
   }[];
-  zones: { latitude: number; longitude: number; count: number }[];
+  zones: { zone: string; count: number }[];
   cancelled: {
     total_incidents: number;
     cancelled: number;

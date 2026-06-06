@@ -13,17 +13,17 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  /* ── Marca: naranja rescate ── */
-  --color-brand-50: #FFF3E9;
-  --color-brand-100: #FFE2C7;
-  --color-brand-200: #FFC894;
-  --color-brand-300: #FFAA5C;
-  --color-brand-400: #FF8A33;
-  --color-brand-500: #FF6B00;
-  --color-brand-600: #E85D00;
-  --color-brand-700: #C24D00;
-  --color-brand-800: #9B3E00;
-  --color-brand-900: #7A3200;
+  /* ── Marca: neutral zinc (reemplaza el naranja) ── */
+  --color-brand-50:  #FAFAFA;
+  --color-brand-100: #F4F4F5;
+  --color-brand-200: #E4E4E7;
+  --color-brand-300: #D4D4D8;
+  --color-brand-400: #A1A1AA;
+  --color-brand-500: #71717A;
+  --color-brand-600: #52525B;
+  --color-brand-700: #3F3F46;
+  --color-brand-800: #27272A;
+  --color-brand-900: #18181B;
 
   /* ── Emergencia: rojo ── */
   --color-emergency-50: #FDECEE;
@@ -37,10 +37,11 @@
   --color-emergency-800: #84141E;
   --color-emergency-900: #6B1018;
 
-  /* ── Hero / superficies oscuras (marketing) ── */
-  --color-hero: #14181f;
-  --color-hero-soft: #1b212b;
-  --color-hero-line: #2a323f;
+  /* ── Hero / superficies oscuras — Spotify blacks ── */
+  --color-hero:        #111111;   /* Spotify signature (warm black)  */
+  --color-hero-soft:   #181818;   /* card surface                    */
+  --color-hero-raised: #282828;   /* elevated surface                */
+  --color-hero-line:   #333333;   /* borders / dividers              */
 
   /* ── Semánticos ── */
   --color-success: #0fad73;
@@ -53,10 +54,10 @@
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* ── Sombras de marca (profundidad + glow) ── */
-  --shadow-brand: 0 12px 30px -8px rgba(255, 107, 0, 0.45);
-  --shadow-emergency: 0 12px 30px -8px rgba(230, 57, 70, 0.45);
-  --shadow-card: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  /* ── Sombras de marca ── */
+  --shadow-brand:      0 4px 24px rgba(255, 255, 255, 0.12);   /* white glow  */
+  --shadow-emergency:  0 12px 30px -8px rgba(230, 57, 70, 0.45);
+  --shadow-card:       0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
   --shadow-card-hover: 0 18px 40px -12px rgba(16, 24, 40, 0.18);
 
   /* ── Motivo de marca: baliza / radar / float ── */
@@ -84,14 +85,10 @@
   }
 }
 
-/* ── Utilidad: texto con degradado de marca ── */
+/* ── Utilidad: texto con énfasis de marca (antes era naranja, ahora blanco bold) ── */
 @utility text-gradient {
-  background: linear-gradient(135deg, #FF8A33 0%, #FF6B00 45%, #E63946 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  display: inline-block;
-  padding-bottom: 0.08em;
+  color: #FFFFFF;
+  font-weight: 800;
 }
 
 /* ── Base global ── */
@@ -107,9 +104,9 @@
   [data-theme="dark"] body { background-color: #0d1117; color: #e6edf3; }
   h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 
-  .material-symbols-rounded {
-    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+  /* Lucide icons — inline SVG via lucide-angular */
+  lucide-angular {
+    display: inline-block;
     vertical-align: middle;
-    user-select: none;
   }
 }
