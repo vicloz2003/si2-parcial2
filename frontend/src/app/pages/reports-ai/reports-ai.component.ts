@@ -28,7 +28,7 @@ declare const window: any;
         <div class="relative">
           <textarea [(ngModel)]="prompt" rows="3" [disabled]="loading"
             placeholder="Ej: Clientes con más incidencias en el último mes; o talleres ordenados por servicios completados..."
-            class="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 py-3 pl-4 pr-14 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white focus:ring-2 focus:ring-slate-900 dark:ring-white/20 disabled:opacity-60 dark:border-hero-line dark:bg-white/5 dark:text-slate-200"></textarea>
+            class="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 py-3 pl-4 pr-14 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-slate-900 dark:ring-white/20 disabled:opacity-60 dark:border-hero-line dark:bg-white/5 dark:text-slate-200"></textarea>
           <button type="button" *ngIf="voiceSupported" (click)="toggleVoice()"
             [title]="recording ? 'Detener dictado' : 'Dictar por voz'"
             class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border transition"
