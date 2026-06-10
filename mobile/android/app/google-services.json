@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "450833769487",
-    "project_id": "asistecar",
-    "storage_bucket": "asistecar.firebasestorage.app"
+    "project_number": "352012799931",
+    "project_id": "parcial2-52968",
+    "storage_bucket": "parcial2-52968.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:450833769487:android:a0db0199167ded260aaf7a",
+        "mobilesdk_app_id": "1:352012799931:android:57288af7cf11b99fbefe9e",
         "android_client_info": {
           "package_name": "com.emergenciapp.emergenciapp"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyD6YnbhCoZuG5kpcSFWVHg7PA_sI-K8Dbg"
+          "current_key": "AIzaSyDycOwJ8vAP_HgLP8RWqiZfOzk_09f0lQI"
         }
       ],
       "services": {
