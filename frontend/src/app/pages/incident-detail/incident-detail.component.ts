@@ -163,8 +163,8 @@ import { AppIconComponent } from '../../shared/app-icon.component';
             </div>
           </div>
 
-          <!-- Pending: offer/reject -->
-          <div [ngClass]="cardCls" *ngIf="incident.status === 'pending'">
+          <!-- Pending: offer/reject — solo para talleres -->
+          <div [ngClass]="cardCls" *ngIf="incident.status === 'pending' && isWorkshop">
             <div [ngClass]="cardHeadCls"><app-icon name="local_offer" class="text-slate-700 dark:text-white" /><h3 [ngClass]="cardTitleCls">{{ currentOffer ? 'Oferta enviada' : 'Enviar oferta' }}</h3></div>
 
             <div class="text-center" *ngIf="currentOffer; else offerFormTpl">
@@ -256,6 +256,7 @@ import { AppIconComponent } from '../../shared/app-icon.component';
 export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChecked {
   apiBaseUrl = environment.apiUrl.replace(/\/api$/, '');
   incident: Incident | null = null;
+  isWorkshop = false;
   technicians: Technician[] = [];
   selectedTechnician: number | null = null;
   offerCost = 120;
@@ -452,21 +453,26 @@ export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChec
 
   ngOnInit() {
     const user = this.auth.getCurrentUser();
-    if (user) this.currentUserId = user.id;
+    if (user) {
+      this.currentUserId = user.id;
+      this.isWorkshop = user.role === 'workshop';
+    }
 
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.api.getIncident(id).subscribe((inc) => {
       this.incident = inc;
       this.cdr.markForCheck();
       this.loadChat(inc.id);
-      if (inc.status === 'pending') {
+      if (inc.status === 'pending' && this.isWorkshop) {
         this.loadMyOffer(inc.id);
       }
     });
-    this.api.getTechnicians().subscribe({
-      next: (t) => { this.technicians = t; this.cdr.markForCheck(); },
-      error: () => { this.technicians = []; this.cdr.markForCheck(); },
-    });
+    if (this.isWorkshop) {
+      this.api.getTechnicians().subscribe({
+        next: (t) => { this.technicians = t; this.cdr.markForCheck(); },
+        error: () => { this.technicians = []; this.cdr.markForCheck(); },
+      });
+    }
 
     this.ws.connect();
     // Listen for incoming chat messages + live technician tracking via WebSocket
