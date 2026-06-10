@@ -373,14 +373,17 @@ def reject_incident(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.role != UserRole.WORKSHOP:
-        raise HTTPException(status_code=403, detail="Solo talleres pueden rechazar incidentes")
+    if current_user.role not in (UserRole.WORKSHOP, UserRole.ADMIN):
+        raise HTTPException(status_code=403, detail="Solo talleres o administradores pueden rechazar incidentes")
 
-    workshop = db.query(Workshop).filter(Workshop.user_id == current_user.id).first()
-    incident = db.query(Incident).filter(
-        Incident.id == incident_id,
-        Incident.workshop_id == workshop.id,
-    ).first()
+    if current_user.role == UserRole.ADMIN:
+        incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    else:
+        workshop = db.query(Workshop).filter(Workshop.user_id == current_user.id).first()
+        incident = db.query(Incident).filter(
+            Incident.id == incident_id,
+            Incident.workshop_id == workshop.id,
+        ).first()
     if not incident:
         raise HTTPException(status_code=404, detail="Incidente no encontrado")
 

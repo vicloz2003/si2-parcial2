@@ -163,56 +163,62 @@ import { AppIconComponent } from '../../shared/app-icon.component';
             </div>
           </div>
 
-          <!-- Pending: offer/reject — solo para talleres -->
-          <div [ngClass]="cardCls" *ngIf="incident.status === 'pending' && isWorkshop">
-            <div [ngClass]="cardHeadCls"><app-icon name="local_offer" class="text-slate-700 dark:text-white" /><h3 [ngClass]="cardTitleCls">{{ currentOffer ? 'Oferta enviada' : 'Enviar oferta' }}</h3></div>
+          <!-- Pending: offer/reject — talleres y admin -->
+          <div [ngClass]="cardCls" *ngIf="incident.status === 'pending' && (isWorkshop || isAdmin)">
+            <!-- Taller: panel completo de oferta -->
+            <ng-container *ngIf="isWorkshop">
+              <div [ngClass]="cardHeadCls"><app-icon name="local_offer" class="text-slate-700 dark:text-white" /><h3 [ngClass]="cardTitleCls">{{ currentOffer ? 'Oferta enviada' : 'Enviar oferta' }}</h3></div>
 
-            <div class="text-center" *ngIf="currentOffer; else offerFormTpl">
-              <div class="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-success/10 text-success">
-                <app-icon name="check_circle" />
+              <div class="text-center" *ngIf="currentOffer; else offerFormTpl">
+                <div class="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-success/10 text-success">
+                  <app-icon name="check_circle" />
+                </div>
+                <div class="font-semibold text-slate-800 dark:text-slate-100">Tu oferta ya fue enviada al cliente</div>
+                <div class="mt-1 text-sm text-slate-500 dark:text-slate-400">El cliente la verá en la app móvil y podrá aceptarla o compararla con otras ofertas.</div>
+                <div class="mt-4 grid grid-cols-3 gap-2 text-left">
+                  <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-white/5"><span class="block text-[11px] text-slate-400">Costo</span><strong class="text-sm text-slate-900 dark:text-white">Bs. {{ currentOffer.cost | number: '1.2-2' }}</strong></div>
+                  <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-white/5"><span class="block text-[11px] text-slate-400">ETA</span><strong class="text-sm text-slate-900 dark:text-white">{{ currentOffer.estimated_arrival }} min</strong></div>
+                  <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-white/5" *ngIf="currentOffer.technician_name"><span class="block text-[11px] text-slate-400">Técnico</span><strong class="text-sm text-slate-900 dark:text-white">{{ currentOffer.technician_name }}</strong></div>
+                </div>
               </div>
-              <div class="font-semibold text-slate-800 dark:text-slate-100">Tu oferta ya fue enviada al cliente</div>
-              <div class="mt-1 text-sm text-slate-500 dark:text-slate-400">El cliente la verá en la app móvil y podrá aceptarla o compararla con otras ofertas.</div>
-              <div class="mt-4 grid grid-cols-3 gap-2 text-left">
-                <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-white/5"><span class="block text-[11px] text-slate-400">Costo</span><strong class="text-sm text-slate-900 dark:text-white">Bs. {{ currentOffer.cost | number: '1.2-2' }}</strong></div>
-                <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-white/5"><span class="block text-[11px] text-slate-400">ETA</span><strong class="text-sm text-slate-900 dark:text-white">{{ currentOffer.estimated_arrival }} min</strong></div>
-                <div class="rounded-lg bg-slate-50 p-2.5 dark:bg-white/5" *ngIf="currentOffer.technician_name"><span class="block text-[11px] text-slate-400">Técnico</span><strong class="text-sm text-slate-900 dark:text-white">{{ currentOffer.technician_name }}</strong></div>
-              </div>
-            </div>
 
-            <ng-template #offerFormTpl>
-              <div class="space-y-3">
-                <div>
-                  <label [ngClass]="labelCls">Asignar técnico (opcional)</label>
-                  <select [(ngModel)]="selectedTechnician" [disabled]="offerSubmitting" [ngClass]="fieldCls" class="cursor-pointer">
-                    <option [ngValue]="null">Sin asignar</option>
-                    <option *ngFor="let t of technicians" [ngValue]="t.id">{{ t.name }}</option>
-                  </select>
+              <ng-template #offerFormTpl>
+                <div class="space-y-3">
+                  <div>
+                    <label [ngClass]="labelCls">Asignar técnico (opcional)</label>
+                    <select [(ngModel)]="selectedTechnician" [disabled]="offerSubmitting" [ngClass]="fieldCls" class="cursor-pointer">
+                      <option [ngValue]="null">Sin asignar</option>
+                      <option *ngFor="let t of technicians" [ngValue]="t.id">{{ t.name }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label [ngClass]="labelCls">Costo ofertado (Bs.)</label>
+                    <input type="number" [(ngModel)]="offerCost" min="1" [disabled]="offerSubmitting" [ngClass]="fieldCls" />
+                  </div>
+                  <div>
+                    <label [ngClass]="labelCls">Tiempo estimado de llegada (min)</label>
+                    <input type="number" [(ngModel)]="offerEta" min="1" [disabled]="offerSubmitting" [ngClass]="fieldCls" />
+                  </div>
+                  <div>
+                    <label [ngClass]="labelCls">Mensaje para el cliente</label>
+                    <textarea [(ngModel)]="offerMessage" rows="3" [disabled]="offerSubmitting" [ngClass]="fieldCls" class="resize-y"></textarea>
+                  </div>
+                  <div class="flex items-center gap-2 rounded-xl bg-emergency-500/10 px-3 py-2 text-sm font-semibold text-emergency-600 dark:text-emergency-300" *ngIf="offerError">
+                    <app-icon name="error" /> {{ offerError }}
+                  </div>
+                  <button (click)="sendOffer()" [disabled]="offerSubmitting"
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-success px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50">
+                    <app-icon [name]="offerSubmitting ? 'progress_activity' : 'send'" [size]="18" />
+                    {{ offerSubmitting ? 'Enviando oferta...' : 'Enviar oferta al cliente' }}
+                  </button>
                 </div>
-                <div>
-                  <label [ngClass]="labelCls">Costo ofertado (Bs.)</label>
-                  <input type="number" [(ngModel)]="offerCost" min="1" [disabled]="offerSubmitting" [ngClass]="fieldCls" />
-                </div>
-                <div>
-                  <label [ngClass]="labelCls">Tiempo estimado de llegada (min)</label>
-                  <input type="number" [(ngModel)]="offerEta" min="1" [disabled]="offerSubmitting" [ngClass]="fieldCls" />
-                </div>
-                <div>
-                  <label [ngClass]="labelCls">Mensaje para el cliente</label>
-                  <textarea [(ngModel)]="offerMessage" rows="3" [disabled]="offerSubmitting" [ngClass]="fieldCls" class="resize-y"></textarea>
-                </div>
-                <div class="flex items-center gap-2 rounded-xl bg-emergency-500/10 px-3 py-2 text-sm font-semibold text-emergency-600 dark:text-emergency-300" *ngIf="offerError">
-                  <app-icon name="error" /> {{ offerError }}
-                </div>
-                <button (click)="sendOffer()" [disabled]="offerSubmitting"
-                  class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-success px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50">
-                  <app-icon [name]="offerSubmitting ? 'progress_activity' : 'send'" [size]="18" />
-                  {{ offerSubmitting ? 'Enviando oferta...' : 'Enviar oferta al cliente' }}
-                </button>
-              </div>
-            </ng-template>
+              </ng-template>
+            </ng-container>
 
-            <button (click)="rejectIncident()" [disabled]="offerSubmitting || !!currentOffer"
+            <!-- Admin: solo cabecera de gestión -->
+            <div [ngClass]="cardHeadCls" *ngIf="isAdmin"><app-icon name="admin_panel_settings" class="text-slate-700 dark:text-white" /><h3 [ngClass]="cardTitleCls">Gestión de incidente</h3></div>
+
+            <button (click)="rejectIncident()" [disabled]="offerSubmitting || (!!currentOffer && !isAdmin)"
               class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 dark:border-hero-line dark:text-slate-300 dark:hover:bg-white/5">
               <app-icon name="close" [size]="18" /> Rechazar
             </button>
@@ -229,6 +235,10 @@ import { AppIconComponent } from '../../shared/app-icon.component';
               <app-icon name="info" [size]="18" />
               <p>El cierre y el pago los realiza el cliente desde la app móvil. El monto queda fijado por la oferta aceptada.</p>
             </div>
+            <button *ngIf="isAdmin" (click)="rejectIncident()" [disabled]="offerSubmitting"
+              class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emergency-200 px-4 py-2.5 text-sm font-semibold text-emergency-600 transition hover:bg-emergency-50 disabled:opacity-50 dark:border-emergency-500/30 dark:text-emergency-300 dark:hover:bg-emergency-500/10">
+              <app-icon name="undo" [size]="18" /> Regresar a pendiente
+            </button>
           </div>
 
           <!-- Final cost -->
@@ -257,6 +267,7 @@ export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChec
   apiBaseUrl = environment.apiUrl.replace(/\/api$/, '');
   incident: Incident | null = null;
   isWorkshop = false;
+  isAdmin = false;
   technicians: Technician[] = [];
   selectedTechnician: number | null = null;
   offerCost = 120;
@@ -456,6 +467,7 @@ export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChec
     if (user) {
       this.currentUserId = user.id;
       this.isWorkshop = user.role === 'workshop';
+      this.isAdmin = user.role === 'admin';
     }
 
     const id = Number(this.route.snapshot.paramMap.get('id'));
