@@ -242,7 +242,7 @@ export class ProfileComponent implements OnInit {
 
   // Clases compartidas (evita repetir utilidades en cada input del template).
   readonly inputCls =
-    'w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white focus:ring-2 focus:ring-slate-900 dark:ring-white/20 disabled:cursor-not-allowed dark:border-hero-line dark:bg-white/5 dark:text-slate-200';
+    'w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-slate-900 dark:ring-white/20 disabled:cursor-not-allowed dark:border-hero-line dark:bg-white/5 dark:text-slate-200';
   readonly saveBtnCls =
     'inline-flex items-center gap-2 rounded-xl bg-[#111111] dark:bg-white dark:text-[#111111] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
 

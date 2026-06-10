@@ -52,7 +52,7 @@ import { AppIconComponent } from '../../shared/app-icon.component';
           <app-icon name="search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30" />
           <input [(ngModel)]="searchTerm" (input)="applyFilter()" placeholder="Buscar nombre, correo o teléfono…"
                  class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition
-                        focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-black/8
+                        focus:border-slate-400 focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-black/8
                         dark:border-white/8 dark:bg-white/5 dark:text-white dark:placeholder:text-white/25
                         dark:focus:border-white/30 dark:focus:ring-white/8">
         </div>

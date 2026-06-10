@@ -188,7 +188,7 @@ export class TechniciansComponent implements OnInit {
   };
 
   readonly inputCls =
-    'w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white focus:ring-2 focus:ring-slate-900 dark:ring-white/20 dark:border-hero-line dark:bg-white/5 dark:text-slate-200';
+    'w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-slate-900 dark:ring-white/20 dark:border-hero-line dark:bg-white/5 dark:text-slate-200';
 
   specOptions = [
     { value: 'battery', label: 'Bateria', icon: 'battery_alert' },

@@ -140,7 +140,7 @@ import { AppIconComponent } from '../../shared/app-icon.component';
             </div>
             <div class="mt-3 flex gap-2">
               <input type="text" [(ngModel)]="chatInput" (keydown.enter)="sendMessage()" placeholder="Escribe un mensaje..."
-                class="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white focus:ring-2 focus:ring-slate-900 dark:ring-white/20 dark:border-hero-line dark:bg-white/5 dark:text-slate-200">
+                class="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-slate-900 dark:ring-white/20 dark:border-hero-line dark:bg-white/5 dark:text-slate-200">
               <button (click)="sendMessage()" [disabled]="!chatInput.trim()"
                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#111111] dark:bg-white text-white shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition hover:bg-slate-800 dark:hover:bg-white/90 disabled:opacity-50">
                 <app-icon name="send" />
@@ -287,7 +287,7 @@ export class IncidentDetailComponent implements OnInit, OnDestroy, AfterViewChec
   readonly cardHeadCls = 'mb-4 flex items-center gap-2';
   readonly cardTitleCls = 'font-display text-base font-bold text-slate-900 dark:text-white';
   readonly labelCls = 'mb-1.5 block text-sm font-semibold text-slate-600 dark:text-slate-300';
-  readonly fieldCls = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white focus:ring-2 focus:ring-slate-900 dark:ring-white/20 disabled:opacity-60 dark:border-hero-line dark:bg-white/5 dark:text-slate-200';
+  readonly fieldCls = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-slate-900 dark:border-white/60 focus:bg-white dark:focus:bg-white/10 focus:ring-2 focus:ring-slate-900 dark:ring-white/20 disabled:opacity-60 dark:border-hero-line dark:bg-white/5 dark:text-slate-200';
 
   catTile(cat: string): string {
     const map: Record<string, string> = {
