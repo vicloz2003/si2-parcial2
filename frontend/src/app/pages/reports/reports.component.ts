@@ -6,6 +6,9 @@ Chart.register(...registerables);
 import { ApiService } from '../../services/api.service';
 import { Incident, Payment } from '../../models/interfaces';
 import { AppIconComponent } from '../../shared/app-icon.component';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 interface MonthData {
   label: string;
@@ -41,16 +44,26 @@ interface TechStat {
           <h1 class="font-display text-3xl font-bold text-slate-900 dark:text-white">Reportes</h1>
           <p class="text-sm text-slate-500 dark:text-slate-400">Análisis y métricas de tu taller</p>
         </div>
-        <div class="flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-hero-line dark:bg-hero-soft">
-          <app-icon name="calendar_today" [size]="18" class="text-slate-400" />
-          <select [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()"
-                  class="cursor-pointer border-0 bg-transparent text-sm font-semibold text-slate-700 outline-none dark:bg-hero-soft dark:text-slate-200 dark:[color-scheme:dark]">
-            <option value="7">Últimos 7 días</option>
-            <option value="30">Últimos 30 días</option>
-            <option value="90">Últimos 3 meses</option>
-            <option value="365">Último año</option>
-            <option value="0">Todo</option>
-          </select>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-hero-line dark:bg-hero-soft">
+            <app-icon name="calendar_today" [size]="18" class="text-slate-400" />
+            <select [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()"
+                    class="cursor-pointer border-0 bg-transparent text-sm font-semibold text-slate-700 outline-none dark:bg-hero-soft dark:text-slate-200 dark:[color-scheme:dark]">
+              <option value="7">Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 3 meses</option>
+              <option value="365">Último año</option>
+              <option value="0">Todo</option>
+            </select>
+          </div>
+          <button (click)="exportExcel()" [disabled]="filteredIncidents.length === 0"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-[#1e7a46] transition hover:bg-slate-50 disabled:opacity-40 dark:border-hero-line dark:bg-hero-soft dark:text-green-400 dark:hover:bg-white/5">
+            <app-icon name="table_view" [size]="18" /> Excel
+          </button>
+          <button (click)="exportPDF()" [disabled]="filteredIncidents.length === 0"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-[#c0392b] transition hover:bg-slate-50 disabled:opacity-40 dark:border-hero-line dark:bg-hero-soft dark:text-red-400 dark:hover:bg-white/5">
+            <app-icon name="picture_as_pdf" [size]="18" /> PDF
+          </button>
         </div>
       </header>
 
@@ -580,5 +593,180 @@ export class ReportsComponent implements OnInit, OnDestroy {
   getBarHeight(value: number, max: number): number {
     if (max <= 0) return 0;
     return Math.max(4, (value / max) * 140);
+  }
+
+  private periodLabel(): string {
+    const map: Record<string, string> = { '7': 'Últimos 7 días', '30': 'Últimos 30 días', '90': 'Últimos 3 meses', '365': 'Último año', '0': 'Todo el período' };
+    return map[this.selectedPeriod] || '';
+  }
+
+  exportExcel(): void {
+    const wb = XLSX.utils.book_new();
+
+    // Hoja 1: KPIs
+    const kpiData = [
+      ['Métrica', 'Valor'],
+      ['Total Incidentes', this.filteredIncidents.length],
+      ['Completados', this.completedCount],
+      ['Tasa de Completados (%)', +this.completionRate.toFixed(1)],
+      ['Ingresos Totales (Bs)', +this.totalRevenue.toFixed(2)],
+      ['Comisión Plataforma (Bs)', +this.totalCommission.toFixed(2)],
+      ['Ingreso Neto (Bs)', +(this.totalRevenue - this.totalCommission).toFixed(2)],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kpiData), 'KPIs');
+
+    // Hoja 2: Tendencia Mensual
+    const monthRows = [['Mes', 'Incidentes', 'Completados', 'Ingresos (Bs)', 'Comisión (Bs)'],
+      ...this.monthlyData.map(m => [m.label, m.incidents, m.completed, +m.revenue.toFixed(2), +m.commission.toFixed(2)])];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(monthRows), 'Tendencia Mensual');
+
+    // Hoja 3: Categorías
+    const catRows = [['Categoría', 'Cantidad', '%'],
+      ...this.categoryStats.map(c => [c.name, c.count, +c.pct.toFixed(1)])];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(catRows), 'Categorías');
+
+    // Hoja 4: Por Estado
+    const statusRows = [['Estado', 'Cantidad', '%'],
+      ...this.statusStats.map(s => [s.label, s.count, +s.pct.toFixed(1)])];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(statusRows), 'Estados');
+
+    // Hoja 5: Por Prioridad
+    const prioRows = [['Prioridad', 'Cantidad', '%'],
+      ...this.priorityStats.map(p => [p.label, p.count, +p.pct.toFixed(1)])];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(prioRows), 'Prioridades');
+
+    // Hoja 6: Técnicos
+    const techRows = [['Técnico', 'Completados'],
+      ...this.techStats.map(t => [t.name, t.completed])];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(techRows), 'Técnicos');
+
+    // Hoja 7: Incidentes completos
+    const incidentRows = [
+      ['ID', 'Estado', 'Categoría', 'Prioridad', 'Costo Final (Bs)', 'Comisión (Bs)', 'Técnico', 'Fecha'],
+      ...this.filteredIncidents.map(i => [
+        i.id, i.status, i.category || '', i.priority || '',
+        i.final_cost ?? 0, i.commission_amount ?? 0,
+        i.technician_name || '', i.created_at ? new Date(i.created_at).toLocaleDateString('es-BO') : '',
+      ]),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(incidentRows), 'Incidentes');
+
+    XLSX.writeFile(wb, `reporte-rescateya-${this.periodLabel().replace(/ /g, '-')}.xlsx`);
+  }
+
+  exportPDF(): void {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const period = this.periodLabel();
+    const now = new Date().toLocaleDateString('es-BO');
+
+    // Cabecera
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RescateYa — Reporte de Taller', 14, 20);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(`Período: ${period}   |   Generado: ${now}`, 14, 27);
+    doc.setTextColor(0);
+
+    // KPIs
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen de KPIs', 14, 37);
+    autoTable(doc, {
+      startY: 41,
+      head: [['Métrica', 'Valor']],
+      body: [
+        ['Total Incidentes', String(this.filteredIncidents.length)],
+        ['Completados', String(this.completedCount)],
+        ['Tasa de Completados', `${this.completionRate.toFixed(1)}%`],
+        ['Ingresos Totales', `Bs ${this.totalRevenue.toFixed(2)}`],
+        ['Comisión Plataforma', `Bs ${this.totalCommission.toFixed(2)}`],
+        ['Ingreso Neto', `Bs ${(this.totalRevenue - this.totalCommission).toFixed(2)}`],
+      ],
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [17, 17, 17] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    // Tendencia Mensual
+    const y1 = (doc as any).lastAutoTable.finalY + 8;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tendencia Mensual', 14, y1);
+    autoTable(doc, {
+      startY: y1 + 4,
+      head: [['Mes', 'Incidentes', 'Completados', 'Ingresos (Bs)', 'Comisión (Bs)']],
+      body: this.monthlyData.map(m => [m.label, m.incidents, m.completed, m.revenue.toFixed(2), m.commission.toFixed(2)]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [17, 17, 17] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    // Categorías y Estado lado a lado
+    const y2 = (doc as any).lastAutoTable.finalY + 8;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Por Categoría', 14, y2);
+    autoTable(doc, {
+      startY: y2 + 4,
+      head: [['Categoría', 'Cantidad', '%']],
+      body: this.categoryStats.map(c => [c.name, c.count, `${c.pct.toFixed(1)}%`]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [17, 17, 17] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      tableWidth: 85,
+    });
+
+    const y2b = y2 + 4;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Por Estado', 110, y2);
+    autoTable(doc, {
+      startY: y2b,
+      head: [['Estado', 'Cantidad', '%']],
+      body: this.statusStats.map(s => [s.label, s.count, `${s.pct.toFixed(1)}%`]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [17, 17, 17] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { left: 110 },
+    });
+
+    // Técnicos
+    const y3 = (doc as any).lastAutoTable.finalY + 8;
+    if (this.techStats.length > 0) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Top Técnicos', 14, y3);
+      autoTable(doc, {
+        startY: y3 + 4,
+        head: [['Técnico', 'Servicios Completados']],
+        body: this.techStats.map(t => [t.name, t.completed]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [17, 17, 17] },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+      });
+    }
+
+    // Listado de incidentes (nueva página)
+    doc.addPage();
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Listado de Incidentes', 14, 16);
+    autoTable(doc, {
+      startY: 20,
+      head: [['ID', 'Estado', 'Categoría', 'Prioridad', 'Costo (Bs)', 'Técnico', 'Fecha']],
+      body: this.filteredIncidents.map(i => [
+        i.id, i.status, i.category || '-', i.priority || '-',
+        i.final_cost ? `${i.final_cost.toFixed(2)}` : '-',
+        i.technician_name || '-',
+        i.created_at ? new Date(i.created_at).toLocaleDateString('es-BO') : '-',
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [17, 17, 17] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    doc.save(`reporte-rescateya-${period.replace(/ /g, '-')}.pdf`);
   }
 }
