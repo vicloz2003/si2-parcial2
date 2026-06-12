@@ -249,7 +249,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
     this.ws.connect();
     this.wsSub = this.ws.notifications$.subscribe((message) => {
-      if (message.type === 'new_incident') {
+      if (message.type === 'new_incident' || message.type === 'invitation') {
         this.showNotificationToast(
           message.title || 'Nueva emergencia cercana',
           message.message || 'Un cliente solicito auxilio mecanico.',

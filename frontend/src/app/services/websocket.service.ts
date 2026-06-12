@@ -21,7 +21,12 @@ export class WebSocketService implements OnDestroy {
     const token = localStorage.getItem('token');
     if (!token || this.ws?.readyState === WebSocket.OPEN) return;
 
-    const url = `${environment.wsUrl}?token=${token}`;
+    let wsUrl = environment.wsUrl;
+    if (wsUrl.startsWith('/')) {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsUrl = `${proto}//${window.location.host}${wsUrl}`;
+    }
+    const url = `${wsUrl}?token=${token}`;
     this.ws = new WebSocket(url);
 
     this.ws.onmessage = (event) => {
