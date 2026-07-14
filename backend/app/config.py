@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.0-flash"
+    # Key separada para Reportes IA para que no comparta cuota con audio/clasificacion/asistente.
+    # Si se deja vacia, cae de vuelta a GEMINI_API_KEY (comportamiento actual).
+    GEMINI_API_KEY_REPORTS: str = ""
     UPLOAD_DIR: str = "./uploads"
     FIREBASE_CREDENTIALS_PATH: str = ""
 

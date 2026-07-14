@@ -26,7 +26,12 @@ def _is_overload(exc: Exception) -> bool:
     ))
 
 
-def generate_json(prompt: str, image_bytes: bytes | None = None, mime_type: str = "image/jpeg") -> dict[str, Any]:
+def generate_json(
+    prompt: str,
+    image_bytes: bytes | None = None,
+    mime_type: str = "image/jpeg",
+    api_key: str | None = None,
+) -> dict[str, Any]:
     try:
         from google import genai
         from google.genai import types
@@ -43,7 +48,7 @@ def generate_json(prompt: str, image_bytes: bytes | None = None, mime_type: str 
             http_status_codes=_TRANSIENT_RETRY_CODES,
         ),
     )
-    client = genai.Client(api_key=settings.GEMINI_API_KEY, http_options=http_options)
+    client = genai.Client(api_key=api_key or settings.GEMINI_API_KEY, http_options=http_options)
 
     contents: list[Any] = [prompt]
     if image_bytes:
